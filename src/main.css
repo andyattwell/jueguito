@@ -29,8 +29,10 @@ body{
 }
 .tile.following {
   background-color: #30f551;
+  border: #30f551 !important;
 }
 .tile.next {
+  background-color: #308ff5 !important;
   border: 3px solid #308ff5;
 }
 .rock {

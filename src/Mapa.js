@@ -30,6 +30,7 @@ class Mapa {
           tile.addClass(randomType);
           tile.attr('data-cell', w);
           tile.attr('data-row', h);
+          tile.attr('id', "tile-" + h * w);
           tile.css('width', self.tileSize);
           tile.css('height', self.tileSize);
           tile.css('line-height', self.tileSize + 'px');
@@ -59,12 +60,14 @@ class Mapa {
       'path', 
       'path', 
       'path', 
+      'path', 
+      'path', 
       'rock', 
-      'path', 
-      'path', 
-      'path', 
       'water'
     ];
+    // const types = [
+    //   'path', 
+    // ];
     const randomNumber = parseInt(Math.random() * types.length);
     return types[randomNumber];
   }
