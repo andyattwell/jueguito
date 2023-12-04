@@ -38,15 +38,19 @@ class Cosita {
   createCosita() {
     let self = this;
     return new Promise((resolve, reject) => {
-      // console.log("New Cosita", this.x, this.y, this.width, this.height);
+      console.log("New Cosita", this.x, this.y, this.width, this.height);
 
       self.element = $("<div>");;
       self.element.addClass('Cosita');
-      self.element.css('width', this.width);
-      self.element.css('height', this.height);
+      self.element.css('width', self.width);
+      self.element.css('height', self.height);
+      // const pos = self.centerPosition(self.x, self.y)
+      // console.log({pos})
+      // self.element.css('top', pos.y);
+      // self.element.css('left', pos.x);
       self.map.$container.append(self.element);
       
-      self.move(1, 1)
+      // self.move(5, 3)
 
       $(document).on("keydown", (event) => {
         self.keyAction(event.key);
@@ -113,11 +117,12 @@ class Cosita {
         break;
     }
     if (this.x !== x || this.y !== y) {
-      this.move(x, y);
+      this.takeStep(x, y);
     }
   }
 
   move(x, y) {
+    console.log('move')
     if (this.isMoving) {
       this.stopMoving();
     }
@@ -137,12 +142,13 @@ class Cosita {
     let diffY = Math.abs(parseInt(targetY - this.element.position().left));
     let diffX = Math.abs(parseInt(targetX - this.element.position().top));
 
-    let x = 0
+    let x = this.x
     let nextX = 0;
     let lastX = 0;
     let nextY = 0;
+    let lastCell = null
 
-    while (x <= targetX) {
+    while (x != targetX) {
     
       if (diffX >= 1) {
         if (targetX > x) {
@@ -158,6 +164,7 @@ class Cosita {
         path.push([nextX, nextY]);
         cell.$tile.addClass('following')
         lastX = nextX;
+        lastCell = cell
       } else {
         lastX = nextX - 1;
         break;
@@ -166,8 +173,8 @@ class Cosita {
       x++;
     }
 
-    let y = 0;
-    while (y < targetY) {
+    let y = this.y;
+    while (y != targetY) {
       if (diffY >= 1) {
         if (targetY > y) {
           nextY += 1;
@@ -181,6 +188,7 @@ class Cosita {
           cell.$tile.addClass('following')
           path.push([lastX, nextY]);
           // lastY = nextY;
+          lastCell = cell
         } else {
           // lastY = nextY - 1;
           break;
@@ -191,9 +199,76 @@ class Cosita {
 
     console.log({path})
     $(".tile").removeClass('selected');
-    this.targetCell.$tile.addClass('selected');
-
+    if (path.length > 0 && lastCell) {
+      lastCell.$tile.addClass('selected');
+    }
+    this.x = nextX;
+    this.y = nextY;
     return path
+  }
+
+  takeStep(targetX, targetY) {
+
+    if (this.isMoving) {
+      return false;
+    }
+
+    this.isMoving = true;
+
+    const targetCell = this.map.tileArray[targetY][targetX];
+
+    let colision = this.detectCollision(targetCell);
+    if (!colision) {
+      this.isMoving = false;
+      return false;
+    }
+
+    // this.x = targetCell.$tile.position().left
+    // this.y = targetCell.$tile.position().top
+
+    let self = this;
+    let step = 1;
+    let cicles = 0;
+    let targetPos = targetCell.$tile.position();
+    let targetPosX = targetPos.left + self.tileSize / 2 - self.width / 2;
+    let targetPosY = targetPos.top + self.tileSize / 2 - self.height / 2;
+
+    this.interval = setInterval(() => {
+      let currentPos = self.element.position();
+      let diffX = Math.abs(parseInt(currentPos.left - targetPosX));
+      let diffY = Math.abs(parseInt(currentPos.top - targetPosY));
+
+      let nextX = currentPos.left;
+      let nextY = currentPos.top;
+
+      if (diffX >= 1) {
+        if (targetPosX > currentPos.left) {
+          nextX += step; 
+        } else if (targetPosX < currentPos.left) {
+          nextX -= step; 
+        }
+      }
+
+      if (diffY >= 1) {
+        if (targetPosY > currentPos.top) {
+          nextY += step;
+        } else if (targetPosY < currentPos.top) {
+          nextY -= step;
+        }
+      }
+
+      self.element.css('left', nextX);
+      self.element.css('top', nextY);
+
+      if (diffY <= 1 && diffX <= 1 || cicles == 500) {
+        self.x = targetX;
+        self.y = targetY;
+        self.stopMoving();
+        targetCell.$tile.addClass('following');
+      }
+      cicles++;
+
+    })
   }
 
   transitionV2 (x, y) {
@@ -247,6 +322,7 @@ class Cosita {
           moving.up = true;
         }
       }
+
       let nextCell = self.detectCollision(nextX, nextY, moving)
 
       if (!nextCell) {
@@ -275,13 +351,14 @@ class Cosita {
 
   }
 
-  detectCollision(nextX, nextY) {
-
-    let next = this.getCurrentCell(nextX, nextY);
-    let nextCell = this.map.tileArray[next.y][next.x];
+  detectCollision(nextCell) {
  
     $(".tile").removeClass('next');
     nextCell.$tile.addClass('next');
+    if (nextCell.type === 'path') {
+      return true
+    }
+    console.log(nextCell.type !== 'rock')
 
     const myBoundry = {
       left: parseInt(this.element.position().left),
@@ -297,31 +374,6 @@ class Cosita {
       bottom: parseInt(nextCell.$tile.position().top + nextCell.$tile.height()),
     }
 
-    // let followingCell = {
-    //   y: next.y,
-    //   x: next.x
-    // }
-    // console.log({moving})
-
-    // if (moving.up) {
-    //   next.x -=  1
-    // } else if (moving.down) {
-    //   next.x += 1
-    // }
-
-    // if (moving.left) {
-    //   next.y += 1
-    // } else if (moving.right) {
-    //   next.y -= 1
-    // }
-    
-
-    // console.log({nextCell, next})
-    // this.targetCell
-
-    $(".tile").removeClass('following');
-    nextCell.$tile.addClass('following');
-
     let currentX = parseInt(this.element.position().left);
     let currentY = parseInt(this.element.position().top);
     // console.log({currentX, currentY})
@@ -330,34 +382,20 @@ class Cosita {
 
     if (myBoundry.bottom >= tileBoundry.top) {
       collition = 'bottom';
-      // return this.detectCollision(nextX, nextY + 1, true);
     } else if (myBoundry.top >= tileBoundry.bottom) {
       collition = 'top';
-      // return this.detectCollision(nextX, nextY - 1, true);
     } else if (myBoundry.right >= tileBoundry.left) {
       collition = 'right';
-      // return this.detectCollision(nextX + 1, nextY, true);
     } else if (myBoundry.left >= tileBoundry.right) {
       collition = 'left';
-      // return this.detectCollision(nextX - 1, nextY, true);
     }
 
-    if (collition && (nextCell.type === 'rock' || nextCell.type === 'water')) {
+    if (collition) {
       console.log('colision ' + collition)
       return false;
     }
 
-    return next
-    // // console.log({cell, myBoundry, tileBoundry})
-
-    // if (cell.type !== 'path') {
-    //   console.log('Cant walk there');
-    //   this.stopMoving();
-    //   return false;
-    // }
-
-      
-    // console.log('move', cell)
+    return true;
 
   }
 
@@ -367,6 +405,8 @@ class Cosita {
 
   stopMoving() {
     clearInterval(this.interval);
+    this.interval = null
+    console.log('stop')
     this.isMoving = false;
   }
 

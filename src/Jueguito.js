@@ -13,7 +13,7 @@ class Jueguito {
   start() {
     let self = this;
     this.status = 1;
-    this.mapa = new Mapa(this.id, 16, 10);
+    this.mapa = new Mapa(this.id, 6, 6);
     self.cosita = new Cosita(this.mapa);
 
   }
