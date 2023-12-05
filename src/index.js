@@ -1,5 +1,6 @@
 // import _ from 'lodash';
-import './main.css';
+import './css/main.css';
+import 'bootstrap/dist/css/bootstrap.css'
 
 import Jueguito from "./Jueguito.js";
 var jueguito = new Jueguito("app");

@@ -1,5 +1,6 @@
 import Cosita from "./Cosita.js";
-import Mapa from "./Mapa.js"
+import Mapa from "./Mapa.js";
+import Menu from "./Menu.js";
 import $ from 'jquery';
 
 class Jueguito {
@@ -8,6 +9,7 @@ class Jueguito {
     this.status = 0;
     this.mapa = null;
     this.cosita = null;
+    this.menu = new Menu(id);
   }
 
   start() {
