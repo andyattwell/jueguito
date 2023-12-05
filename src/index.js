@@ -1,7 +1,8 @@
-// import _ from 'lodash';
-import './css/main.css';
+import 'jquery';
+import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.css'
-
+import './css/main.scss';
 import Jueguito from "./Jueguito.js";
+
 var jueguito = new Jueguito("app");
 jueguito.start();

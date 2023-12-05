@@ -9,49 +9,73 @@ class Mapa {
     this.tileArray = [];
     this.containerId = containerId;
     this.$container = $("#"+containerId);
-    this.map = null
-    this.createMap();
+    this.map = null;
+    this.listeners = {};
   }
 
-  createMap() {
-    let self = this;
-    return new Promise((resolve, reject) => {
-      
-      self.$map = $("<div>");
-      self.$map.addClass("map");
-      let n = 1;
-      for (let h = 0; h < self.height; h++) {
-        self.tileArray[h] = [];
-        for (let w = 0; w < self.width; w++) {
-          const randomType = self.getRandomTile();
-          
-          let tile = $('<div>');
-          tile.addClass('tile');
-          tile.addClass(randomType);
-          tile.attr('data-cell', w);
-          tile.attr('data-row', h);
-          tile.attr('id', "tile-" + h * w);
-          tile.css('width', self.tileSize);
-          tile.css('height', self.tileSize);
-          tile.css('line-height', self.tileSize + 'px');
-          tile.css('left', w * self.tileSize);
-          tile.css('top', h * self.tileSize);
-          tile.text(n);
-          self.$map.append(tile);
+  emit(method, payload = null) {
+    const callback = this.listeners[method];
+    if(typeof callback === 'function'){
+      callback(payload);
+    }
+  }
+  addEventListener(method,callback) {
+    this.listeners[method] = callback;
+  }
 
-          self.tileArray[h][w] = {
-            type: randomType,
-            $tile: tile,
-            id: n
-          };
-          n++
-        }
+  removeEventListener (method) {
+    delete this.listeners[method];
+  }
+
+  generateGrid() {
+    let tileId = 0;
+    for (let y = 0; y < this.height; y++) {
+      this.tileArray[y] = [];
+      for (let x = 0; x < this.width; x++) {
+        this.tileArray[y][x] = {
+          type: this.getRandomTile(),
+          id: tileId,
+          left: x * this.tileSize,
+          top: y * this.tileSize
+        };
+        tileId++;
       }
+    }
+  }
 
-      $("#"+self.containerId).append(self.$map)
+  drawMap() {
+    const self = this;
+    let $map = $('<div class="map">');
+    $map.css('width', this.tileArray.length * this.tileSize)
+    $map.css('height', this.tileArray.length * this.tileSize)
 
-      resolve();
-    });
+    for (let h = 0; h < this.tileArray.length; h++) {
+      for (let w = 0; w < this.tileArray[h].length ; w++) {
+        const tile = this.tileArray[h][w];
+        let $tileDiv = $('<div>');
+        $tileDiv.addClass('tile');
+        $tileDiv.addClass(tile.type);
+        $tileDiv.attr('data-cell', w);
+        $tileDiv.attr('data-row', h);
+        $tileDiv.attr('id', "tile-" + tile.id);
+        $tileDiv.css('width', this.tileSize);
+        $tileDiv.css('height', this.tileSize);
+        // $tileDiv.css('line-height', self.tileSize + 'px');
+        // $tileDiv.css('left', tile.left);
+        // $tileDiv.css('top', tile.top);
+        
+        $tileDiv.css('left', w * this.tileSize);
+        $tileDiv.css('top', h * this.tileSize);
+        // $tileDiv.text(n);
+        $tileDiv.on('click', (e) => {
+          e.preventDefault();
+          self.tileClickHandler($tileDiv, w, h);
+        })
+        $map.append($tileDiv);
+      }
+    }
+
+    return $map;
   }
 
   getRandomTile() {
@@ -70,6 +94,12 @@ class Mapa {
     // ];
     const randomNumber = parseInt(Math.random() * types.length);
     return types[randomNumber];
+  }
+
+  tileClickHandler($tileDiv, x, y) {
+    $('.tile').removeClass('selected');
+    $tileDiv.addClass('selected');
+    this.emit('click', {x, y})
   }
 }
 

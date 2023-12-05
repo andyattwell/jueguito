@@ -1,7 +1,8 @@
 import $ from 'jquery';
 
 class Cosita {
-  constructor(map) {
+  constructor(map, containerId) {
+    this.containerId = containerId;
     this.width = 30;
     this.height = 30;
     this.tileSize = 60;
@@ -22,7 +23,7 @@ class Cosita {
     this.currentCell = map.tileArray[0][0];
     this.currentPath = null
     this.currentStep = 0
-    this.init();
+    this.createCosita();
 
   }
 
@@ -32,29 +33,23 @@ class Cosita {
 
   createCosita() {
     let self = this;
-    return new Promise((resolve, reject) => {
+    self.element = $("<div>");;
+    self.element.addClass('Cosita');
+    self.element.css('width', self.width);
+    self.element.css('height', self.height);
+    const pos = self.centerPosition(self.x, self.y)
+    self.element.css('top', pos.y);
+    self.element.css('left', pos.x);
+    // $("#"+self.containerId).append(self.element);
 
-      self.element = $("<div>");;
-      self.element.addClass('Cosita');
-      self.element.css('width', self.width);
-      self.element.css('height', self.height);
-      const pos = self.centerPosition(self.x, self.y)
-      self.element.css('top', pos.y);
-      self.element.css('left', pos.x);
-      self.map.$container.append(self.element);
 
-      $(document).on("keydown", (event) => {
-        self.keyAction(event.key);
-      });
+    // $(".tile").on('click', (e) => {
+    //   const row = $(e.target).attr('data-row');
+    //   const col = $(e.target).attr('data-cell');
+    //   self.move(col, row);
+    // });
 
-      $(".tile").on('click', (e) => {
-        const row = $(e.target).attr('data-row');
-        const col = $(e.target).attr('data-cell');
-        self.move(col, row);
-      });
-
-      return resolve(self.element);
-    });
+    return self.element;
   }
 
   centerPosition(x, y) {
@@ -104,14 +99,14 @@ class Cosita {
     }
   }
 
-  move(x, y) {
+  moveTo(x, y) {
     this.currentPath = this.drawPath(x, y);
     this.followPath();
   }
 
   drawPath(targetX, targetY) {
 
-    $(".tile").removeClass('selected');
+    // $(".tile").removeClass('selected');
     $(".tile").removeClass('following');
 
     this.targetCell = this.map.tileArray[targetY][targetX];
@@ -282,7 +277,7 @@ class Cosita {
       if (self.isMoving) {
         return false;
       }
-
+      
       self.isMoving = true;
       const targetCell = self.map.tileArray[targetY][targetX];
       
@@ -291,12 +286,13 @@ class Cosita {
         self.isMoving = false;
         return false;
       }
-      targetCell.$tile.addClass('next');
-      $('.tile').removeClass('selected');
+      $(".tile").removeClass('next');
+      $('#tile-'+targetCell.id).addClass('next');
+      // $('.tile').removeClass('selected');
 
       let step = 1;
       let cicles = 0;
-      let targetPos = targetCell.$tile.position();
+      let targetPos = $('#tile-'+targetCell.id).position();
       let targetPosX = targetPos.left + self.tileSize / 2 - self.width / 2;
       let targetPosY = targetPos.top + self.tileSize / 2 - self.height / 2;
 
@@ -331,10 +327,7 @@ class Cosita {
           self.x = targetX;
           self.y = targetY;
           self.stopMoving();
-          targetCell.$tile.removeClass('next');
-          targetCell.$tile.addClass('selected');
-          // targetCell.$tile.addClass('following');
-          resolve(targetCell);
+          resolve($('#tile-'+targetCell.id));
         }
         cicles++;
 
@@ -344,11 +337,10 @@ class Cosita {
 
   detectCollision(nextCell) {
  
-    $(".tile").removeClass('next');
     if (nextCell.type === 'path') {
       return true
     }
-
+    
     const myBoundry = {
       left: parseInt(this.element.position().left),
       right: parseInt(this.element.position().left + this.width * 2),
@@ -357,10 +349,10 @@ class Cosita {
     }
 
     const tileBoundry = {
-      left: parseInt(nextCell.$tile.position().left),
-      right: parseInt(nextCell.$tile.position().left + nextCell.$tile.width()),
-      top: parseInt(nextCell.$tile.position().top),
-      bottom: parseInt(nextCell.$tile.position().top + nextCell.$tile.height()),
+      left: parseInt($('#tile-'+nextCell.id).position().left),
+      right: parseInt($('#tile-'+nextCell.id).position().left + $('#tile-'+nextCell.id).width()),
+      top: parseInt($('#tile-'+nextCell.id).position().top),
+      bottom: parseInt($('#tile-'+nextCell.id).position().top + $('#tile-'+nextCell.id).height()),
     }
 
     let collition = false
