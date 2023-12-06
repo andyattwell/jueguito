@@ -42,29 +42,27 @@ class Menu {
 
   emit(method, payload = null) {
     const callback = this.listeners[method];
-    if(typeof callback === 'function'){
+    if (typeof callback === 'function') {
       callback(payload);
     }
   }
-  addEventListener(method,callback) {
+  addEventListener(method, callback) {
     this.listeners[method] = callback;
   }
 
-  removeEventListener (method) {
+  removeEventListener(method) {
     delete this.listeners[method];
   }
-  
 
-
-  drawMenu () {
+  drawMenu() {
     const self = this
-    const $parent = $("#"+this.parentId);
+    const $parent = $("#" + this.parentId);
     $parent.remove("#app-menu");
-    
-    let $menu = $('<div class="navbar navbar-expand-lg navbar-dark bg-dark" id="app-menu">');
+
+    let $menu = $('<div class="navbar navbar-expand-sm navbar-dark bg-dark" id="app-menu">');
     let $container = $('<div class="container-fluid">')
     let $brandBtn = $('<a class="navbar-brand" href="#">Navbar</a>');
-    
+
     $container.append($brandBtn);
 
     let $ul = $('<ul class="navbar-nav me-auto mb-2 mb-lg-0">');
@@ -74,7 +72,7 @@ class Menu {
       let $a = $('<a class="nav-link" href="#">')
       $a.attr('id', item.id)
       $a.text(item.label);
-      
+
       if (item.children) {
         $a.addClass('dropdown-toggle');
         $a.attr('id', 'navbarDropdown-' + item.id)
@@ -82,7 +80,7 @@ class Menu {
         $a.attr('data-bs-toggle', 'dropdown')
         $a.attr('aria-expanded', 'false')
         $li.addClass('dropdown');
-        let $ciUl = $('<ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdown-'+item.id+'">');
+        let $ciUl = $('<ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdown-' + item.id + '">');
         item.children.forEach((ci) => {
           let $ciLi = $("<li>");
           let $ciA = $('<a class="dropdown-item" href="#">')
@@ -101,14 +99,14 @@ class Menu {
       $li.append($a);
       $ul.append($li);
     })
-    
+
     $container.append($ul)
     $menu.append($container);
     $parent.append($menu);
   }
 
   menuBtnActionHandler($target) {
-    this.emit('action', { action: $target.attr('id'), algo: '123'})
+    this.emit('action', { action: $target.attr('id'), algo: '123' })
   }
 }
 

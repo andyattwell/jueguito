@@ -17,7 +17,6 @@ class Jueguito {
     const self = this
     this.mapa = new Mapa(this.id, 6, 6);
     this.menu.addEventListener('action', (data) => {
-      console.log('action', data)
       if (data.action === 'generateMap') {
         self.generateMap();
       } else if (data.action === 'saveMap') {
@@ -28,9 +27,7 @@ class Jueguito {
     })
 
     $(document).on("keydown", (event) => {
-      event.preventDefault();
       self.keyActionHandler(event.key);
-      return false;
     });
 
     this.generateMap();
@@ -90,12 +87,11 @@ class Jueguito {
     
     let $game = $('<div class="game-container" id="game1">');
     if (!grid) {
-      this.mapa.generateGrid();
+      this.mapa.init();
     } else {
-      this.mapa.tileArray = grid;
+      this.mapa.grid = grid;
     }
     let $map = this.mapa.drawMap();
-    $map.css('left', 400)
     this.cosita = new Cosita(this.mapa, 'game1');
     $map.append(this.cosita.createCosita());
     $game.append($map);
