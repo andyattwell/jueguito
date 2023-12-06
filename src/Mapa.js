@@ -64,7 +64,7 @@ class Mapa {
     delete this.listeners[method];
   }
 
-  init() {
+  init(data = null) {
     //making a 2D array
     for (let i = 0; i < this.cols; i++) {
       this.grid[i] = new Array(this.rows);
@@ -73,28 +73,64 @@ class Mapa {
     let tileId = 0;
     for (let i = 0; i < this.cols; i++) {
       for (let j = 0; j < this.rows; j++) {
+        let tileData = {}
+        tileData.x = i;
+        tileData.y = j;
+        tileData.id = tileId;
+        tileData.type = this.getRandomTile();
+        tileData.left = i * this.tileSize;
+        tileData.top = i * this.tileSize;
+
+        if (data) {
+          tileData = data[i][j];
+        }
+
         this.grid[i][j] = new GridPoint(
-          i,
-          j, 
-          tileId, 
-          this.getRandomTile(),
-          i * this.tileSize,
-          j * this.tileSize
+          tileData.x,
+          tileData.y, 
+          tileData.id, 
+          tileData.type,
+          tileData.left,
+          tileData.top
         );
         tileId++;
       }
     }
   
+    this.updateNeighbors();
+  }
+
+  updateNeighbors() {
     for (let i = 0; i < this.cols; i++) {
       for (let j = 0; j < this.rows; j++) {
         this.grid[i][j].updateNeighbors(this.grid, this.cols, this.rows);
       }
     }
-  
-    // this.start = this.grid[0][0];
-    // this.end = this.grid[this.cols - 1][this.rows - 1];
-  
-    // openSet.push(this.start);
+  }
+
+  exportGrid () {
+    let data = []
+    for (let x = 0; x < this.cols; x++) {
+      let row = [];
+      for (let y = 0; y < this.rows; y++) {
+        const tile = this.grid[x][y];
+        row.push({
+          x: tile.x,
+          y: tile.y,
+          f: 0,
+          g: 0,
+          h: 0,
+          neighbors: [],
+          parent: [],
+          type: tile.type,
+          id: tile.id,
+          left: tile.left,
+          top: tile.top
+        })
+      }
+      data.push(row)
+    }
+    return data;
   }
 
   search(startX, startY, endX, endY) {
@@ -248,6 +284,23 @@ class Mapa {
     $('.tile').removeClass('selected');
     $tileDiv.addClass('selected');
     this.emit('click', {x, y})
+  }
+
+  pickSpawn() {
+    let spawn = false;
+    let i = 0;
+    
+    while(!spawn && i < 9) {
+      let randomRow = parseInt(Math.random() * this.rows);
+      let randomCol = parseInt(Math.random() * this.cols);
+      let tile = this.grid[randomCol][randomRow];
+      if (tile && tile.type === 'path') {
+        spawn = tile
+      }
+    }
+    i++;
+
+    return spawn || this.grid[0][0];
   }
 }
 

@@ -26,30 +26,33 @@ body{
   color: #fff;
   cursor: pointer;
   line-height: 100%;
+  transition: all .5s;
 }
 .tile.selected {
   border: 3px solid #f5b030;
 }
 .tile.following {
-  background-color: #30f551;
-  border: #30f551 !important;
+  transition: all .5s;
+  background-color: rgba(255, 121, 116, 0.5);
+  border: #f53330;
 }
 .tile.next {
-  background-color: #308ff5 !important;
-  border: 3px solid #308ff5;
+  transition: all .5s;
+  background-color: rgba(221, 234, 40, 0.7);
+  border: 3px solid #f5f230;
 }
 .tile.blocked {
-  background-color: #f53051 !important;
+  background-color: #f53051;
   border: 3px solid #f53051;
 }
 .rock {
-  background-color: #575757;
+  background-color: #838181;
 }
 .water {
-  background-color: #286a90;
+  background-color: #2093d5;
 }
 .path {
-  background-color: rgb(181, 171, 104);
+  background-color: #51d343;
 }
 .Cosita {
   position: absolute;

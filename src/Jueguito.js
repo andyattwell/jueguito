@@ -15,7 +15,7 @@ class Jueguito {
   async start() {
     this.status = 1;
     const self = this
-    this.mapa = new Mapa(this.id, 6, 6);
+    
     this.menu.addEventListener('action', (data) => {
       if (data.action === 'generateMap') {
         self.generateMap();
@@ -52,15 +52,16 @@ class Jueguito {
       const file = e.target.files.item(0)
       const text = await file.text();
       const mapData = JSON.parse(text);
-      console.log({mapData})
-      self.generateMap(mapData)
+      if(mapData.length > 0) {
+        self.generateMap(mapData)
+      }
       input.remove();
     })
 
   }
 
   saveMap() {
-    const mapStr = JSON.stringify(this.mapa.tileArray);
+    const mapStr = JSON.stringify(this.mapa.exportGrid());
     console.log(mapStr);
 
     let file = new Blob([mapStr], {type: 'text/plain'});
@@ -84,22 +85,27 @@ class Jueguito {
 
   generateMap(grid = null) {
     $(".game-container").remove();
-    
+
     let $game = $('<div class="game-container" id="game1">');
-    if (!grid) {
-      this.mapa.init();
-    } else {
-      this.mapa.grid = grid;
-    }
+    
+    this.mapa = new Mapa(this.id, 12, 12);
+    this.mapa.init(grid);
     let $map = this.mapa.drawMap();
-    this.cosita = new Cosita(this.mapa, 'game1');
-    $map.append(this.cosita.createCosita());
+    let spawn = this.mapa.pickSpawn();
+    this.cosita = new Cosita(this.mapa, 'game1', spawn);
+    let $cosita = this.cosita.createCosita();
+
+    
+    $map.append($cosita);
     $game.append($map);
+
     $("#"+this.id).append($game)
+
     const self = this;
     this.mapa.addEventListener('click', (tile) => {
       self.cosita.moveTo(tile.x, tile.y)
     })
+
   }
 
 }

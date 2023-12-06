@@ -1,28 +1,20 @@
 import $ from 'jquery';
 
 class Cosita {
-  constructor(map, containerId) {
+  constructor(map, containerId, spawn) {
     this.containerId = containerId;
     this.width = 30;
     this.height = 30;
     this.tileSize = 60;
-    this.x = 3;
-    this.y = 3;
-    this.speed = 0;
+    this.x = spawn.x;
+    this.y = spawn.y;
     this.element = null;
     this.isMoving = false;
-    this.moving = {
-      up: false,
-      down: false,
-      left: false,
-      right: false,
-    }
+
     this.map = map;
     this.interval = null;
-    this.targetCell = null;
-    this.currentCell = map.gridp? map.grid[0][0] : null;
+    this.currentCell = spawn ? spawn : map.grid[0][0];
     this.currentPath = null
-    this.currentStep = 0
     this.createCosita();
 
   }
@@ -110,7 +102,7 @@ class Cosita {
     }
     let self = this
     self.takeStep(self.currentPath[0].x, self.currentPath[0].y)
-      .then(() => {
+      .then((tile) => {
         self.currentPath.shift();
         if (self.currentPath.length > 0) {
           self.followPath();
@@ -130,15 +122,13 @@ class Cosita {
       const targetCell = self.map.grid[targetX][targetY];
       
       // let colision = self.detectCollision(targetCell);
+      if (targetCell.type !== 'path') {
+        self.isMoving = false;
+        return false;
+      }
 
-      // if (!colision) {
-      //   self.isMoving = false;
-      //   return false;
-      // }
-      
       $(".tile").removeClass('next');
       $('#tile-'+targetCell.id).addClass('next');
-      // $('.tile').removeClass('selected');
 
       let step = 1;
       let cicles = 0;
@@ -177,7 +167,12 @@ class Cosita {
           self.x = targetX;
           self.y = targetY;
           self.stopMoving();
+          self.currentCell = targetCell;
           resolve($('#tile-'+targetCell.id));
+          $('#tile-'+targetCell.id).addClass('following');
+          setTimeout(() => {
+            $('#tile-'+targetCell.id).removeClass('following')
+          }, 1000);
         }
         cicles++;
 
@@ -188,7 +183,7 @@ class Cosita {
   detectCollision(nextCell) {
  
     if (nextCell.type === 'path') {
-      return true
+      return false
     }
     
     const myBoundry = {
