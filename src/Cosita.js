@@ -87,12 +87,22 @@ class Cosita {
         break;
     }
     if (this.x !== x || this.y !== y) {
-      this.takeStep(x, y);
+      // if (this.isMoving) {
+      //   this.stopMoving();
+      //   this.currentPath = [];
+      // }
+      // this.takeStep(x, y);
+      this.currentPath = [this.map.grid[x][y]];
+      this.followPath();
     }
   }
 
   moveTo(endX, endY) {
     this.currentPath = this.map.search(this.x, this.y, endX, endY);
+    $(".tile").removeClass("planned")
+    for (let index = 0; index < this.currentPath.length; index++) {
+      $("#tile-"+this.currentPath[index].id).addClass("planned");
+    }
     this.followPath();
   }
 
@@ -103,9 +113,12 @@ class Cosita {
     let self = this
     self.takeStep(self.currentPath[0].x, self.currentPath[0].y)
       .then((tile) => {
+        $("#tile-"+self.currentPath[0].id).removeClass("planned");
         self.currentPath.shift();
         if (self.currentPath.length > 0) {
           self.followPath();
+        } else {
+          $(".tile").removeClass("planned");
         }
       })
   }
@@ -172,7 +185,7 @@ class Cosita {
           $('#tile-'+targetCell.id).addClass('following');
           setTimeout(() => {
             $('#tile-'+targetCell.id).removeClass('following')
-          }, 1000);
+          }, 600);
         }
         cicles++;
 

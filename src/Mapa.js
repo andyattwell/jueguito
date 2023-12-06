@@ -79,7 +79,7 @@ class Mapa {
         tileData.id = tileId;
         tileData.type = this.getRandomTile();
         tileData.left = i * this.tileSize;
-        tileData.top = i * this.tileSize;
+        tileData.top = j * this.tileSize;
 
         if (data) {
           tileData = data[i][j];
@@ -250,7 +250,7 @@ class Mapa {
         $tileDiv.css('height', this.tileSize);
         $tileDiv.css('left', i * this.tileSize);
         $tileDiv.css('top', j * this.tileSize);
-        $tileDiv.text(i + " " + j);
+        // $tileDiv.text(i + " " + j);
         $tileDiv.on('click', (e) => {
           e.preventDefault();
           self.tileClickHandler($tileDiv, i, j);

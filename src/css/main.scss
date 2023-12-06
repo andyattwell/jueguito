@@ -18,7 +18,7 @@ body{
 
 .tile {
   display: block;
-  border: 1px solid #000;
+  // border: 1px solid #000;
   position: absolute;
   text-align: center;
   font-size: 20px;
@@ -31,14 +31,19 @@ body{
 .tile.selected {
   border: 3px solid #f5b030;
 }
+.tile.planned {
+  transition: all .5s;
+  background-color: rgb(255, 246, 116);
+  border: #f53330;
+}
 .tile.following {
   transition: all .5s;
-  background-color: rgba(255, 121, 116, 0.5);
+  background-color: rgba(255, 247, 247, 0.313);
   border: #f53330;
 }
 .tile.next {
   transition: all .5s;
-  background-color: rgba(221, 234, 40, 0.7);
+  background-color: rgba(127, 40, 234, 0.7);
   border: 3px solid #f5f230;
 }
 .tile.blocked {
@@ -66,4 +71,15 @@ body{
   color: #e63b52;
   color: #f5b030;
   color: #7cbde2;
+}
+
+#inspector {
+  width: 300px;
+  min-height: 200px;
+  padding: 15px;
+  color: #fff;
+  position: fixed;
+  top: 50px;
+  right: 0;
+  background-color: #000;
 }

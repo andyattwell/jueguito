@@ -31,6 +31,8 @@ class Jueguito {
     });
 
     this.generateMap();
+
+    this.initInspector();
   }
 
   keyActionHandler(eventKey) {
@@ -87,8 +89,9 @@ class Jueguito {
     $(".game-container").remove();
 
     let $game = $('<div class="game-container" id="game1">');
-    
-    this.mapa = new Mapa(this.id, 12, 12);
+    let cols = grid ? grid.length : 12;
+    let rows = grid ? grid[0].length : 12;
+    this.mapa = new Mapa(this.id, cols, rows);
     this.mapa.init(grid);
     let $map = this.mapa.drawMap();
     let spawn = this.mapa.pickSpawn();
@@ -103,9 +106,33 @@ class Jueguito {
 
     const self = this;
     this.mapa.addEventListener('click', (tile) => {
-      self.cosita.moveTo(tile.x, tile.y)
+      if (self.mapa.grid[tile.x][tile.y].type === 'path') {
+        self.cosita.moveTo(tile.x, tile.y)
+      }
+      self.showInfo(self.mapa.grid[tile.x][tile.y])
     })
 
+  }
+
+  initInspector() {
+    let $inspactor = $('<div id="inspector">');
+    $inspactor.append('<h1>Inspector</h1>');
+    $("#"+this.id).append($inspactor)
+  }
+
+  showInfo(tile) {
+    $("#inspector").html("")
+    $("#inspector").append('<p>Tile ID: ' + tile.id + "</p>")
+    $("#inspector").append('<p>Tile Type: ' + tile.type + "</p>")
+    $("#inspector").append('<p>Tile X: ' + tile.x + "</p>")
+    $("#inspector").append('<p>Tile Y: ' + tile.y + "</p>")
+    $("#inspector").append('<p>left: ' + tile.left + "</p>")
+    $("#inspector").append('<p>top: ' + tile.top + "</p>")
+    // $("#inspector").append('<p>parent: ' + tile.parent + "</p>")
+    // $("#inspector").append('<p>neighbors: ' + tile.neighbors + "</p>")
+    // $("#inspector").append('<p>f: ' + tile.f + "</p>")
+    // $("#inspector").append('<p>g: ' + tile.g + "</p>")
+    // $("#inspector").append('<p>h: ' + tile.h + "</p>")
   }
 
 }
