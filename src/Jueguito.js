@@ -57,7 +57,6 @@ class Jueguito {
     }, 200)
 
     input.on('change', async (e) => {
-      console.log('change', e)
       const file = e.target.files.item(0)
       const text = await file.text();
       const mapData = JSON.parse(text);
@@ -71,7 +70,6 @@ class Jueguito {
 
   saveMap() {
     const mapStr = JSON.stringify(this.mapa.exportGrid());
-    console.log(mapStr);
 
     let file = new Blob([mapStr], {type: 'text/plain'});
     const filename = 'map.json';
@@ -94,9 +92,11 @@ class Jueguito {
 
   generateMap(grid = null) {
     const self = this;
-    let cols = grid ? grid.length : 80;
-    let rows = grid ? grid[0].length : 50;
+    let cols = grid ? grid.length : 20;
+    let rows = grid ? grid[0].length : 20;
     this.mapa = new Mapa(this.id, cols, rows);
+    $('canvas').remove();
+    this.ctx = null;
 
     const $canvas = $('<canvas>');
     $canvas.attr('width', cols * this.mapa.tileSize);
@@ -106,9 +106,9 @@ class Jueguito {
     this.canvas = $canvas;
     self.ctx = this.canvas[0].getContext('2d');
 
-    
     this.mapa.init(grid);
-    
+    this.cositas = [];
+
     for (let index = 0; index < 10; index++) {
       let spawn = this.mapa.pickSpawn();
       let cosita = new Cosita(index, this.mapa, spawn);
@@ -179,7 +179,7 @@ class Jueguito {
 
     })
 
-    $(self.canvas).on("contextmenu", (e) => {
+    $(this.canvas).on("contextmenu", (e) => {
       e.preventDefault();
       const position = $('canvas').position();
       const mouseX = e.pageX;
