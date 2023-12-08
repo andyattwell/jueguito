@@ -1,7 +1,7 @@
 import $ from 'jquery';
 
 //constructor function to create all the grid points as objects containind the data for the points
-function GridPoint(x, y, id, type, left, top) {
+function GridPoint(x, y, id, type, left, top, size = 30) {
   this.x = x; //x location of the grid point
   this.y = y; //y location of the grid point
   this.f = 0; //total cost function
@@ -9,10 +9,11 @@ function GridPoint(x, y, id, type, left, top) {
   this.h = 0; //heuristic estimated cost function from current grid point to the goal
   this.neighbors = []; // neighbors of the current grid point
   this.parent = undefined; // immediate source of the current grid point
-  this.type = type
-  this.id = id,
-  this.left = left,
-  this.top = top
+  this.type = type;
+  this.id = id;
+  this.left = left;
+  this.top = top;
+  this.size = size;
 
   // update neighbors array for a given grid point
   this.updateNeighbors = function (grid, cols, rows) {
@@ -107,6 +108,7 @@ class Mapa {
         tileData.type = this.getRandomTile();
         tileData.left = i * this.tileSize;
         tileData.top = j * this.tileSize;
+        tileData.size = this.tileSize;
 
         if (data) {
           tileData = data[i][j];
@@ -118,7 +120,8 @@ class Mapa {
           tileData.id, 
           tileData.type,
           tileData.left,
-          tileData.top
+          tileData.top,
+          tileData.size
         );
         tileId++;
       }
@@ -161,6 +164,7 @@ class Mapa {
   }
 
   search(startX, startY, endX, endY) {
+    
     let start = this.grid[startX][startY];
     let end = this.grid[endX][endY];
     let openSet = [start];
@@ -324,12 +328,12 @@ class Mapa {
     $tileDiv.addClass('selected');
     this.emit('click', {x, y})
   }
-  tileRightClickHandler($tileDiv, x, y) {
-    $('.tile').removeClass('selected');
-    $tileDiv.addClass('selected');
-    const tile = this.grid[x][y];
-    this.emit("contextmenu", tile);
-  }
+  // tileRightClickHandler($tileDiv, x, y) {
+  //   $('.tile').removeClass('selected');
+  //   $tileDiv.addClass('selected');
+  //   const tile = this.grid[x][y];
+  //   this.emit("contextmenu", tile);
+  // }
 
   pickSpawn() {
     let spawn = false;

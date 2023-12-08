@@ -22,7 +22,6 @@ class Cosita {
       const pos = this.centerPosition(spawn.x, spawn.y);
       this.x = pos.x;
       this.y = pos.y;
-      console.log({pos})
     }
     
     this.createCosita();
@@ -65,8 +64,12 @@ class Cosita {
     return self.element;
   }
 
+  select () {
+    this.color = '#f5f230';
+  }
+
   deselect () {
-    this.element.removeClass('selected');
+    this.color = '#fff';
   }
 
   centerPosition(x, y) {
@@ -122,31 +125,28 @@ class Cosita {
     const collition = this.detectCollision(targetX, targetY);
 
     if (collition) {
-      console.log({collition})
       return false;
     }
     
     this.x = x;
     this.y = y;
 
-    // if (this.x !== x || this.y !== y) {
-      // if (this.isMoving) {
-      //   this.stopMoving();
-      //   this.currentPath = [];
-      // }
-      // this.takeStep(x, y);
-      // this.currentPath = [this.map.grid[x][y]];
-      // this.followPath();
-    // }
   }
 
   moveTo(endX, endY) {
-    this.currentPath = this.map.search(this.x, this.y, endX, endY);
-    $(".tile").removeClass("planned")
-    for (let index = 0; index < this.currentPath.length; index++) {
-      $("#tile-"+this.currentPath[index].id).addClass("planned");
-    }
-    this.followPath();
+    const cellX = parseInt(this.x / this.map.tileSize);
+    const cellY = parseInt(this.y / this.map.tileSize);
+    this.currentPath = this.map.search(cellX, cellY, endX, endY);
+    // this.followPath();
+    let self = this
+    
+    self.takeStep()
+      .then(() => {
+        self.currentPath.shift();
+        if (self.currentPath.length > 0) {
+          self.followPath();
+        }
+      })
   }
 
   async followPath() {
@@ -154,20 +154,19 @@ class Cosita {
       return false;
     }
     let self = this
-    self.takeStep(self.currentPath[0].x, self.currentPath[0].y)
-      .then((tile) => {
-        $("#tile-"+self.currentPath[0].id).removeClass("planned");
+    
+    self.takeStep()
+      .then(() => {
         self.currentPath.shift();
         if (self.currentPath.length > 0) {
           self.followPath();
-        } else {
-          $(".tile").removeClass("planned");
         }
       })
   }
 
-  takeStep(targetX, targetY) {
+  takeStep() {
     let self = this;
+    const targetCell = self.currentPath[0];
 
     return new Promise((resolve) => {
       if (self.isMoving) {
@@ -175,64 +174,48 @@ class Cosita {
       }
       
       self.isMoving = true;
-      const targetCell = self.map.grid[targetX][targetY];
-      
-      // let colision = self.detectCollision(targetCell);
-      if (targetCell.type !== 'path') {
-        self.isMoving = false;
-        return false;
-      }
 
-      // $(".tile").removeClass('next');
-      // $('#tile-'+targetCell.id).addClass('next');
-
-      let step = 1;
       let cicles = 0;
-      let targetPos = $('#tile-'+targetCell.id).position();
-      let targetPosX = targetPos.left + self.map.tileSize / 2 - self.width / 2;
-      let targetPosY = targetPos.top + self.map.tileSize / 2 - self.height / 2;
+
+      let targetPosX = targetCell.left + targetCell.size / 2 - self.width / 2;
+      let targetPosY = targetCell.top + targetCell.size / 2 - self.height / 2;
 
       this.interval = setInterval(() => {
-        let currentPos = self.element.position();
-        let diffX = Math.abs(parseInt(currentPos.left - targetPosX));
-        let diffY = Math.abs(parseInt(currentPos.top - targetPosY));
+        
+        let diffX = Math.abs(parseInt(self.x - targetPosX));
+        let diffY = Math.abs(parseInt(self.y - targetPosY));
 
-        let nextX = currentPos.left;
-        let nextY = currentPos.top;
+        let nextX = self.x;
+        let nextY = self.y;
 
         if (diffX >= 1) {
-          if (targetPosX > currentPos.left) {
-            nextX += step; 
-          } else if (targetPosX < currentPos.left) {
-            nextX -= step; 
+          if (targetPosX > self.x) {
+            nextX += this.speed; 
+          } else if (targetPosX < self.x) {
+            nextX -= this.speed; 
           }
         }
 
         if (diffY >= 1) {
-          if (targetPosY > currentPos.top) {
-            nextY += step;
-          } else if (targetPosY < currentPos.top) {
-            nextY -= step;
+          if (targetPosY > self.y) {
+            nextY += this.speed;
+          } else if (targetPosY < self.y) {
+            nextY -= this.speed;
           }
         }
 
-        self.element.css('left', nextX);
-        self.element.css('top', nextY);
+        self.x = nextX
+        self.y = nextY
 
-        if (diffY <= 1 && diffX <= 1 || cicles == 500) {
-          self.x = targetX;
-          self.y = targetY;
+        if (diffY <= 1 && diffX <= 1 || cicles >= 500) {
+
           self.stopMoving();
           self.currentCell = targetCell;
-          resolve($('#tile-'+targetCell.id));
-          $('#tile-'+targetCell.id).addClass('trail');
-          setTimeout(() => {
-            $('#tile-'+targetCell.id).removeClass('trail')
-          }, 600);
+          resolve(targetCell);
         }
-        cicles++;
 
-      })
+        cicles++;
+      }, 10)
     })
   }
 
@@ -242,60 +225,15 @@ class Cosita {
     const cellY = parseInt(targetY / this.map.tileSize);
 
     const nextCell = this.map.grid[cellX][cellY];
+
+    if (!nextCell) {
+      return false;
+    }
+
     if (nextCell.type !== 'path') {
       this.map.grid[cellX][cellY].color = "#f53051";
-      return true;
+      return nextCell;
     }
-    
-    const myBoundry = {
-      left: targetX,
-      right: targetX + this.width,
-      top: targetY,
-      bottom: targetY + this.height,
-    }
-    
-    // for (let i = 0; i < this.map.grid.length; i++) {
-    //   for (let j = 0; j < this.map.grid[i].length; j++) {
-
-    //     const nextCell = this.map.grid[i][j];
-        
-    //     if (nextCell.type === 'path') {
-    //       continue;
-    //     }
-    //     // console.log('asdasd', nextCell.type)
-
-    //     const tileBoundry = {
-    //       left: nextCell.x * this.map.tileSize,
-    //       right: nextCell.y * this.map.tileSize + this.map.tileSize,
-    //       top: nextCell.y * this.map.tileSize,
-    //       bottom: nextCell.y * this.map.tileSize + this.map.tileSize,
-    //     }
-
-    //     if (
-    //       myBoundry.left <= tileBoundry.right && 
-    //       myBoundry.right >= tileBoundry.left &&
-    //       myBoundry.top <= tileBoundry.bottom &&
-    //       myBoundry.botom >= tileBoundry.top
-    //     ) {
-    //       this.map.grid[i][j].color = "#f53051";
-    //       collition = { myBoundry, tileBoundry };
-    //     }
-    
-    //     // if (
-    //     //   myBoundry.bottom >= tileBoundry.top
-    //     // ) {
-    //     //   collition = 'bottom';
-    //     //   // nextCell.color = "#f53051";
-          
-    //     // }
-    //     // if (myBoundry.top >= tileBoundry.bottom) {
-    //     //   collition = 'top';
-    //     // }
-    //     // if (myBoundry.left >= tileBoundry.right) {
-    //     //   collition = 'left';
-    //     // }
-    //   }
-    // }
 
     return collition;
 

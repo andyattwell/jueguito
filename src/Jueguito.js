@@ -102,51 +102,93 @@ class Jueguito {
 
   generateMap(grid = null) {
     $(".game-container").remove();
+    const self = this;
 
-    let $game = $('<div class="game-container" id="game1">');
     let cols = grid ? grid.length : 24;
     let rows = grid ? grid[0].length : 10;
     this.mapa = new Mapa(this.id, cols, rows);
     this.mapa.init(grid);
-    // this.mapa.drawMap();
     
-    for (let index = 0; index < 1; index++) {
+    for (let index = 0; index < 3; index++) {
       let spawn = this.mapa.pickSpawn();
       let cosita = new Cosita(this.mapa, 'game1', spawn);
       this.cositas.push(cosita);
-      // let $cosita = cosita.createCosita();
-      // $map.append($cosita);
-
-      // cosita.addEventListener('selected', (cosita) => {
-      //   this.cosita_selected = cosita
-      //   this.inspector.showInfo('cosita', cosita)
-      // })
     }
     this.cosita_selected = this.cositas[0];
+    this.cosita_selected.select();
 
     this.play();
 
-    // $game.append($map);
+    $(this.canvas).on('click', (e) => {
+      const position = $('canvas').position();
+      const mouseX = e.pageX;
+      const mouseY = e.pageY - position.top;
 
-    // $("#"+this.id).append($game)
+      let match = null;
 
-    // const self = this;
-    // this.mapa.addEventListener('click', (tile) => {
-    //   if (self.cosita_selected) {
-    //     self.cosita_selected.deselect();
-    //     self.cosita_selected = false;
-    //   }
-    //   self.tile_selected = tile
-    //   self.inspector.showInfo('tile', self.mapa.grid[tile.x][tile.y])
-    // })
+      self.cositas.forEach(cosita => {
+        const left = cosita.x <= mouseX;
+        const right = (cosita.x + cosita.width) >= mouseX;
+        const top = mouseY >= cosita.y;
+        const bottom = mouseY <= (cosita.y + cosita.height);
 
-    // this.mapa.addEventListener("contextmenu", (tile) => {
-    //   if (self.cosita_selected && tile) {
-    //     if (self.mapa.grid[tile.x][tile.y].type === 'path') {
-    //       self.cosita_selected.moveTo(tile.x, tile.y)
-    //     }
-    //   }
-    // });
+        if (left === true && right === true && top === true && bottom === true  ) {
+          match = {
+            type: 'cosita',
+            data: cosita
+          };
+        }
+      });
+
+      if (!match) {
+        const cellX = parseInt(mouseX / self.mapa.tileSize);
+        const cellY = parseInt(mouseY / self.mapa.tileSize);
+
+        const tile = self.mapa.grid[cellX][cellY];
+        if (tile) {
+          match = {
+            type: 'tile',
+            data: tile
+          }
+        }
+      }
+
+
+      if (match) {
+        
+        if (self.cosita_selected) {
+          self.cosita_selected.deselect();
+          self.cosita_selected = false;
+        }
+
+        if (match.type === 'cosita') {
+          self.cosita_selected = match.data
+          self.cosita_selected.select();
+        }
+
+        self.inspector.showInfo(match.type, match.data)
+      }
+
+    })
+
+    $(self.canvas).on("contextmenu", (e) => {
+      e.preventDefault();
+      const position = $('canvas').position();
+      const mouseX = e.pageX;
+      const mouseY = e.pageY - position.top;
+
+      const cellX = parseInt(mouseX / self.mapa.tileSize);
+      const cellY = parseInt(mouseY / self.mapa.tileSize);
+
+      const tile = self.mapa.grid[cellX][cellY];
+
+      if (self.cosita_selected && tile) {
+        if (self.mapa.grid[tile.x][tile.y].type === 'path') {
+          self.cosita_selected.moveTo(tile.x, tile.y)
+        }
+      }
+      return false;
+    });
 
   }
 
