@@ -15,6 +15,7 @@ function GridPoint(x, y, id, type, left, top, size = 30) {
   this.top = top;
   this.size = size;
   this.occupied = false;
+  this.selected = false;
   // update neighbors array for a given grid point
   this.updateNeighbors = function (grid, cols, rows) {
     let i = this.x;
@@ -274,36 +275,19 @@ class Mapa {
         ctx.rect(i * this.tileSize, j * this.tileSize, this.tileSize, this.tileSize);
         ctx.fillStyle = tile.color;
         ctx.fill();
+        if (tile.selected === true) {
+          ctx.strokeStyle = 'red';
+          ctx.stroke();
+        }
         ctx.closePath();
 
         ctx.fillStyle = '#fff';
         ctx.font="14px Georgia";
         ctx.strokeStyle = "#fff";
         const textx = i * this.tileSize + 5;
-        const texty = j * this.tileSize + 10;
+        const texty = j * this.tileSize + 20;
         ctx.fillText(tile.id, textx, texty);
 
-        // let $tileDiv = $('<div>');
-        // $tileDiv.addClass('tile');
-        // $tileDiv.addClass(tile.type);
-        // $tileDiv.attr('data-cell', i);
-        // $tileDiv.attr('data-row', j);
-        // $tileDiv.attr('id', "tile-" + tile.id);
-        // $tileDiv.css('width', this.tileSize);
-        // $tileDiv.css('height', this.tileSize);
-        // $tileDiv.css('left', i * this.tileSize);
-        // $tileDiv.css('top', j * this.tileSize);
-        // // $tileDiv.text(i + " " + j);
-        // $tileDiv.on('click', (e) => {
-        //   e.preventDefault();
-        //   self.tileClickHandler($tileDiv, i, j);
-        // })
-        
-        // $tileDiv.on("contextmenu", function(e){
-        //   e.preventDefault();
-        //   self.tileRightClickHandler($tileDiv, i, j)
-        //   return false;
-        // });
       }
     }
   }
@@ -331,12 +315,6 @@ class Mapa {
     $tileDiv.addClass('selected');
     this.emit('click', {x, y})
   }
-  // tileRightClickHandler($tileDiv, x, y) {
-  //   $('.tile').removeClass('selected');
-  //   $tileDiv.addClass('selected');
-  //   const tile = this.grid[x][y];
-  //   this.emit("contextmenu", tile);
-  // }
 
   pickSpawn() {
     let spawn = false;

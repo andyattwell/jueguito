@@ -21,14 +21,6 @@ class Jueguito {
   async start() {
     const self = this
 
-    const $canvas = $('<canvas>');
-    $canvas.attr('width', document.documentElement.scrollWidth);
-    $canvas.attr('height', document.documentElement.scrollHeight);
-    $canvas.css('background-color', '#030303');
-    $("#"+this.id).append($canvas);
-    this.canvas = $canvas;
-    self.ctx = this.canvas[0].getContext('2d');
-
     this.menu.addEventListener('action', (data) => {
       if (data.action === 'generateMap') {
         self.generateMap();
@@ -101,17 +93,25 @@ class Jueguito {
   }
 
   generateMap(grid = null) {
-    $(".game-container").remove();
     const self = this;
-
-    let cols = grid ? grid.length : 24;
-    let rows = grid ? grid[0].length : 10;
+    let cols = grid ? grid.length : 80;
+    let rows = grid ? grid[0].length : 50;
     this.mapa = new Mapa(this.id, cols, rows);
+
+    const $canvas = $('<canvas>');
+    $canvas.attr('width', cols * this.mapa.tileSize);
+    $canvas.attr('height', rows * this.mapa.tileSize);
+    $canvas.css('background-color', '#030303');
+    $("#"+this.id).append($canvas);
+    this.canvas = $canvas;
+    self.ctx = this.canvas[0].getContext('2d');
+
+    
     this.mapa.init(grid);
     
-    for (let index = 0; index < 3; index++) {
+    for (let index = 0; index < 10; index++) {
       let spawn = this.mapa.pickSpawn();
-      let cosita = new Cosita(this.mapa, 'game1', spawn);
+      let cosita = new Cosita(index, this.mapa, spawn);
       this.cositas.push(cosita);
     }
     this.cosita_selected = this.cositas[0];
@@ -125,6 +125,13 @@ class Jueguito {
       const mouseY = e.pageY - position.top;
 
       let match = null;
+
+      self.mapa.grid.forEach(cols => {
+        cols.forEach((tile) => {
+          tile.selected = false;
+          return tile
+        })
+      })
 
       self.cositas.forEach(cosita => {
         const left = cosita.x <= mouseX;
@@ -150,6 +157,7 @@ class Jueguito {
             type: 'tile',
             data: tile
           }
+          tile.selected = true;
         }
       }
 
@@ -225,12 +233,10 @@ class Jueguito {
   }
 
   cositasColition () {
-    // self.currentCell.occupied = true;
-    const totalCositas = this.cositas.length;
+
     for (let y = 0; y < this.mapa.grid.length; y++) {
       for (let x = 0; x < this.mapa.grid[y].length; x++) {
         const tile = this.mapa.grid[y][x];
-        // console.log(this.cositas);
         tile.occupied = false;
         tile.color = tile.getColor();
 

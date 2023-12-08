@@ -1,19 +1,16 @@
 import $ from 'jquery';
 
 class Cosita {
-  constructor(map, containerId, spawn) {
-    this.id = null;
-    this.containerId = containerId;
+  constructor(id, map, spawn) {
+    this.id = id;
     this.width = 15;
     this.height = 15;
-    this.element = null;
     this.isMoving = false;
     this.color = '#fff';
     this.speed = 3;
     
     this.map = map;
     this.interval = null;
-    this.currentCell = spawn ? spawn : map.grid[0][0];
     this.currentPath = null
     
     this.listeners = {};
@@ -23,8 +20,6 @@ class Cosita {
       this.x = pos.x;
       this.y = pos.y;
     }
-    
-    this.createCosita();
 
   }
 
@@ -41,27 +36,6 @@ class Cosita {
 
   removeEventListener (method) {
     delete this.listeners[method];
-  }
-
-  createCosita() {
-    let self = this;
-    self.element = $("<div>");;
-    self.element.addClass('Cosita');
-    self.element.css('width', self.width);
-    self.element.css('height', self.height);
-    // const pos = self.centerPosition(self.x, self.y)
-    self.element.css('top', this.y);
-    self.element.css('left', this.x);
-
-    const cositasCreated = $(document).find('.Cosita').length;
-    self.id = cositasCreated + 1;
-
-    self.element.on('click', () => {
-      self.emit('selected', self);
-      $(".Cosita").removeClass('selected');
-      self.element.addClass('selected');
-    })
-    return self.element;
   }
 
   select () {
@@ -206,7 +180,6 @@ class Cosita {
         if (diffY <= 1 && diffX <= 1 || cicles >= 500) {
 
           self.stopMoving();
-          self.currentCell = targetCell;
           resolve(targetCell);
         }
 

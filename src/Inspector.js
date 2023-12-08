@@ -20,9 +20,10 @@ class Inspector {
       $("#inspector").append('<p>top: ' + data.top + "</p>")
       $("#inspector").append('<p>occupied: ' + data.occupied + "</p>")
     }}
-    if (type === 'cosita') {{
-      $("#inspector").append('<p>Tile ID: ' + data.id + "</p>")
-    }}
+
+    if (type === 'cosita') {
+      $("#inspector").append('<p>Cosita ID: ' + data.id + "</p>")
+    }
   }
 }
 
