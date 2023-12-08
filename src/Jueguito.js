@@ -94,8 +94,8 @@ class Jueguito {
     $(".game-container").remove();
 
     let $game = $('<div class="game-container" id="game1">');
-    let cols = grid ? grid.length : 12;
-    let rows = grid ? grid[0].length : 5;
+    let cols = grid ? grid.length : 24;
+    let rows = grid ? grid[0].length : 10;
     this.mapa = new Mapa(this.id, cols, rows);
     this.mapa.init(grid);
     let $map = this.mapa.drawMap();

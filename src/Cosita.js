@@ -4,8 +4,8 @@ class Cosita {
   constructor(map, containerId, spawn) {
     this.id = null;
     this.containerId = containerId;
-    this.width = 30;
-    this.height = 30;
+    this.width = 15;
+    this.height = 15;
     this.x = spawn.x;
     this.y = spawn.y;
     this.element = null;
@@ -161,8 +161,8 @@ class Cosita {
         return false;
       }
 
-      $(".tile").removeClass('next');
-      $('#tile-'+targetCell.id).addClass('next');
+      // $(".tile").removeClass('next');
+      // $('#tile-'+targetCell.id).addClass('next');
 
       let step = 1;
       let cicles = 0;

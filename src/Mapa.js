@@ -41,7 +41,7 @@ class Mapa {
     this.grid = new Array(cols);
     this.closedSet = [];
     this.openSet = [];
-    this.tileSize = 60;
+    this.tileSize = 30;
     this.tileArray = [];
     this.containerId = containerId;
     this.$container = $("#"+containerId);
