@@ -1,6 +1,7 @@
 import Cosita from "./Cosita.js";
 import Mapa from "./Mapa.js";
 import Menu from "./Menu.js";
+import Inspector from "./Inspector.js";
 import $ from 'jquery';
 
 class Jueguito {
@@ -8,8 +9,11 @@ class Jueguito {
     this.id = id;
     this.status = 0;
     this.mapa = null;
-    this.cosita = null;
+    this.cositas = [];
     this.menu = new Menu(id);
+    this.inspector = new Inspector();
+
+    this.cosita_selected = null
   }
 
   async start() {
@@ -31,12 +35,13 @@ class Jueguito {
     });
 
     this.generateMap();
-
-    this.initInspector();
+    this.inspector.init();
   }
 
   keyActionHandler(eventKey) {
-    this.cosita.keyAction(eventKey);
+    if (this.cosita_selected) {
+      this.cosita_selected.keyAction(eventKey);
+    }
   }
   openMap() {
     const self = this;
@@ -90,49 +95,48 @@ class Jueguito {
 
     let $game = $('<div class="game-container" id="game1">');
     let cols = grid ? grid.length : 12;
-    let rows = grid ? grid[0].length : 12;
+    let rows = grid ? grid[0].length : 5;
     this.mapa = new Mapa(this.id, cols, rows);
     this.mapa.init(grid);
     let $map = this.mapa.drawMap();
-    let spawn = this.mapa.pickSpawn();
-    this.cosita = new Cosita(this.mapa, 'game1', spawn);
-    let $cosita = this.cosita.createCosita();
+    
+    for (let index = 0; index < 3; index++) {
+      let spawn = this.mapa.pickSpawn();
+      let cosita = new Cosita(this.mapa, 'game1', spawn);
+      this.cositas.push(cosita);
+      let $cosita = cosita.createCosita();
+      $map.append($cosita);
+
+      cosita.addEventListener('selected', (cosita) => {
+        this.cosita_selected = cosita
+        this.inspector.showInfo('cosita', cosita)
+      })
+    }
 
     
-    $map.append($cosita);
+    
     $game.append($map);
 
     $("#"+this.id).append($game)
 
     const self = this;
     this.mapa.addEventListener('click', (tile) => {
-      if (self.mapa.grid[tile.x][tile.y].type === 'path') {
-        self.cosita.moveTo(tile.x, tile.y)
+      if (self.cosita_selected) {
+        self.cosita_selected.deselect();
+        self.cosita_selected = false;
       }
-      self.showInfo(self.mapa.grid[tile.x][tile.y])
+      self.tile_selected = tile
+      self.inspector.showInfo('tile', self.mapa.grid[tile.x][tile.y])
     })
 
-  }
+    this.mapa.addEventListener("contextmenu", (tile) => {
+      if (self.cosita_selected && tile) {
+        if (self.mapa.grid[tile.x][tile.y].type === 'path') {
+          self.cosita_selected.moveTo(tile.x, tile.y)
+        }
+      }
+    });
 
-  initInspector() {
-    let $inspactor = $('<div id="inspector">');
-    $inspactor.append('<h1>Inspector</h1>');
-    $("#"+this.id).append($inspactor)
-  }
-
-  showInfo(tile) {
-    $("#inspector").html("")
-    $("#inspector").append('<p>Tile ID: ' + tile.id + "</p>")
-    $("#inspector").append('<p>Tile Type: ' + tile.type + "</p>")
-    $("#inspector").append('<p>Tile X: ' + tile.x + "</p>")
-    $("#inspector").append('<p>Tile Y: ' + tile.y + "</p>")
-    $("#inspector").append('<p>left: ' + tile.left + "</p>")
-    $("#inspector").append('<p>top: ' + tile.top + "</p>")
-    // $("#inspector").append('<p>parent: ' + tile.parent + "</p>")
-    // $("#inspector").append('<p>neighbors: ' + tile.neighbors + "</p>")
-    // $("#inspector").append('<p>f: ' + tile.f + "</p>")
-    // $("#inspector").append('<p>g: ' + tile.g + "</p>")
-    // $("#inspector").append('<p>h: ' + tile.h + "</p>")
   }
 
 }

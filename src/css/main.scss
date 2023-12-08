@@ -26,51 +26,50 @@ body{
   color: #fff;
   cursor: pointer;
   line-height: 100%;
-  transition: all .5s;
+  transition: background-color .5s;
 }
+
 .tile.selected {
-  border: 3px solid #f5b030;
+  // background-color: #f5f230;
+  border: 3px solid #fff;
 }
+
 .tile.planned {
-  transition: all .5s;
-  background-color: rgb(255, 246, 116);
-  border: #f53330;
+  background-color: rgb(170, 224, 69);
 }
-.tile.following {
-  transition: all .5s;
-  background-color: rgba(255, 247, 247, 0.313);
-  border: #f53330;
+
+.tile.trail {
+  background-color: rgb(65, 240, 45);
 }
+
 .tile.next {
-  transition: all .5s;
-  background-color: rgba(127, 40, 234, 0.7);
-  border: 3px solid #f5f230;
+  background-color: #f53051;
 }
+
 .tile.blocked {
   background-color: #f53051;
   border: 3px solid #f53051;
 }
 .rock {
-  background-color: #838181;
+  background-color: rgb(131, 129, 129);
 }
 .water {
-  background-color: #2093d5;
+  background-color: rgb(32, 147, 213);
 }
 .path {
-  background-color: #51d343;
+  background-color: rgba(81, 211, 67, 1);
 }
+
 .Cosita {
   position: absolute;
   top: 0;
   left: 0;
   background-color: #fff;
   z-index: 10;
-}
+  &.selected {
+    background-color: #f5f230;
 
-.brick {
-  color: #e63b52;
-  color: #f5b030;
-  color: #7cbde2;
+  }
 }
 
 #inspector {

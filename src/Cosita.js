@@ -2,10 +2,10 @@ import $ from 'jquery';
 
 class Cosita {
   constructor(map, containerId, spawn) {
+    this.id = null;
     this.containerId = containerId;
     this.width = 30;
     this.height = 30;
-    this.tileSize = 60;
     this.x = spawn.x;
     this.y = spawn.y;
     this.element = null;
@@ -15,12 +15,26 @@ class Cosita {
     this.interval = null;
     this.currentCell = spawn ? spawn : map.grid[0][0];
     this.currentPath = null
+    
+    this.listeners = {};
+
     this.createCosita();
 
   }
 
-  init() {
-    this.createCosita()
+  emit(method, payload = null) {
+    const callback = this.listeners[method];
+    if(typeof callback === 'function'){
+      callback(payload);
+    }
+  }
+
+  addEventListener(method,callback) {
+    this.listeners[method] = callback;
+  }
+
+  removeEventListener (method) {
+    delete this.listeners[method];
   }
 
   createCosita() {
@@ -32,21 +46,25 @@ class Cosita {
     const pos = self.centerPosition(self.x, self.y)
     self.element.css('top', pos.y);
     self.element.css('left', pos.x);
-    // $("#"+self.containerId).append(self.element);
 
+    const cositasCreated = $(document).find('.Cosita').length;
+    self.id = cositasCreated + 1;
 
-    // $(".tile").on('click', (e) => {
-    //   const row = $(e.target).attr('data-row');
-    //   const col = $(e.target).attr('data-cell');
-    //   self.move(col, row);
-    // });
-
+    self.element.on('click', () => {
+      self.emit('selected', self);
+      $(".Cosita").removeClass('selected');
+      self.element.addClass('selected');
+    })
     return self.element;
   }
 
+  deselect () {
+    this.element.removeClass('selected');
+  }
+
   centerPosition(x, y) {
-    let centerX = x * this.tileSize + this.tileSize / 2 - this.width / 2;
-    let centerY =  y * this.tileSize + this.tileSize / 2 - this.height / 2;
+    let centerX = x * this.map.tileSize + this.map.tileSize / 2 - this.width / 2;
+    let centerY =  y * this.map.tileSize + this.map.tileSize / 2 - this.height / 2;
     return {
       x: centerX,
       y: centerY
@@ -54,14 +72,15 @@ class Cosita {
   }
 
   getCurrentCell(posX, posY) {
-    let x = parseInt(posX / this.tileSize);
-    let y = parseInt(posY / this.tileSize);
+    let x = parseInt(posX / this.map.tileSize);
+    let y = parseInt(posY / this.map.tileSize);
     return { x, y }
   }
 
   keyAction(keyName) {
     let x = this.x;
     let y = this.y;
+    console.log(keyName, {x,y, cols: this.map.cols, rows: this.map.rows})
     switch (keyName) {
       case "w":
         if (this.y - 1 >= 0) {
@@ -69,7 +88,7 @@ class Cosita {
         }
         break;
       case "s":
-        if (this.y + 1 < this.map.cols) {
+        if (this.y + 1 < this.map.rows) {
           y += 1;
         }
         break;
@@ -79,13 +98,15 @@ class Cosita {
         }
         break;
       case "d":
-        if (this.x + 1 < this.map.rows) {
+        if (this.x + 1 < this.map.cols) {
           x += 1;
         }
         break;
       default:
         break;
     }
+    console.log('2', {x,y})
+
     if (this.x !== x || this.y !== y) {
       // if (this.isMoving) {
       //   this.stopMoving();
@@ -146,8 +167,8 @@ class Cosita {
       let step = 1;
       let cicles = 0;
       let targetPos = $('#tile-'+targetCell.id).position();
-      let targetPosX = targetPos.left + self.tileSize / 2 - self.width / 2;
-      let targetPosY = targetPos.top + self.tileSize / 2 - self.height / 2;
+      let targetPosX = targetPos.left + self.map.tileSize / 2 - self.width / 2;
+      let targetPosY = targetPos.top + self.map.tileSize / 2 - self.height / 2;
 
       this.interval = setInterval(() => {
         let currentPos = self.element.position();
@@ -182,9 +203,9 @@ class Cosita {
           self.stopMoving();
           self.currentCell = targetCell;
           resolve($('#tile-'+targetCell.id));
-          $('#tile-'+targetCell.id).addClass('following');
+          $('#tile-'+targetCell.id).addClass('trail');
           setTimeout(() => {
-            $('#tile-'+targetCell.id).removeClass('following')
+            $('#tile-'+targetCell.id).removeClass('trail')
           }, 600);
         }
         cicles++;
@@ -238,7 +259,6 @@ class Cosita {
     this.interval = null
     this.isMoving = false;
   }
-
 
   get position() {
     return [this.x, this.y];

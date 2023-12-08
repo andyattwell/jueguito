@@ -204,8 +204,8 @@ class Mapa {
   }
 
   clearAll() {
-    for (let i = 0; i < this.rows; i++) {
-      for (let j = 0; j < this.cols; j++) {
+    for (let i = 0; i < this.cols; i++) {
+      for (let j = 0; j < this.rows; j++) {
         this.grid[i][j].f = 0;
         this.grid[i][j].g = 0;
         this.grid[i][j].h = 0;
@@ -255,6 +255,13 @@ class Mapa {
           e.preventDefault();
           self.tileClickHandler($tileDiv, i, j);
         })
+        
+        $tileDiv.on("contextmenu", function(e){
+          e.preventDefault();
+          self.tileRightClickHandler($tileDiv, i, j)
+          return false;
+        });
+
         $map.append($tileDiv);
       }
     }
@@ -284,6 +291,12 @@ class Mapa {
     $('.tile').removeClass('selected');
     $tileDiv.addClass('selected');
     this.emit('click', {x, y})
+  }
+  tileRightClickHandler($tileDiv, x, y) {
+    $('.tile').removeClass('selected');
+    $tileDiv.addClass('selected');
+    const tile = this.grid[x][y];
+    this.emit("contextmenu", tile);
   }
 
   pickSpawn() {
