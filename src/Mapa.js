@@ -31,11 +31,32 @@ function GridPoint(x, y, id, type, left, top) {
       this.neighbors.push(grid[i][j - 1]);
     }
   };
+
+  this.getColor = function () {
+    const colors = [
+      {
+        type: 'rock',
+        color: '#838181'
+      },
+      {
+        type: 'water',
+        color: '#2093d5'
+      },
+      {
+        type: 'path',
+        color: '#51d343'
+      }
+    ];
+    const match = colors.find((c) => c.type === this.type);
+    return match ? match.color : '#fff';
+  }
+  
+  this.color = this.getColor();
 }
 
 class Mapa {
   
-  constructor(containerId, cols = 16, rows = 10) {
+  constructor(containerId, cols = 16, rows = 10, ctx) {
     this.cols = cols;
     this.rows = rows;
     this.grid = new Array(cols);
@@ -47,6 +68,7 @@ class Mapa {
     this.$container = $("#"+containerId);
     this.map = null;
     this.listeners = {};
+    this.ctx = ctx
   }
 
   emit(method, payload = null) {
@@ -65,6 +87,11 @@ class Mapa {
   }
 
   init(data = null) {
+       
+    let $map = $('<div class="map">');
+    $map.css('width', this.tileArray.length * this.tileSize)
+    $map.css('height', this.tileArray.length * this.tileSize)
+
     //making a 2D array
     for (let i = 0; i < this.cols; i++) {
       this.grid[i] = new Array(this.rows);
@@ -231,42 +258,47 @@ class Mapa {
     }
   }
 
-  drawMap() {
-    const self = this;
-    let $map = $('<div class="map">');
-    $map.css('width', this.tileArray.length * this.tileSize)
-    $map.css('height', this.tileArray.length * this.tileSize)
+  drawMap(ctx) {
 
     for (let i = 0; i < this.cols; i++) {
       for (let j = 0; j < this.rows; j++) {
         const tile = this.grid[i][j];
-        let $tileDiv = $('<div>');
-        $tileDiv.addClass('tile');
-        $tileDiv.addClass(tile.type);
-        $tileDiv.attr('data-cell', i);
-        $tileDiv.attr('data-row', j);
-        $tileDiv.attr('id', "tile-" + tile.id);
-        $tileDiv.css('width', this.tileSize);
-        $tileDiv.css('height', this.tileSize);
-        $tileDiv.css('left', i * this.tileSize);
-        $tileDiv.css('top', j * this.tileSize);
-        // $tileDiv.text(i + " " + j);
-        $tileDiv.on('click', (e) => {
-          e.preventDefault();
-          self.tileClickHandler($tileDiv, i, j);
-        })
-        
-        $tileDiv.on("contextmenu", function(e){
-          e.preventDefault();
-          self.tileRightClickHandler($tileDiv, i, j)
-          return false;
-        });
+        ctx.beginPath();
+        ctx.rect(i * this.tileSize, j * this.tileSize, this.tileSize, this.tileSize);
+        ctx.fillStyle = tile.color;
+        ctx.fill();
+        ctx.closePath();
 
-        $map.append($tileDiv);
+        ctx.fillStyle = '#fff';
+        ctx.font="14px Georgia";
+        ctx.strokeStyle = "#fff";
+        const textx = i * this.tileSize + 5;
+        const texty = j * this.tileSize + 10;
+        ctx.fillText(tile.id, textx, texty);
+
+        // let $tileDiv = $('<div>');
+        // $tileDiv.addClass('tile');
+        // $tileDiv.addClass(tile.type);
+        // $tileDiv.attr('data-cell', i);
+        // $tileDiv.attr('data-row', j);
+        // $tileDiv.attr('id', "tile-" + tile.id);
+        // $tileDiv.css('width', this.tileSize);
+        // $tileDiv.css('height', this.tileSize);
+        // $tileDiv.css('left', i * this.tileSize);
+        // $tileDiv.css('top', j * this.tileSize);
+        // // $tileDiv.text(i + " " + j);
+        // $tileDiv.on('click', (e) => {
+        //   e.preventDefault();
+        //   self.tileClickHandler($tileDiv, i, j);
+        // })
+        
+        // $tileDiv.on("contextmenu", function(e){
+        //   e.preventDefault();
+        //   self.tileRightClickHandler($tileDiv, i, j)
+        //   return false;
+        // });
       }
     }
-
-    return $map;
   }
 
   getRandomTile() {

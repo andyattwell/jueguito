@@ -6,18 +6,25 @@ class Cosita {
     this.containerId = containerId;
     this.width = 15;
     this.height = 15;
-    this.x = spawn.x;
-    this.y = spawn.y;
     this.element = null;
     this.isMoving = false;
-
+    this.color = '#fff';
+    this.speed = 3;
+    
     this.map = map;
     this.interval = null;
     this.currentCell = spawn ? spawn : map.grid[0][0];
     this.currentPath = null
     
     this.listeners = {};
-
+    
+    if (spawn) {
+      const pos = this.centerPosition(spawn.x, spawn.y);
+      this.x = pos.x;
+      this.y = pos.y;
+      console.log({pos})
+    }
+    
     this.createCosita();
 
   }
@@ -43,9 +50,9 @@ class Cosita {
     self.element.addClass('Cosita');
     self.element.css('width', self.width);
     self.element.css('height', self.height);
-    const pos = self.centerPosition(self.x, self.y)
-    self.element.css('top', pos.y);
-    self.element.css('left', pos.x);
+    // const pos = self.centerPosition(self.x, self.y)
+    self.element.css('top', this.y);
+    self.element.css('left', this.x);
 
     const cositasCreated = $(document).find('.Cosita').length;
     self.id = cositasCreated + 1;
@@ -80,42 +87,57 @@ class Cosita {
   keyAction(keyName) {
     let x = this.x;
     let y = this.y;
-    console.log(keyName, {x,y, cols: this.map.cols, rows: this.map.rows})
+    let targetX = this.x;
+    let targetY = this.y;
+
     switch (keyName) {
       case "w":
-        if (this.y - 1 >= 0) {
-          y -= 1;
+        if (this.y - this.speed >= 0) {
+          y -= this.speed;
+          targetY = y;
         }
         break;
       case "s":
-        if (this.y + 1 < this.map.rows) {
-          y += 1;
+        if (this.y + this.height + this.speed < this.map.rows * this.map.tileSize) {
+          y += this.speed;
+          targetY = y + this.width;
         }
         break;
       case "a":
-        if (this.x - 1 >= 0) {
-          x -= 1;
+        if (this.x - this.speed >= 0) {
+          x -= this.speed;
+          targetX = x;
         }
         break;
       case "d":
-        if (this.x + 1 < this.map.cols) {
-          x += 1;
+        if (this.x + this.width + this.speed < this.map.cols * this.map.tileSize) {
+          x += this.speed;
+          targetX = x + this.width;
         }
         break;
       default:
         break;
     }
-    console.log('2', {x,y})
 
-    if (this.x !== x || this.y !== y) {
+    const collition = this.detectCollision(targetX, targetY);
+
+    if (collition) {
+      console.log({collition})
+      return false;
+    }
+    
+    this.x = x;
+    this.y = y;
+
+    // if (this.x !== x || this.y !== y) {
       // if (this.isMoving) {
       //   this.stopMoving();
       //   this.currentPath = [];
       // }
       // this.takeStep(x, y);
-      this.currentPath = [this.map.grid[x][y]];
-      this.followPath();
-    }
+      // this.currentPath = [this.map.grid[x][y]];
+      // this.followPath();
+    // }
   }
 
   moveTo(endX, endY) {
@@ -214,43 +236,68 @@ class Cosita {
     })
   }
 
-  detectCollision(nextCell) {
- 
-    if (nextCell.type === 'path') {
-      return false
+  detectCollision(targetX, targetY) {
+    let collition = false
+    const cellX = parseInt(targetX / this.map.tileSize);
+    const cellY = parseInt(targetY / this.map.tileSize);
+
+    const nextCell = this.map.grid[cellX][cellY];
+    if (nextCell.type !== 'path') {
+      this.map.grid[cellX][cellY].color = "#f53051";
+      return true;
     }
     
     const myBoundry = {
-      left: parseInt(this.element.position().left),
-      right: parseInt(this.element.position().left + this.width * 2),
-      top: parseInt(this.element.position().top),
-      bottom: parseInt(this.element.position().top + this.height),
+      left: targetX,
+      right: targetX + this.width,
+      top: targetY,
+      bottom: targetY + this.height,
     }
+    
+    // for (let i = 0; i < this.map.grid.length; i++) {
+    //   for (let j = 0; j < this.map.grid[i].length; j++) {
 
-    const tileBoundry = {
-      left: parseInt($('#tile-'+nextCell.id).position().left),
-      right: parseInt($('#tile-'+nextCell.id).position().left + $('#tile-'+nextCell.id).width()),
-      top: parseInt($('#tile-'+nextCell.id).position().top),
-      bottom: parseInt($('#tile-'+nextCell.id).position().top + $('#tile-'+nextCell.id).height()),
-    }
+    //     const nextCell = this.map.grid[i][j];
+        
+    //     if (nextCell.type === 'path') {
+    //       continue;
+    //     }
+    //     // console.log('asdasd', nextCell.type)
 
-    let collition = false
+    //     const tileBoundry = {
+    //       left: nextCell.x * this.map.tileSize,
+    //       right: nextCell.y * this.map.tileSize + this.map.tileSize,
+    //       top: nextCell.y * this.map.tileSize,
+    //       bottom: nextCell.y * this.map.tileSize + this.map.tileSize,
+    //     }
 
-    if (myBoundry.bottom >= tileBoundry.top) {
-      collition = 'bottom';
-    } else if (myBoundry.top >= tileBoundry.bottom) {
-      collition = 'top';
-    } else if (myBoundry.right >= tileBoundry.left) {
-      collition = 'right';
-    } else if (myBoundry.left >= tileBoundry.right) {
-      collition = 'left';
-    }
+    //     if (
+    //       myBoundry.left <= tileBoundry.right && 
+    //       myBoundry.right >= tileBoundry.left &&
+    //       myBoundry.top <= tileBoundry.bottom &&
+    //       myBoundry.botom >= tileBoundry.top
+    //     ) {
+    //       this.map.grid[i][j].color = "#f53051";
+    //       collition = { myBoundry, tileBoundry };
+    //     }
+    
+    //     // if (
+    //     //   myBoundry.bottom >= tileBoundry.top
+    //     // ) {
+    //     //   collition = 'bottom';
+    //     //   // nextCell.color = "#f53051";
+          
+    //     // }
+    //     // if (myBoundry.top >= tileBoundry.bottom) {
+    //     //   collition = 'top';
+    //     // }
+    //     // if (myBoundry.left >= tileBoundry.right) {
+    //     //   collition = 'left';
+    //     // }
+    //   }
+    // }
 
-    if (collition) {
-      return false;
-    }
-
-    return true;
+    return collition;
 
   }
 
@@ -266,6 +313,15 @@ class Cosita {
 
   get size() {
     return [this.width, this.height];
+  }
+
+  draw (ctx) {
+    // const pos = this.centerPosition(this.x, this.y)
+    ctx.beginPath();
+    ctx.rect(this.x, this.y, this.width, this.height);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+    ctx.closePath();
   }
 }
 export default Cosita
