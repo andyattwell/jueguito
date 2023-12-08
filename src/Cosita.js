@@ -81,11 +81,6 @@ class Cosita {
     }
   }
 
-  getCurrentCell(posX, posY) {
-    let x = parseInt(posX / this.map.tileSize);
-    let y = parseInt(posY / this.map.tileSize);
-    return { x, y }
-  }
 
   keyAction(keyName) {
     let x = this.x;
@@ -133,20 +128,20 @@ class Cosita {
 
   }
 
-  moveTo(endX, endY) {
+  currentTile() {
     const cellX = parseInt(this.x / this.map.tileSize);
     const cellY = parseInt(this.y / this.map.tileSize);
-    this.currentPath = this.map.search(cellX, cellY, endX, endY);
-    // this.followPath();
-    let self = this
-    
-    self.takeStep()
-      .then(() => {
-        self.currentPath.shift();
-        if (self.currentPath.length > 0) {
-          self.followPath();
-        }
-      })
+
+    return {
+      x: cellX,
+      y: cellY,
+    }
+  }
+
+  moveTo(endX, endY) {
+    const tile = this.currentTile()
+    this.currentPath = this.map.search(tile.x, tile.y, endX, endY);
+    this.followPath();
   }
 
   async followPath() {
@@ -159,18 +154,19 @@ class Cosita {
       .then(() => {
         self.currentPath.shift();
         if (self.currentPath.length > 0) {
-          self.followPath();
+          const last = self.currentPath[self.currentPath.length -1]
+          self.moveTo(last.x, last.y);
         }
       })
   }
 
   takeStep() {
     let self = this;
-    const targetCell = self.currentPath[0];
+    const targetCell = self.currentPath[1];
 
     return new Promise((resolve) => {
-      if (self.isMoving) {
-        return false;
+      if (self.isMoving || !targetCell) {
+        return resolve();
       }
       
       self.isMoving = true;

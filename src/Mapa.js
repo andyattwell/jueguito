@@ -14,7 +14,7 @@ function GridPoint(x, y, id, type, left, top, size = 30) {
   this.left = left;
   this.top = top;
   this.size = size;
-
+  this.occupied = false;
   // update neighbors array for a given grid point
   this.updateNeighbors = function (grid, cols, rows) {
     let i = this.x;
@@ -195,7 +195,10 @@ class Mapa {
         this.clearAll();
         return path.reverse();
       }
-      closedSet.push(current);
+
+      if (current !== start) {
+        closedSet.push(current);
+      }
   
       //remove current from openSet
       openSet.splice(lowestIndex, 1);
@@ -205,7 +208,7 @@ class Mapa {
       for (let i = 0; i < neighbors.length; i++) {
         let neighbor = neighbors[i];
         
-        if (neighbor.type !== 'path' || closedSet.includes(neighbor)) {
+        if (neighbor.type !== 'path' || neighbor.occupied === true || closedSet.includes(neighbor)) {
           continue;
         }
 

@@ -18,6 +18,7 @@ class Inspector {
       $("#inspector").append('<p>Tile Y: ' + data.y + "</p>")
       $("#inspector").append('<p>left: ' + data.left + "</p>")
       $("#inspector").append('<p>top: ' + data.top + "</p>")
+      $("#inspector").append('<p>occupied: ' + data.occupied + "</p>")
     }}
     if (type === 'cosita') {{
       $("#inspector").append('<p>Tile ID: ' + data.id + "</p>")

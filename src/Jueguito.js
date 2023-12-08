@@ -214,12 +214,41 @@ class Jueguito {
     this.mapa.drawMap(this.ctx);
     this.drawCositas();
     this.play();
+    this.cositasColition();
   }
 
   drawCositas () {
     for (let index = 0; index < this.cositas.length; index++) {
       const cosita = this.cositas[index];
       cosita.draw(this.ctx);
+    }
+  }
+
+  cositasColition () {
+    // self.currentCell.occupied = true;
+    const totalCositas = this.cositas.length;
+    for (let y = 0; y < this.mapa.grid.length; y++) {
+      for (let x = 0; x < this.mapa.grid[y].length; x++) {
+        const tile = this.mapa.grid[y][x];
+        // console.log(this.cositas);
+        tile.occupied = false;
+        tile.color = tile.getColor();
+
+        for (let c = 0; c < this.cositas.length; c++) {
+          const cosita = this.cositas[c];
+          if (
+            cosita.x >= tile.left && 
+            cosita.x <= tile.left + tile.size &&
+            cosita.y >= tile.top &&
+            cosita.y <= tile.top + tile.size
+          ) {
+            tile.occupied = true
+            tile.color = '#f53051';
+          }
+        }
+        
+      }
+      
     }
   }
 
