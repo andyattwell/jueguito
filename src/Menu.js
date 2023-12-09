@@ -2,8 +2,9 @@ import $ from 'jquery';
 import { Dropdown } from 'bootstrap';
 
 class Menu {
-  constructor(parentId) {
-    this.parentId = parentId;
+  constructor(parent) {
+    this.parent = parent
+    this.parentId = parent.id;
     this.listeners = {};
     this.items = [
       {
@@ -32,11 +33,17 @@ class Menu {
           },
           {
             label: 'Guardar',
-            id: 'saveMap'
+            id: 'saveMap',
+            callback: () => {
+              this.saveMap();
+            }
           },
           {
             label: 'Abrir',
-            id: 'openMap'
+            id: 'openMap',
+            callback: () => {
+              this.openMap();
+            }
           },
           {
             label: 'Editar celdas',
@@ -63,6 +70,7 @@ class Menu {
       callback(payload);
     }
   }
+
   addEventListener(method, callback) {
     this.listeners[method] = callback;
   }
@@ -89,6 +97,9 @@ class Menu {
       let $a = $('<a class="nav-link" href="#">')
       $a.attr('id', item.id)
       $a.text(item.label);
+      if (item.class) {
+        $li.addClass(item.class);
+      }
 
       if (item.children) {
         $a.addClass('dropdown-toggle');
@@ -103,7 +114,11 @@ class Menu {
           let $ciA = $('<a class="dropdown-item" href="#">')
           $ciA.on('click', (e) => {
             e.preventDefault();
-            self.menuBtnActionHandler($(e.target));
+            if (ci.callback) {
+              ci.callback();
+            } else {
+              self.menuBtnActionHandler($(e.target));
+            }
           });
           $ciA.attr('id', ci.id);
           $ciA.text(ci.label);
@@ -116,15 +131,125 @@ class Menu {
       $li.append($a);
       $ul.append($li);
     })
-
     $container.append($ul)
+
+    let $ulInspector = $('<ul class="navbar-nav" id="inspector-nav">');
+    let $liInspector = $('<li class="nav-item">');
+    let $aInspector = $('<a class="nav-link" href="#">')
+    $aInspector.text('Inspector');
+
+    $aInspector.on('click', self.toggleInspector);
+
+    $liInspector.append($aInspector);
+    $ulInspector.append($liInspector);
+
+    $container.append($ulInspector)
+    
     $menu.append($container);
+
+    
     $parent.append($menu);
+
+  }
+  
+  menuBtnActionHandler($target) {
+    this.emit('action', { action: $target.attr('id') })
   }
 
-  menuBtnActionHandler($target) {
-    console.log({ action: $target.attr('id'), algo: '123' })
-    this.emit('action', { action: $target.attr('id'), algo: '123' })
+  toggleInspector (e) {
+    e.preventDefault();
+    if ($('#inspector').length >= 1) {
+      $('#inspector').remove();
+    } else {
+      $('#inspector-nav').append('<div id="inspector">');
+    }
+    return false;
+  }
+
+  showInfo(item) {
+    // $('#inspector-nav').remove("#inspector");
+    // console.log('item', item)
+    if (!item) {
+      $('#inspector-nav').hide();
+      return false;
+    }
+    $('#inspector-nav').show();
+
+    let $inspactor = $('#inspector');
+
+    if ($inspactor.length < 1) {
+      return false
+    }
+
+    $inspactor.html("");
+
+    $inspactor.append('<h1>Inspector</h1>');
+
+    if (item.type === 'path' || item.type === 'water' || item.type === 'rock') {{
+      $inspactor.append('<p>Tile ID: ' + item.id + "</p>")
+      $inspactor.append('<p>Tile Type: ' + item.type + "</p>")
+      $inspactor.append('<p>Tile X: ' + item.x + "</p>")
+      $inspactor.append('<p>Tile Y: ' + item.y + "</p>")
+      $inspactor.append('<p>left: ' + item.left + "</p>")
+      $inspactor.append('<p>top: ' + item.top + "</p>")
+      $inspactor.append('<p>occupied: ' + item.occupied + "</p>")
+    }}
+
+    if (item.type === 'cosita') {
+      $inspactor.append('<p>Cosita ID: ' + item.id + "</p>")
+      $inspactor.append('<p>X: ' + item.x + " - Y: " + item.y +"</p>")
+      $inspactor.append('<p>Current Tile X: ' + item.currentTile().x + " - Y: " + item.currentTile().y +"</p>")
+      if (item.currentPath && item.currentPath.length >= 1) {
+        $inspactor.append('<p>Destination X: ' + item.currentPath[item.currentPath.length - 1].x + " - Y: " + item.currentPath[item.currentPath.length - 1].y +"</p>")
+      }
+    }
+
+    $('#inspector-nav').append($inspactor)
+
+  }
+
+  openMap() {
+    const self = this;
+    let input = $('<input type="file">')
+    input.attr('id', 'map-file')
+    input.attr('name', 'map-file')
+    input.css('display', 'none')
+    $("#"+this.parentId).append(input)
+    setTimeout(() => {
+      input.trigger('click')
+    }, 200)
+
+    input.on('change', async (e) => {
+      const file = e.target.files.item(0)
+      const text = await file.text();
+      const mapData = JSON.parse(text);
+      if(mapData.length > 0) {
+        self.emit('action', { action: 'generateMap', data: mapData })
+      }
+      input.remove();
+    })
+
+  }
+
+  saveMap() {
+    const mapStr = JSON.stringify(this.parent.mapa.exportGrid());
+    let file = new Blob([mapStr], {type: 'text/plain'});
+    const filename = 'map.json';
+
+    if (window.navigator.msSaveOrOpenBlob) {
+      window.navigator.msSaveOrOpenBlob(file, filename);
+    } else {
+      let a = document.createElement("a")
+      let url = URL.createObjectURL(file);
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function() {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);  
+      }, 0); 
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 import Cosita from "./Cosita.js";
 import Mapa from "./Mapa.js";
 import Menu from "./Menu.js";
-import Inspector from "./Inspector.js";
+// import Inspector from "./Inspector.js";
 import $ from 'jquery';
 
 class Jueguito {
@@ -9,8 +9,8 @@ class Jueguito {
     this.id = id;
     this.mapa = null;
     this.cositas = [];
-    this.menu = new Menu(id);
-    this.inspector = new Inspector();
+    this.menu = new Menu(this);
+    // this.inspector = new Inspector();
     this.object_selected = null;
 
     this.canvas = null;
@@ -22,28 +22,19 @@ class Jueguito {
     const self = this
 
     this.menu.addEventListener('action', (data) => {
-      if (data.action === 'generateMap') {
-        self.generateMap();
-      } else if (data.action === 'saveMap') {
-        self.saveMap();
-      } else if (data.action === 'openMap') {
-        self.openMap();
-      } else if (data.action === 'play') {
-        self.play();
-      } else if (data.action === 'pause') {
-        self.pause();
-      } else if (data.action === 'stop') {
-        self.stop();
+      if(typeof this[data.action] === 'function'){
+        this[data.action](data.data);
+      } else {
+        console.log("Listener not implemented", data)
       }
+      return false;
     })
 
     $(document).on("keydown", (event) => {
       self.keyActionHandler(event.key);
     });
 
-    this.generateMap();
-    this.addCositas(3);
-    this.inspector.init();
+    // this.generateMap();
   }
 
   keyActionHandler(eventKey) {
@@ -53,103 +44,21 @@ class Jueguito {
       return false;
     }
 
+    if (!this.requestId) {
+      return false;
+    }
+
     if (this.object_selected && this.object_selected === 'cosita') {
       this.object_selected.keyAction(eventKey);
     }
   }
 
-  openMap() {
-    const self = this;
-    let input = $('<input type="file">')
-    input.attr('id', 'map-file')
-    input.attr('name', 'map-file')
-    input.css('display', 'none')
-    $("#"+this.id).append(input)
-    setTimeout(() => {
-      input.trigger('click')
-    }, 200)
-
-    input.on('change', async (e) => {
-      const file = e.target.files.item(0)
-      const text = await file.text();
-      const mapData = JSON.parse(text);
-      if(mapData.length > 0) {
-        self.generateMap(mapData)
-      }
-      input.remove();
-    })
-
-  }
-
-  saveMap() {
-    const mapStr = JSON.stringify(this.mapa.exportGrid());
-
-    let file = new Blob([mapStr], {type: 'text/plain'});
-    const filename = 'map.json';
-
-    if (window.navigator.msSaveOrOpenBlob) // IE10+
-      window.navigator.msSaveOrOpenBlob(file, filename);
-    else { // Others
-      let a = document.createElement("a"),
-              url = URL.createObjectURL(file);
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(function() {
-          document.body.removeChild(a);
-          window.URL.revokeObjectURL(url);  
-      }, 0); 
-    }
-  }
-
-  generateMap(grid = null) {
-    const self = this;
-    let cols = grid ? grid.length : 20;
-    let rows = grid ? grid[0].length : 20;
-    this.mapa = new Mapa(this.id, cols, rows);
-    $('canvas').remove();
-    this.ctx = null;
-
-    const $canvas = $('<canvas>');
-    $canvas.attr('width', cols * this.mapa.tileSize);
-    $canvas.attr('height', rows * this.mapa.tileSize);
-    $canvas.css('background-color', '#030303');
-    $("#"+this.id).append($canvas);
-    this.canvas = $canvas;
-    self.ctx = this.canvas[0].getContext('2d');
-
-    this.mapa.init(grid);
-    this.play();
-
-    $(this.canvas).on('click', (e) => {
-      self.clickHandler(e);
-    })
-
-    $(this.canvas).on("contextmenu", (e) => {
-      e.preventDefault();
-      const position = $('canvas').position();
-      const mouseX = e.pageX;
-      const mouseY = e.pageY - position.top;
-
-      const cellX = parseInt(mouseX / self.mapa.tileSize);
-      const cellY = parseInt(mouseY / self.mapa.tileSize);
-
-      const tile = self.mapa.grid[cellX][cellY];
-      console.log(typeof self.object_selected)
-      if (
-        (self.object_selected && self.object_selected.type === 'cosita') && tile
-      ) {
-        if (self.mapa.grid[tile.x][tile.y].type === 'path') {
-          self.object_selected.moveTo(tile.x, tile.y)
-        }
-      }
-      return false;
-    });
-
-  }
-
   clickHandler(e) {
+
+    if (!this.requestId) {
+      return false;
+    }
+
     const self = this;
     const position = $('canvas').position();
     const mouseX = e.pageX;
@@ -188,6 +97,64 @@ class Jueguito {
     }
 
     self.object_selected = match
+  }
+
+  generateMap(grid = null) {
+    const self = this;
+    let cols = grid ? grid.length : 20;
+    let rows = grid ? grid[0].length : 20;
+    this.mapa = new Mapa(this.id, cols, rows);
+    $('canvas').remove();
+    this.ctx = null;
+
+    const $canvas = $('<canvas>');
+    $canvas.attr('width', cols * this.mapa.tileSize);
+    $canvas.attr('height', rows * this.mapa.tileSize);
+    $canvas.css('background-color', '#030303');
+    $("#"+this.id).append($canvas);
+    this.canvas = $canvas;
+    self.ctx = this.canvas[0].getContext('2d');
+
+    this.mapa.init(grid);
+
+    this.cositas = [];
+    this.addCositas(3);
+    
+    this.play();
+
+    $(this.canvas).on('click', (e) => {
+      self.clickHandler(e);
+    })
+
+    $(this.canvas).on("contextmenu", (e) => {
+      self.rightClickHandler(e)
+    });
+
+  }
+
+  rightClickHandler(e) {
+    e.preventDefault();
+    
+    if (!this.requestId) {
+      return false;
+    }
+
+    const position = $('canvas').position();
+    const mouseX = e.pageX;
+    const mouseY = e.pageY - position.top;
+
+    const cellX = parseInt(mouseX / this.mapa.tileSize);
+    const cellY = parseInt(mouseY / this.mapa.tileSize);
+
+    const tile = this.mapa.grid[cellX][cellY];
+    if (
+      (this.object_selected && this.object_selected.type === 'cosita') && tile
+    ) {
+      if (this.mapa.grid[tile.x][tile.y].type === 'path') {
+        this.object_selected.moveTo(tile.x, tile.y)
+      }
+    }
+    return false;
   }
 
   addCositas(amount = 1) {
@@ -233,11 +200,9 @@ class Jueguito {
 
     this.updateCositas();
 
-    if (this.object_selected) {
-      this.inspector.showInfo(this.object_selected)
-    } else {
-      this.inspector.hide();
-    }
+    // this.menu.selectedItem = this.object_selected;
+
+    this.menu.showInfo(this.object_selected);
 
     this.drawCositas();
     this.play();

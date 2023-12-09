@@ -175,7 +175,7 @@ class Mapa {
           neighbors: [],
           parent: [],
           type: tile.type,
-          type: tile.color,
+          color: tile.color,
           id: tile.id,
           left: tile.left,
           top: tile.top

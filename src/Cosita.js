@@ -8,11 +8,12 @@ class Cosita {
     this.height = 15;
     this.isMoving = false;
     this.selected = false;
-    this.speed = 3;
+    this.speed = 1;
     
     this.map = map;
     this.interval = null;
-    this.currentPath = null
+    this.currentPath = null;
+    this.lastTile = null;
     
     this.listeners = {};
     
@@ -20,7 +21,13 @@ class Cosita {
       const pos = this.centerPosition(spawn.x, spawn.y);
       this.x = pos.x;
       this.y = pos.y;
+    } else {
+      this.x = 0;
+      this.y = 0;
     }
+
+    const _ct = this.currentTile();
+    this.current = this.map.grid[_ct.x][_ct.y]; // current tile
 
   }
 
@@ -152,18 +159,29 @@ class Cosita {
     if (diffY <= 1 && diffX <= 1) {
       this.currentPath.shift();
       targetCell.planned = false;
+      
+      if (!this.current || this.current != targetCell) {
+        this.lastTile = this.current;
+        this.current = targetCell;
+      }
+
+      const last = this.currentPath[this.currentPath.length-1];
+      if (last) {
+        this.moveTo(last.x, last.y)
+      }
     }
   }
 
   moveTo(endX, endY) {
     const tile = this.currentTile()
-    if (this.currentPath && this.currentPath.length > 1) {
+    const self = this;
+    if (this.currentPath && this.currentPath.length >= 1) {
       this.currentPath.map(tile => {
         tile.planned = false;
         return tile;
       });
     }
-    this.currentPath = this.map.search(tile.x, tile.y, endX, endY);
+    this.currentPath = this.map.search(tile.x, tile.y, endX, endY).filter((tile) => tile !== self.current);
     this.currentPath.map(tile => {
       tile.planned = true;
       return tile;
@@ -188,12 +206,6 @@ class Cosita {
 
     return collition;
 
-  }
-
-  stopMoving() {
-    clearInterval(this.interval);
-    this.interval = null
-    this.isMoving = false;
   }
 
   draw (ctx) {
