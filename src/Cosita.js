@@ -181,7 +181,12 @@ class Cosita {
         return tile;
       });
     }
+
     this.currentPath = this.map.search(tile.x, tile.y, endX, endY).filter((tile) => tile !== self.current);
+
+    if (this.currentPath.length === 0) {
+      this.currentPath = [this.current]
+    }
     this.currentPath.map(tile => {
       tile.planned = true;
       return tile;

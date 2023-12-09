@@ -101,8 +101,8 @@ class Jueguito {
 
   generateMap(grid = null) {
     const self = this;
-    let cols = grid ? grid.length : 20;
-    let rows = grid ? grid[0].length : 20;
+    let cols = grid ? grid.length : 8;
+    let rows = grid ? grid[0].length : 8;
     this.mapa = new Mapa(this.id, cols, rows);
     $('canvas').remove();
     this.ctx = null;
@@ -118,7 +118,7 @@ class Jueguito {
     this.mapa.init(grid);
 
     this.cositas = [];
-    this.addCositas(3);
+    this.addCositas(2);
     
     this.play();
 
@@ -150,9 +150,9 @@ class Jueguito {
     if (
       (this.object_selected && this.object_selected.type === 'cosita') && tile
     ) {
-      if (this.mapa.grid[tile.x][tile.y].type === 'path') {
-        this.object_selected.moveTo(tile.x, tile.y)
-      }
+      this.object_selected.moveTo(tile.x, tile.y)
+      // if (this.mapa.grid[tile.x][tile.y].type === 'path') {
+      // }
     }
     return false;
   }

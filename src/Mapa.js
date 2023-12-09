@@ -193,6 +193,17 @@ class Mapa {
     let openSet = [start];
     let closedSet = [];
     let path = [];
+
+    
+    if (end.type !== 'path' || end.occupied === true) {
+      let newEnd = null
+      for (let index = 0; index < end.neighbors.length; index++) {
+        if (!newEnd && end.neighbors[index].type === 'path' && end.neighbors[index].occupied === false){
+          newEnd = end.neighbors[index];
+        }
+      }
+      end = newEnd;
+    }
     
     while (openSet.length > 0) {
       //assumption lowest index is the first one to begin with
@@ -204,16 +215,17 @@ class Mapa {
       }
 
       let current = openSet[lowestIndex];
-      if (current.type !== 'path') {
-        continue;
-      }
 
       if (current === end) {
         let temp = current;
         path.push(temp);
         while (temp.parent) {
-          path.push(temp.parent);
-          temp = temp.parent;
+          try {
+            path.push(temp.parent);
+            temp = temp.parent;
+          } catch (error) {
+            temp.parent = null
+          }
         }
         this.clearAll();
         return path.reverse();
@@ -227,23 +239,32 @@ class Mapa {
       openSet.splice(lowestIndex, 1);
       
       let neighbors = current.neighbors;
-  
+
       for (let i = 0; i < neighbors.length; i++) {
         let neighbor = neighbors[i];
-        
-        if (neighbor.type !== 'path' || neighbor.occupied === true || closedSet.includes(neighbor)) {
+
+        if (neighbor === start) {
+          continue;
+        }
+
+        if (closedSet.includes(neighbor)) {
           continue;
         }
 
         let possibleG = current.g + 1;
   
         if (!openSet.includes(neighbor)) {
-          openSet.push(neighbor);
           neighbor.g = possibleG;
           neighbor.h = this.heuristic(neighbor, end);
           neighbor.f = neighbor.g + neighbor.h;
-          // neighbor.f = neighbor.type === 'path' ? neighbor.f : 0;
+
+          neighbor.f += neighbor.type !== 'path' ? 10000 : 0;
+          neighbor.f += neighbor.occupied ? 10000 : 0;
+
           neighbor.parent = current;
+          if (!neighbor.occupied) {
+            openSet.push(neighbor);
+          }
         }
       }
       
