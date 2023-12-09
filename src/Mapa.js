@@ -1,23 +1,27 @@
 import $ from 'jquery';
 
 //constructor function to create all the grid points as objects containind the data for the points
-function GridPoint(x, y, id, type, left, top, size = 30) {
-  this.x = x; //x location of the grid point
-  this.y = y; //y location of the grid point
-  this.f = 0; //total cost function
-  this.g = 0; //cost function from start to the current grid point
-  this.h = 0; //heuristic estimated cost function from current grid point to the goal
-  this.neighbors = []; // neighbors of the current grid point
-  this.parent = undefined; // immediate source of the current grid point
-  this.type = type;
-  this.id = id;
-  this.left = left;
-  this.top = top;
-  this.size = size;
-  this.occupied = false;
-  this.selected = false;
+class GridPoint {
+  constructor(x, y, id, type, left, top, size = 30) {
+    this.x = x; // x location of the grid point
+    this.y = y; // y location of the grid point
+    this.f = 0; // total cost function
+    this.g = 0; // cost function from start to the current grid point
+    this.h = 0; // heuristic estimated cost function from current grid point to the goal
+    this.neighbors = []; // neighbors of the current grid point
+    this.parent = undefined; // immediate source of the current grid point
+    this.type = type; // path | water | rock
+    this.id = id; // tile id
+    this.left = left; // x position in pixels
+    this.top = top; // y position in pixels
+    this.size = size; // size in pixels
+    this.occupied = false; // is the current tile ocupied?
+    this.selected = false; // is the current tile selected?
+    this.color = this.getColor(); // tile color based on the type
+  }
+
   // update neighbors array for a given grid point
-  this.updateNeighbors = function (grid, cols, rows) {
+  updateNeighbors = function (grid, cols, rows) {
     let i = this.x;
     let j = this.y;
     if (i < cols - 1) {
@@ -34,26 +38,45 @@ function GridPoint(x, y, id, type, left, top, size = 30) {
     }
   };
 
-  this.getColor = function () {
-    const colors = [
-      {
-        type: 'rock',
-        color: '#838181'
-      },
-      {
-        type: 'water',
-        color: '#2093d5'
-      },
-      {
-        type: 'path',
-        color: '#51d343'
-      }
-    ];
-    const match = colors.find((c) => c.type === this.type);
-    return match ? match.color : '#fff';
+  getColor = function () {
+    let typeColor = "#000000";
+    
+    if (this.type === 'path') {
+      typeColor = '#51d343';
+    } else if (this.type === 'water') {
+      typeColor = '#2093d5';
+    } else if (this.type === 'rock') {
+      typeColor = '#685e70';
+    } else {
+      typeColor = '#000';
+    }
+
+    let specialColor = false;
+
+    if (this.planned === true) {
+      specialColor = "#fff700";
+    } else if (this.occupied === true) {
+      specialColor = '#e000ff' 
+    }
+
+    let color = typeColor
+
+    if (specialColor) {
+      color = this.blendColors(color, specialColor, 0.5);
+    }
+
+    return color;
   }
   
-  this.color = this.getColor();
+  blendColors(colorA, colorB, amount) {
+    const [rA, gA, bA] = colorA.match(/\w\w/g).map((c) => parseInt(c, 16));
+    const [rB, gB, bB] = colorB.match(/\w\w/g).map((c) => parseInt(c, 16));
+    const r = Math.round(rA + (rB - rA) * amount).toString(16).padStart(2, '0');
+    const g = Math.round(gA + (gB - gA) * amount).toString(16).padStart(2, '0');
+    const b = Math.round(bA + (bB - bA) * amount).toString(16).padStart(2, '0');
+    return '#' + r + g + b;
+  }
+
 }
 
 class Mapa {
@@ -99,23 +122,22 @@ class Mapa {
       this.grid[i] = new Array(this.rows);
     }
 
-    let tileId = 0;
-    for (let i = 0; i < this.cols; i++) {
-      for (let j = 0; j < this.rows; j++) {
+    for (let x = 0; x < this.cols; x++) {
+      for (let y = 0; y < this.rows; y++) {
         let tileData = {}
-        tileData.x = i;
-        tileData.y = j;
-        tileData.id = tileId;
+        tileData.x = x;
+        tileData.y = y;
+        tileData.id = (x * this.cols) + y;
         tileData.type = this.getRandomTile();
-        tileData.left = i * this.tileSize;
-        tileData.top = j * this.tileSize;
+        tileData.left = x * this.tileSize;
+        tileData.top = y * this.tileSize;
         tileData.size = this.tileSize;
 
         if (data) {
-          tileData = data[i][j];
+          tileData = data[x][y];
         }
 
-        this.grid[i][j] = new GridPoint(
+        this.grid[x][y] = new GridPoint(
           tileData.x,
           tileData.y, 
           tileData.id, 
@@ -124,7 +146,6 @@ class Mapa {
           tileData.top,
           tileData.size
         );
-        tileId++;
       }
     }
   
@@ -154,6 +175,7 @@ class Mapa {
           neighbors: [],
           parent: [],
           type: tile.type,
+          type: tile.color,
           id: tile.id,
           left: tile.left,
           top: tile.top
@@ -249,23 +271,6 @@ class Mapa {
     }
   }
 
-  generateGrid() {
-    let tileId = 0;
-
-    for (let y = 0; y < this.rows; y++) {
-      this.tileArray[y] = [];
-      for (let x = 0; x < this.cols; x++) {
-        this.tileArray[y][x] = {
-          type: this.getRandomTile(),
-          id: tileId,
-          left: x * this.tileSize,
-          top: y * this.tileSize
-        };
-        tileId++;
-      }
-    }
-  }
-
   drawMap(ctx) {
 
     for (let i = 0; i < this.cols; i++) {
@@ -273,16 +278,17 @@ class Mapa {
         const tile = this.grid[i][j];
         ctx.beginPath();
         ctx.rect(i * this.tileSize, j * this.tileSize, this.tileSize, this.tileSize);
-        ctx.fillStyle = tile.color;
+        ctx.fillStyle = tile.getColor();
         ctx.fill();
+        ctx.closePath();
         if (tile.selected === true) {
           ctx.strokeStyle = 'red';
           ctx.stroke();
         }
-        ctx.closePath();
+
 
         ctx.fillStyle = '#fff';
-        ctx.font="14px Georgia";
+        ctx.font="10px Arial";
         ctx.strokeStyle = "#fff";
         const textx = i * this.tileSize + 5;
         const texty = j * this.tileSize + 20;

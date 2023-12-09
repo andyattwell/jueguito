@@ -7,6 +7,23 @@ class Menu {
     this.listeners = {};
     this.items = [
       {
+        label: 'Juego',
+        children: [
+          {
+            label: 'Play',
+            id: 'play'
+          },
+          {
+            label: 'Pause',
+            id: 'pause'
+          },
+          {
+            label: 'Stop',
+            id: 'stop'
+          }
+        ]
+      },
+      {
         label: 'Mapa',
         children: [
           {
@@ -106,6 +123,7 @@ class Menu {
   }
 
   menuBtnActionHandler($target) {
+    console.log({ action: $target.attr('id'), algo: '123' })
     this.emit('action', { action: $target.attr('id'), algo: '123' })
   }
 }

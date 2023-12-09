@@ -3,10 +3,11 @@ import $ from 'jquery';
 class Cosita {
   constructor(id, map, spawn) {
     this.id = id;
+    this.type = 'cosita';
     this.width = 15;
     this.height = 15;
     this.isMoving = false;
-    this.color = '#fff';
+    this.selected = false;
     this.speed = 3;
     
     this.map = map;
@@ -38,14 +39,6 @@ class Cosita {
     delete this.listeners[method];
   }
 
-  select () {
-    this.color = '#f5f230';
-  }
-
-  deselect () {
-    this.color = '#fff';
-  }
-
   centerPosition(x, y) {
     let centerX = x * this.map.tileSize + this.map.tileSize / 2 - this.width / 2;
     let centerY =  y * this.map.tileSize + this.map.tileSize / 2 - this.height / 2;
@@ -54,7 +47,6 @@ class Cosita {
       y: centerY
     }
   }
-
 
   keyAction(keyName) {
     let x = this.x;
@@ -112,80 +104,70 @@ class Cosita {
     }
   }
 
-  moveTo(endX, endY) {
-    const tile = this.currentTile()
-    this.currentPath = this.map.search(tile.x, tile.y, endX, endY);
-    this.followPath();
-  }
+  update() {
+    if (this.selected === true) {
+      this.color = "#f5f230";
+    } else {
+      this.color = "#fff";
+    }
 
-  async followPath() {
-    if (this.currentPath.length < 1) {
+    if (this.currentPath === null || this.currentPath.length < 1) {
       return false;
     }
-    let self = this
+
+    const targetCell = this.currentPath[0];
+
+    if (!targetCell) {
+      return false;
+    }
+
+    let targetPosX = targetCell.left + targetCell.size / 2 - this.width / 2;
+    let targetPosY = targetCell.top + targetCell.size / 2 - this.height / 2;
     
-    self.takeStep()
-      .then(() => {
-        self.currentPath.shift();
-        if (self.currentPath.length > 0) {
-          const last = self.currentPath[self.currentPath.length -1]
-          self.moveTo(last.x, last.y);
-        }
-      })
+    let diffX = Math.abs(parseInt(this.x - targetPosX));
+    let diffY = Math.abs(parseInt(this.y - targetPosY));
+
+    let nextX = this.x;
+    let nextY = this.y;
+
+    if (diffX >= 1) {
+      if (targetPosX > this.x) {
+        nextX += this.speed; 
+      } else if (targetPosX < this.x) {
+        nextX -= this.speed; 
+      }
+    }
+
+    if (diffY >= 1) {
+      if (targetPosY > this.y) {
+        nextY += this.speed;
+      } else if (targetPosY < this.y) {
+        nextY -= this.speed;
+      }
+    }
+
+    this.x = nextX
+    this.y = nextY
+
+    if (diffY <= 1 && diffX <= 1) {
+      this.currentPath.shift();
+      targetCell.planned = false;
+    }
   }
 
-  takeStep() {
-    let self = this;
-    const targetCell = self.currentPath[1];
-
-    return new Promise((resolve) => {
-      if (self.isMoving || !targetCell) {
-        return resolve();
-      }
-      
-      self.isMoving = true;
-
-      let cicles = 0;
-
-      let targetPosX = targetCell.left + targetCell.size / 2 - self.width / 2;
-      let targetPosY = targetCell.top + targetCell.size / 2 - self.height / 2;
-
-      this.interval = setInterval(() => {
-        
-        let diffX = Math.abs(parseInt(self.x - targetPosX));
-        let diffY = Math.abs(parseInt(self.y - targetPosY));
-
-        let nextX = self.x;
-        let nextY = self.y;
-
-        if (diffX >= 1) {
-          if (targetPosX > self.x) {
-            nextX += this.speed; 
-          } else if (targetPosX < self.x) {
-            nextX -= this.speed; 
-          }
-        }
-
-        if (diffY >= 1) {
-          if (targetPosY > self.y) {
-            nextY += this.speed;
-          } else if (targetPosY < self.y) {
-            nextY -= this.speed;
-          }
-        }
-
-        self.x = nextX
-        self.y = nextY
-
-        if (diffY <= 1 && diffX <= 1 || cicles >= 500) {
-
-          self.stopMoving();
-          resolve(targetCell);
-        }
-
-        cicles++;
-      }, 10)
-    })
+  moveTo(endX, endY) {
+    const tile = this.currentTile()
+    if (this.currentPath && this.currentPath.length > 1) {
+      this.currentPath.map(tile => {
+        tile.planned = false;
+        return tile;
+      });
+    }
+    this.currentPath = this.map.search(tile.x, tile.y, endX, endY);
+    this.currentPath.map(tile => {
+      tile.planned = true;
+      return tile;
+    });
   }
 
   detectCollision(targetX, targetY) {
@@ -200,7 +182,7 @@ class Cosita {
     }
 
     if (nextCell.type !== 'path') {
-      this.map.grid[cellX][cellY].color = "#f53051";
+      // this.map.grid[cellX][cellY].color = "#f53051";
       return nextCell;
     }
 
@@ -214,16 +196,7 @@ class Cosita {
     this.isMoving = false;
   }
 
-  get position() {
-    return [this.x, this.y];
-  }
-
-  get size() {
-    return [this.width, this.height];
-  }
-
   draw (ctx) {
-    // const pos = this.centerPosition(this.x, this.y)
     ctx.beginPath();
     ctx.rect(this.x, this.y, this.width, this.height);
     ctx.fillStyle = this.color;
