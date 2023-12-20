@@ -44,11 +44,12 @@ class Jueguito {
       return false;
     }
 
-    if (!this.requestId) {
+    if (eventKey === 'r') {
+      this.generateMap();
       return false;
     }
 
-    if (this.object_selected && this.object_selected === 'cosita') {
+    if (this.object_selected && this.object_selected.type === 'cosita') {
       this.object_selected.keyAction(eventKey);
     }
   }
@@ -79,8 +80,10 @@ class Jueguito {
       const top = mouseY >= cosita.y;
       const bottom = mouseY <= (cosita.y + cosita.height);
       cosita.selected = false
+      cosita.color = "#fff";
       if (left === true && right === true && top === true && bottom === true  ) {
         cosita.selected = true;
+        cosita.color = "#f5f230";
         match = cosita;
       }
     });
@@ -102,7 +105,7 @@ class Jueguito {
   generateMap(grid = null) {
     const self = this;
     let cols = grid ? grid.length : 8;
-    let rows = grid ? grid[0].length : 8;
+    let rows = grid ? grid[0].length : 9;
     this.mapa = new Mapa(this.id, cols, rows);
     $('canvas').remove();
     this.ctx = null;
@@ -199,9 +202,6 @@ class Jueguito {
     this.mapa.drawMap(this.ctx);
 
     this.updateCositas();
-
-    // this.menu.selectedItem = this.object_selected;
-
     this.menu.showInfo(this.object_selected);
 
     this.drawCositas();
@@ -223,7 +223,7 @@ class Jueguito {
   }
 
   cositasColition () {
-    for (let y = 0; y < this.mapa.grid.length; y++) {
+    /* for (let y = 0; y < this.mapa.grid.length; y++) {
       for (let x = 0; x < this.mapa.grid[y].length; x++) {
         const tile = this.mapa.grid[y][x];
         tile.occupied = false;
@@ -242,7 +242,7 @@ class Jueguito {
         
       }
       
-    }
+    } */
   }
 
 }

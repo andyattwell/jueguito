@@ -56,6 +56,7 @@ class Cosita {
   }
 
   keyAction(keyName) {
+    console.log({keyName})
     let x = this.x;
     let y = this.y;
     let targetX = this.x;
@@ -90,8 +91,8 @@ class Cosita {
         break;
     }
 
-    const collition = this.detectCollision(targetX, targetY);
-
+    const collition = this.detectCollitionV2(targetX, targetY);
+    console.log({collition})
     if (collition) {
       return false;
     }
@@ -112,19 +113,24 @@ class Cosita {
   }
 
   update() {
-    if (this.selected === true) {
-      this.color = "#f5f230";
-    } else {
-      this.color = "#fff";
-    }
+    // if (this.selected === true) {
+    //   this.color = "#f5f230";
+    // } else {
+    //   this.color = "#fff";
+    // }
 
     if (this.currentPath === null || this.currentPath.length < 1) {
       return false;
     }
 
-    const targetCell = this.currentPath[0];
+    let targetCell = this.currentPath[0];
 
     if (!targetCell) {
+      return false;
+    }
+
+    if (targetCell !== this.current && (targetCell.type !== 'path' || targetCell.occupied == true)) {
+      this.moveTo(this.current.x, this.current.y)
       return false;
     }
 
@@ -161,8 +167,10 @@ class Cosita {
       targetCell.planned = false;
       
       if (!this.current || this.current != targetCell) {
+        this.current.occupied = false;
         this.lastTile = this.current;
         this.current = targetCell;
+        this.current.occupied = true;
       }
 
       const last = this.currentPath[this.currentPath.length-1];
@@ -191,6 +199,82 @@ class Cosita {
       tile.planned = true;
       return tile;
     });
+  }
+
+  detectCollitionV2(targetX, targetY) {
+    const self  = this;
+    let collition = false
+    // const cellX = parseInt(targetX / this.map.tileSize);
+    // const cellY = parseInt(targetY / this.map.tileSize);
+
+    // this.current = this.map.grid[cellX][cellY];
+    // if (this.current.type !== 'path') {
+    //   return true;
+    // }
+    // console.log({nextCell})
+    const myBoundry = {
+      left: targetX,
+      right: targetX + this.width,
+      top: targetY,
+      bottom: targetY + this.height,
+    }
+
+    // console.log('current', this.current)
+    for (let x = 0; x < this.map.cols; x++) {
+      for (let y = 0; y < this.map.rows; y++) {
+        const cell = this.map.grid[x][y];
+        
+        if(cell.type !== 'path') {
+          
+          const tileBoundry = {
+            left: cell.left,
+            right: cell.left + self.map.tileSize,
+            top: cell.top,
+            bottom: cell.top + self.map.tileSize,
+          }
+
+          const left = 
+            (myBoundry.left <= tileBoundry.right && 
+            myBoundry.left >= tileBoundry.left)
+
+          const right = 
+            (
+            myBoundry.right - this.width >= tileBoundry.left && 
+            myBoundry.left <= tileBoundry.right
+          )
+          
+          const top = 
+            (myBoundry.top <= tileBoundry.bottom &&
+            myBoundry.top >= tileBoundry.top)
+          
+          const bottom = 
+            (myBoundry.bottom >= tileBoundry.top &&
+            myBoundry.bottom <= tileBoundry.bottom)
+            
+          if ( 
+            (left && top) ||
+            (left && bottom) ||
+            (right && top) ||
+            (right && bottom) 
+          ) {
+            console.log(cell.id, {
+              left, 
+              right, 
+              top, 
+              bottom
+            })
+            console.log({myBoundry, tileBoundry})
+            cell.color = "#000";
+            collition = true;
+            console.log("ACA", cell.id, collition)
+          }
+
+        }   
+
+      }
+    }
+
+    return collition;
   }
 
   detectCollision(targetX, targetY) {

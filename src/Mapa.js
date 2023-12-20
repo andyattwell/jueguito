@@ -3,6 +3,7 @@ import $ from 'jquery';
 //constructor function to create all the grid points as objects containind the data for the points
 class GridPoint {
   constructor(x, y, id, type, left, top, size = 30) {
+    this.id = id; // tile id
     this.x = x; // x location of the grid point
     this.y = y; // y location of the grid point
     this.f = 0; // total cost function
@@ -11,7 +12,6 @@ class GridPoint {
     this.neighbors = []; // neighbors of the current grid point
     this.parent = undefined; // immediate source of the current grid point
     this.type = type; // path | water | rock
-    this.id = id; // tile id
     this.left = left; // x position in pixels
     this.top = top; // y position in pixels
     this.size = size; // size in pixels
@@ -81,7 +81,7 @@ class GridPoint {
 
 class Mapa {
   
-  constructor(containerId, cols = 16, rows = 10, ctx) {
+  constructor(containerId, cols = 8, rows = 9, ctx) {
     this.cols = cols;
     this.rows = rows;
     this.grid = new Array(cols);
@@ -194,6 +194,9 @@ class Mapa {
     let closedSet = [];
     let path = [];
 
+    if (end === start) {
+      return [];
+    }
     
     if (end.type !== 'path' || end.occupied === true) {
       let newEnd = null
@@ -215,7 +218,6 @@ class Mapa {
       }
 
       let current = openSet[lowestIndex];
-
       if (current === end) {
         let temp = current;
         path.push(temp);
@@ -254,6 +256,11 @@ class Mapa {
         let possibleG = current.g + 1;
   
         if (!openSet.includes(neighbor)) {
+
+          // if (neighbor.type !== 'path' || neighbor.occupied == true) {
+          //   continue;
+          // }
+          
           neighbor.g = possibleG;
           neighbor.h = this.heuristic(neighbor, end);
           neighbor.f = neighbor.g + neighbor.h;
