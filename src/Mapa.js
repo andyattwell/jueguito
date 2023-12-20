@@ -93,8 +93,8 @@ class Mapa {
     this.offsetY = 0;
     this.ctx = ctx;
     this.viewArea = {
-      width: 16 * this.tileSize,
-      height: 9 * this.tileSize,
+      width: window.innerWidth,
+      height: window.innerHeight,
     }
 
     if (data) {
@@ -311,7 +311,7 @@ class Mapa {
         }
         break;
       case "s":
-        if (this.offsetY * -1 < this.rows * this.tileSize + this.tileSize - this.ctx.canvas.height) {
+        if (this.offsetY * -1 < this.rows * this.tileSize - this.ctx.canvas.height) {
           this.offsetY -= this.tileSize;
         }
         break;
@@ -330,23 +330,25 @@ class Mapa {
     }
   }
 
-  drawMap(ctx) {
+  drawMap(ctx, zoom) {
     const offsetX = this.offsetX;
     const offsetY = this.offsetY;
 
+    const tileSize = this.tileSize * zoom
+
     for (let i = 0; i < this.cols; i++) {
 
-      if (offsetX + i * this.tileSize < 0 || offsetX + i * this.tileSize > this.viewArea.width) {
+      if (offsetX + i * tileSize < 0 - tileSize || offsetX + i * tileSize > this.viewArea.width + tileSize) {
         continue;
       }
 
       for (let j = 0; j < this.rows; j++) {
-        if (offsetY + j * this.tileSize < 0 || offsetY + j * this.tileSize > this.viewArea.height) {
+        if (offsetY + j * tileSize < 0 - tileSize || offsetY + j * tileSize > this.viewArea.height + tileSize) {
           continue;
         }
         const tile = this.grid[i][j];
         ctx.beginPath();
-        ctx.rect(offsetX + i * this.tileSize, offsetY + j * this.tileSize, this.tileSize, this.tileSize);
+        ctx.rect(offsetX + i * tileSize, offsetY + j * tileSize, tileSize, tileSize);
         ctx.fillStyle = tile.getColor();
         ctx.fill();
         ctx.closePath();
@@ -355,12 +357,11 @@ class Mapa {
           ctx.stroke();
         }
 
-
         ctx.fillStyle = '#fff';
         ctx.font="10px Arial";
         ctx.strokeStyle = "#fff";
-        const textx = offsetX + i * this.tileSize + 5;
-        const texty = offsetY + j * this.tileSize + 20;
+        const textx = offsetX + i * this.tileSize * zoom + 5;
+        const texty = offsetY + j * this.tileSize * zoom + 20;
         ctx.fillText(tile.id, textx, texty);
 
       }

@@ -297,18 +297,18 @@ class Cosita {
 
   }
 
-  draw (ctx) {
+  draw (ctx, zoom) {
 
-    if (this.map.offsetX + this.x < 0 || this.map.offsetX + this.x > this.map.viewArea.width) {
+    if (this.map.offsetX + this.x * zoom  < 0 || this.map.offsetX + this.x * zoom  > this.map.viewArea.width) {
       return;
     }
 
-    if (this.map.offsetY + this.y < 0 || this.map.offsetY + this.y > this.map.viewArea.height) {
+    if (this.map.offsetY + this.y * zoom  < 0 || this.map.offsetY + this.y * zoom  > this.map.viewArea.height) {
       return;
     }
 
     ctx.beginPath();
-    ctx.rect(this.map.offsetX + this.x, this.map.offsetY + this.y, this.width, this.height);
+    ctx.rect(this.map.offsetX + this.x * zoom , this.map.offsetY + this.y * zoom , this.width * zoom, this.height * zoom);
     ctx.fillStyle = this.color;
     ctx.fill();
     ctx.closePath();

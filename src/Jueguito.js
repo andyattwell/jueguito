@@ -16,6 +16,7 @@ class Jueguito {
     this.canvas = null;
     this.ctx = null;
     this.requestId = null;
+    this.zoom = 1;
   }
 
   async start() {
@@ -53,8 +54,8 @@ class Jueguito {
     self.ctx = this.canvas[0].getContext('2d');
 
     this.mapa = new Mapa(self.ctx, cols, rows, grid);
-    $canvas.attr('width', this.mapa.viewArea.width);
-    $canvas.attr('height',this.mapa.viewArea.height);
+    $canvas.attr('width', window.innerWidth);
+    $canvas.attr('height',window.innerHeight);
 
     this.cositas = [];
     this.addCositas(2);
@@ -69,6 +70,20 @@ class Jueguito {
       self.rightClickHandler(e)
     });
 
+    $(this.canvas).on("contextmenu", (e) => {
+      self.rightClickHandler(e)
+    });
+    
+    $(window).bind('mousewheel DOMMouseScroll', function(event){
+      if (event.originalEvent.wheelDelta > 0 || event.originalEvent.detail < 0) {
+        if (self.zoom < 2){
+          self.zoom += 0.1;
+        }
+      }
+      else if (self.zoom > 0.6){
+        self.zoom -= 0.1;
+      }
+    });
   }
 
   addCositas(amount = 1) {
@@ -110,9 +125,9 @@ class Jueguito {
 
   render (now) {
     this.requestId = undefined;
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     
-    this.mapa.drawMap(this.ctx);
+    this.mapa.drawMap(this.ctx, this.zoom);
 
     this.updateCositas();
     this.menu.showInfo(this.object_selected);
@@ -131,7 +146,7 @@ class Jueguito {
   drawCositas () {
     for (let index = 0; index < this.cositas.length; index++) {
       const cosita = this.cositas[index];
-      cosita.draw(this.ctx);
+      cosita.draw(this.ctx, this.zoom);
     }
   }
 
@@ -202,10 +217,10 @@ class Jueguito {
     })
 
     self.cositas.forEach(cosita => {
-      const left = cosita.x <= mouseX;
-      const right = (cosita.x + cosita.width) >= mouseX;
-      const top = mouseY >= cosita.y;
-      const bottom = mouseY <= (cosita.y + cosita.height);
+      const left = cosita.x * this.zoom <= mouseX;
+      const right = (cosita.x + cosita.width) * this.zoom >= mouseX;
+      const top = mouseY >= cosita.y * this.zoom;
+      const bottom = mouseY <= (cosita.y + cosita.height) * this.zoom;
       cosita.selected = false
       cosita.color = "#fff";
       if (left === true && right === true && top === true && bottom === true  ) {
@@ -216,8 +231,8 @@ class Jueguito {
     });
 
     if (!match) {
-      const cellX = parseInt(mouseX / self.mapa.tileSize);
-      const cellY = parseInt(mouseY / self.mapa.tileSize);
+      const cellX = parseInt((mouseX / self.mapa.tileSize) / this.zoom);
+      const cellY = parseInt((mouseY / self.mapa.tileSize) / this.zoom);
 
       const tile = self.mapa.grid[cellX][cellY];
       if (tile) {
@@ -245,8 +260,8 @@ class Jueguito {
     if (this.mapa.offsetY < 0) {
       mouseY -= this.mapa.offsetY
     }
-    const cellX = parseInt(mouseX / this.mapa.tileSize);
-    const cellY = parseInt(mouseY / this.mapa.tileSize);
+    const cellX = parseInt(mouseX / this.mapa.tileSize / this.zoom);
+    const cellY = parseInt(mouseY / this.mapa.tileSize / this.zoom);
 
     const tile = this.mapa.grid[cellX][cellY];
     if (
