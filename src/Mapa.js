@@ -81,19 +81,28 @@ class GridPoint {
 
 class Mapa {
   
-  constructor(containerId, cols = 8, rows = 9, ctx) {
+  constructor(ctx, cols = 8, rows = 9, data) {
     this.cols = cols;
     this.rows = rows;
     this.grid = new Array(cols);
     this.closedSet = [];
     this.openSet = [];
     this.tileSize = 30;
-    this.tileArray = [];
-    this.containerId = containerId;
-    this.$container = $("#"+containerId);
-    this.map = null;
     this.listeners = {};
-    this.ctx = ctx
+    this.offsetX = 0;
+    this.offsetY = 0;
+    this.ctx = ctx;
+    this.viewArea = {
+      width: 16 * this.tileSize,
+      height: 9 * this.tileSize,
+    }
+
+    if (data) {
+      this.cols = data.length;
+      this.rows = data[0].length;
+    }
+
+    this.init(data);
   }
 
   emit(method, payload = null) {
@@ -112,11 +121,6 @@ class Mapa {
   }
 
   init(data = null) {
-       
-    let $map = $('<div class="map">');
-    $map.css('width', this.tileArray.length * this.tileSize)
-    $map.css('height', this.tileArray.length * this.tileSize)
-
     //making a 2D array
     for (let i = 0; i < this.cols; i++) {
       this.grid[i] = new Array(this.rows);
@@ -299,13 +303,50 @@ class Mapa {
     }
   }
 
+  scroll(keyName) {
+    switch (keyName) {
+      case "w":
+        if (this.offsetY < 0) {
+          this.offsetY += this.tileSize;
+        }
+        break;
+      case "s":
+        if (this.offsetY * -1 < this.rows * this.tileSize + this.tileSize - this.ctx.canvas.height) {
+          this.offsetY -= this.tileSize;
+        }
+        break;
+      case "a":
+        if (this.offsetX < 0) {
+          this.offsetX += this.tileSize
+        }
+        break;
+      case "d":
+        if (this.offsetX * -1 < this.cols * this.tileSize + this.tileSize - this.ctx.canvas.width) {
+          this.offsetX -= this.tileSize
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
   drawMap(ctx) {
+    const offsetX = this.offsetX;
+    const offsetY = this.offsetY;
 
     for (let i = 0; i < this.cols; i++) {
+
+      if (offsetX + i * this.tileSize < 0 || offsetX + i * this.tileSize > this.viewArea.width) {
+        continue;
+      }
+
       for (let j = 0; j < this.rows; j++) {
+        if (offsetY + j * this.tileSize < 0 || offsetY + j * this.tileSize > this.viewArea.height) {
+          continue;
+        }
         const tile = this.grid[i][j];
         ctx.beginPath();
-        ctx.rect(i * this.tileSize, j * this.tileSize, this.tileSize, this.tileSize);
+        ctx.rect(offsetX + i * this.tileSize, offsetY + j * this.tileSize, this.tileSize, this.tileSize);
         ctx.fillStyle = tile.getColor();
         ctx.fill();
         ctx.closePath();
@@ -318,8 +359,8 @@ class Mapa {
         ctx.fillStyle = '#fff';
         ctx.font="10px Arial";
         ctx.strokeStyle = "#fff";
-        const textx = i * this.tileSize + 5;
-        const texty = j * this.tileSize + 20;
+        const textx = offsetX + i * this.tileSize + 5;
+        const texty = offsetY + j * this.tileSize + 20;
         ctx.fillText(tile.id, textx, texty);
 
       }

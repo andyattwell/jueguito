@@ -198,6 +198,8 @@ class Menu {
     if (item.type === 'cosita') {
       $inspactor.append('<p>Cosita ID: ' + item.id + "</p>")
       $inspactor.append('<p>X: ' + item.x + " - Y: " + item.y +"</p>")
+      $inspactor.append('<p>OffsetX: ' + item.map.offsetX + " - OffsetY: " + item.map.offsetY +"</p>")
+      $inspactor.append('<p>Canvas width: ' + item.map.ctx.canvas.width + " - Height: " + item.map.ctx.canvas.height +"</p>")
       $inspactor.append('<p>Current Tile X: ' + item.currentTile().x + " - Y: " + item.currentTile().y +"</p>")
       if (item.currentPath && item.currentPath.length >= 1) {
         $inspactor.append('<p>Destination X: ' + item.currentPath[item.currentPath.length - 1].x + " - Y: " + item.currentPath[item.currentPath.length - 1].y +"</p>")

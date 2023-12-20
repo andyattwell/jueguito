@@ -37,6 +37,127 @@ class Jueguito {
     // this.generateMap();
   }
 
+  generateMap(grid = null) {
+    const self = this;
+    let cols = grid ? grid.length : 60;
+    let rows = grid ? grid[0].length : 60;
+    
+    
+    $('canvas').remove();
+    this.ctx = null;
+
+    const $canvas = $('<canvas>');
+    $canvas.css('background-color', '#030303');
+    $("#"+this.id).append($canvas);
+    this.canvas = $canvas;
+    self.ctx = this.canvas[0].getContext('2d');
+
+    this.mapa = new Mapa(self.ctx, cols, rows, grid);
+    $canvas.attr('width', this.mapa.viewArea.width);
+    $canvas.attr('height',this.mapa.viewArea.height);
+
+    this.cositas = [];
+    this.addCositas(2);
+    
+    this.play();
+
+    $(this.canvas).on('click', (e) => {
+      self.clickHandler(e);
+    })
+
+    $(this.canvas).on("contextmenu", (e) => {
+      self.rightClickHandler(e)
+    });
+
+  }
+
+  addCositas(amount = 1) {
+    this.cositas = [];
+
+    for (let index = 0; index < amount; index++) {
+      // let spawn = this.mapa.pickSpawn();
+      let spawn = {x: 1, y: 1};
+      let cosita = new Cosita(index, this.mapa, spawn);
+      this.cositas.push(cosita);
+    }
+  }
+
+  play() {
+    const self = this;
+    if (!this.requestId) {
+      $("#"+this.id).children('#pause-menu').remove()
+      this.requestId = window.requestAnimationFrame((time) => {
+        self.render(time)
+      });
+    }
+  }
+
+  stop() {
+    if (this.requestId) {
+      $("#"+this.id).append("<div id='pause-menu'><p>Pause</p></div>")
+      window.cancelAnimationFrame(this.requestId);
+      this.requestId = undefined;
+    }
+  }
+
+  pause () {
+    if (!this.requestId) {
+      this.play()
+    } else {
+      this.stop()
+    }
+  }
+
+  render (now) {
+    this.requestId = undefined;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    this.mapa.drawMap(this.ctx);
+
+    this.updateCositas();
+    this.menu.showInfo(this.object_selected);
+
+    this.drawCositas();
+    this.play();
+    // this.cositasColition();
+  }
+
+  updateCositas() {
+    this.cositas.forEach((cosita) => {
+      cosita.update();
+    })
+  }
+
+  drawCositas () {
+    for (let index = 0; index < this.cositas.length; index++) {
+      const cosita = this.cositas[index];
+      cosita.draw(this.ctx);
+    }
+  }
+
+  // cositasColition () {
+  //   for (let y = 0; y < this.mapa.grid.length; y++) {
+  //     for (let x = 0; x < this.mapa.grid[y].length; x++) {
+  //       const tile = this.mapa.grid[y][x];
+  //       tile.occupied = false;
+
+  //       for (let c = 0; c < this.cositas.length; c++) {
+  //         const cosita = this.cositas[c];
+  //         if (
+  //           cosita.x >= tile.left && 
+  //           cosita.x <= tile.left + tile.size &&
+  //           cosita.y >= tile.top &&
+  //           cosita.y <= tile.top + tile.size
+  //         ) {
+  //           tile.occupied = true
+  //         }
+  //       }
+        
+  //     }
+      
+  //   }
+  // }
+
   keyActionHandler(eventKey) {
 
     if (eventKey === 'p') {
@@ -49,9 +170,10 @@ class Jueguito {
       return false;
     }
 
-    if (this.object_selected && this.object_selected.type === 'cosita') {
-      this.object_selected.keyAction(eventKey);
-    }
+    // if (this.object_selected && this.object_selected.type === 'cosita') {
+    //   this.object_selected.keyAction(eventKey);
+    // }
+    this.mapa.scroll(eventKey);
   }
 
   clickHandler(e) {
@@ -62,9 +184,14 @@ class Jueguito {
 
     const self = this;
     const position = $('canvas').position();
-    const mouseX = e.pageX;
-    const mouseY = e.pageY - position.top;
-
+    let mouseX = e.pageX;
+    if (this.mapa.offsetX < 0) {
+      mouseX -= this.mapa.offsetX
+    }
+    let mouseY = e.pageY - position.top;
+    if (this.mapa.offsetY < 0) {
+      mouseY -= this.mapa.offsetY
+    }
     let match = null;
 
     self.mapa.grid.forEach(cols => {
@@ -102,39 +229,6 @@ class Jueguito {
     self.object_selected = match
   }
 
-  generateMap(grid = null) {
-    const self = this;
-    let cols = grid ? grid.length : 8;
-    let rows = grid ? grid[0].length : 9;
-    this.mapa = new Mapa(this.id, cols, rows);
-    $('canvas').remove();
-    this.ctx = null;
-
-    const $canvas = $('<canvas>');
-    $canvas.attr('width', cols * this.mapa.tileSize);
-    $canvas.attr('height', rows * this.mapa.tileSize);
-    $canvas.css('background-color', '#030303');
-    $("#"+this.id).append($canvas);
-    this.canvas = $canvas;
-    self.ctx = this.canvas[0].getContext('2d');
-
-    this.mapa.init(grid);
-
-    this.cositas = [];
-    this.addCositas(2);
-    
-    this.play();
-
-    $(this.canvas).on('click', (e) => {
-      self.clickHandler(e);
-    })
-
-    $(this.canvas).on("contextmenu", (e) => {
-      self.rightClickHandler(e)
-    });
-
-  }
-
   rightClickHandler(e) {
     e.preventDefault();
     
@@ -143,9 +237,14 @@ class Jueguito {
     }
 
     const position = $('canvas').position();
-    const mouseX = e.pageX;
-    const mouseY = e.pageY - position.top;
-
+    let mouseX = e.pageX;
+    if (this.mapa.offsetX < 0) {
+      mouseX -= this.mapa.offsetX
+    }
+    let mouseY = e.pageY - position.top;
+    if (this.mapa.offsetY < 0) {
+      mouseY -= this.mapa.offsetY
+    }
     const cellX = parseInt(mouseX / this.mapa.tileSize);
     const cellY = parseInt(mouseY / this.mapa.tileSize);
 
@@ -158,91 +257,6 @@ class Jueguito {
       // }
     }
     return false;
-  }
-
-  addCositas(amount = 1) {
-    this.cositas = [];
-
-    for (let index = 0; index < amount; index++) {
-      let spawn = this.mapa.pickSpawn();
-      let cosita = new Cosita(index, this.mapa, spawn);
-      this.cositas.push(cosita);
-    }
-  }
-
-  play() {
-    const self = this;
-    if (!this.requestId) {
-      $("#"+this.id).children('#pause-menu').remove()
-      this.requestId = window.requestAnimationFrame((time) => {
-        self.render(time)
-      });
-    }
-  }
-
-  stop() {
-    if (this.requestId) {
-      $("#"+this.id).append("<div id='pause-menu'><p>Pause</p></div>")
-      window.cancelAnimationFrame(this.requestId);
-      this.requestId = undefined;
-    }
-  }
-
-  pause () {
-    if (!this.requestId) {
-      this.play()
-    } else {
-      this.stop()
-    }
-  }
-
-  render (now) {
-    this.requestId = undefined;
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.mapa.drawMap(this.ctx);
-
-    this.updateCositas();
-    this.menu.showInfo(this.object_selected);
-
-    this.drawCositas();
-    this.play();
-    this.cositasColition();
-  }
-
-  updateCositas() {
-    this.cositas.forEach((cosita) => {
-      cosita.update();
-    })
-  }
-
-  drawCositas () {
-    for (let index = 0; index < this.cositas.length; index++) {
-      const cosita = this.cositas[index];
-      cosita.draw(this.ctx);
-    }
-  }
-
-  cositasColition () {
-    /* for (let y = 0; y < this.mapa.grid.length; y++) {
-      for (let x = 0; x < this.mapa.grid[y].length; x++) {
-        const tile = this.mapa.grid[y][x];
-        tile.occupied = false;
-
-        for (let c = 0; c < this.cositas.length; c++) {
-          const cosita = this.cositas[c];
-          if (
-            cosita.x >= tile.left && 
-            cosita.x <= tile.left + tile.size &&
-            cosita.y >= tile.top &&
-            cosita.y <= tile.top + tile.size
-          ) {
-            tile.occupied = true
-          }
-        }
-        
-      }
-      
-    } */
   }
 
 }
