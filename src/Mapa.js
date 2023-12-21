@@ -72,6 +72,7 @@ class Tile extends GridPoint{
     const b = Math.round(bA + (bB - bA) * amount).toString(16).padStart(2, '0');
     return '#' + r + g + b;
   }
+
 }
 
 class Rock extends Tile {
@@ -243,8 +244,9 @@ class Mapa {
     return data;
   }
 
-  search(startX, startY, endX, endY) {
+  findPath(startX, startY, endX, endY) {
     
+    console.log('findPath')
     let start = this.grid[startX][startY];
     let end = this.grid[endX][endY];
     let openSet = [start];
@@ -254,7 +256,7 @@ class Mapa {
     if (end === start) {
       return [];
     }
-    
+
     if (end.walkable !== true || end.occupied === true) {
       let newEnd = null
       for (let index = 0; index < end.neighbors.length; index++) {
@@ -310,13 +312,14 @@ class Mapa {
           continue;
         }
 
+        if (neighbor.walkable !== true || neighbor.occupied == true) {
+          continue;
+        }
+
         let possibleG = current.g + 1;
   
         if (!openSet.includes(neighbor)) {
 
-          // if (neighbor.type !== 'path' || neighbor.occupied == true) {
-          //   continue;
-          // }
           
           neighbor.g = possibleG;
           neighbor.h = this.heuristic(neighbor, end);
@@ -356,26 +359,26 @@ class Mapa {
     }
   }
 
-  scroll(keyName) {
+  scroll(keyName, zoom) {
     switch (keyName) {
       case "w":
         if (this.offsetY < 0) {
-          this.offsetY += this.tileSize;
+          this.offsetY += this.tileSize * zoom;
         }
         break;
       case "s":
-        if (this.offsetY * -1 < this.rows * this.tileSize - this.ctx.canvas.height) {
-          this.offsetY -= this.tileSize;
+        if (this.offsetY * -1 < (this.rows * this.tileSize) * zoom - this.ctx.canvas.height) {
+          this.offsetY -= this.tileSize * zoom;
         }
         break;
       case "a":
         if (this.offsetX < 0) {
-          this.offsetX += this.tileSize
+          this.offsetX += this.tileSize * zoom
         }
         break;
       case "d":
-        if (this.offsetX * -1 < this.cols * this.tileSize + this.tileSize - this.ctx.canvas.width) {
-          this.offsetX -= this.tileSize
+        if (this.offsetX * -1 < (this.cols * this.tileSize) * zoom - this.ctx.canvas.width) {
+          this.offsetX -= this.tileSize * zoom
         }
         break;
       default:
@@ -463,6 +466,35 @@ class Mapa {
 
     return spawn || this.grid[0][0];
   }
+
+  replaceTile(tile, type) {
+    // let entity = Path;
+    let color = "#51d343";
+    let walkable = true;
+    if (type === 'grass') {
+      // entity = Grass;
+      walkable = true;
+      color = "#aa9f2b";
+    } else if (type === 'rock') {
+      // entity = Rock;
+      walkable = false;
+      color = "#685e70";
+    } else if (type === 'water') {
+      // entity = Water;
+      walkable = false;
+      color = "#2093d5";
+    }
+
+    this.grid[tile.x][tile.y].type = type;
+    this.grid[tile.x][tile.y].color = color;
+    this.grid[tile.x][tile.y].walkable = walkable;
+    // this.grid[tile.x][tile.y] = new entity(tile.x, tile.y, tile.id, tile.size)
+    // this.updateNeighbors();
+  }
+}
+
+export {
+  Rock, Path, Grass, Water
 }
 
 export default Mapa

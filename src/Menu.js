@@ -1,5 +1,5 @@
 import $ from 'jquery';
-import { Dropdown } from 'bootstrap';
+import { Rock, Path, Grass, Water } from './Mapa';
 
 class Menu {
   constructor(parent) {
@@ -150,8 +150,6 @@ class Menu {
     $inspactor.html('<div class="content">');
     $inspactor.append('<a href="#" class="toggle"></a>')
 
-    
-
     if (item.type === 'cosita') {
       $inspactor.children('.content').append('<h5>Cosita ID: ' + item.id + "</h5>")
       $inspactor.children('.content').append('<p>X: ' + item.x + " - Y: " + item.y +"</p>")
@@ -172,6 +170,7 @@ class Menu {
   }
 
   showTileInfo(tile) {
+    let self = this;
     let $inspactor = $('#inspector > .content');
     const htmlResult = `
       <h5>Tile id: ${tile.id}</h5>
@@ -206,7 +205,10 @@ class Menu {
     $inspactor.html(htmlResult);
 
     $("select#tileType").on('change', (e) => {
-      tile.type = $(e.target).val()
+      console.log('ACA', self.parent)
+      // tile.setType($(e.target).val());
+      let type = $(e.target).val();
+      self.parent.mapa.replaceTile(tile, type)
     })
   }
 

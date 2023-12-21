@@ -125,10 +125,28 @@ class Cosita {
       return false;
     }
 
-    if (targetCell !== this.current && (targetCell.walkable !== true || targetCell.occupied == true)) {
-      this.moveTo(this.current.x, this.current.y)
-      return false;
-    }
+    // Avoid checking current tile beacause its occupied
+    // if (targetCell !== this.current) {
+    //   if ((targetCell.walkable !== true || targetCell.occupied == true)) {
+    //     // let newTarget = null;
+    //     // // Look for a new free and walkable target tile
+    //     // for (let i = 0; i < targetCell.neighbors.length ; i++) {
+    //     //   const tile = targetCell.neighbors[i];
+    //     //   if (tile.occupied == false && tile.walkable == true) {
+    //     //     newTarget = tile
+    //     //   }
+    //     // }
+    //     // if (newTarget) {
+    //       // }
+    //       console.log('Moving to new target')
+    //       const last = this.currentPath[this.currentPath.length-1];
+    //       this.moveTo(last.x, last.y)
+    //       return false;
+    //   }
+    //   // const last = this.currentPath[this.currentPath.length-1];
+    //   // this.moveTo(last.x, last.y)
+      
+    // }
 
     let targetPosX = targetCell.left + targetCell.size / 2 - this.width / 2;
     let targetPosY = targetCell.top + targetCell.size / 2 - this.height / 2;
@@ -187,11 +205,15 @@ class Cosita {
       });
     }
 
-    this.currentPath = this.map.search(tile.x, tile.y, endX, endY).filter((tile) => tile !== self.current);
+    this.currentPath = this.map.findPath(tile.x, tile.y, endX, endY)
+      .filter((tile) => tile !== self.current);
+      
+    console.log(this.currentPath)
 
     if (this.currentPath.length === 0) {
       this.currentPath = [this.current]
     }
+
     this.currentPath.map(tile => {
       tile.planned = true;
       return tile;

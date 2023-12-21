@@ -252,7 +252,7 @@ class Jueguito {
     //   this.object_selected.keyAction(eventKey);
     // }
     if (this.mapa) {
-      this.mapa.scroll(eventKey);
+      this.mapa.scroll(eventKey, this.zoom);
     }
   }
 
