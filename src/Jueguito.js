@@ -88,15 +88,53 @@ class Jueguito {
     });
     
     $(window).bind('mousewheel DOMMouseScroll', function(event){
+      const position = $('canvas').position();
+      let mouseX = event.pageX;
+      let mouseY = event.pageY - position.top;
+      
+
+      // console.log({mouseX, mouseY})
       if ($(event.target).is('canvas')) {
+        const cellX = parseInt((mouseX / self.mapa.tileSize) / self.zoom);
+        const cellY = parseInt((mouseY / self.mapa.tileSize) / self.zoom);
+
+
         if (event.originalEvent.wheelDelta > 0 || event.originalEvent.detail < 0) {
           if (self.zoom < 2){
             self.zoom += 0.1;
           }
-        }
-        else if (self.zoom > 0.6){
+
+
+        } else if (self.zoom > 0.6){
           self.zoom -= 0.1;
         }
+        // self.mapa.offsetY = mouseY
+
+        // self.mapa.offsetX = mouseX
+        // const tile = self.mapa.grid[cellX][cellY];
+
+        // if (tile) {
+        //   console.log({tile})
+        //   let newY = -tile.top - self.mapa.viewArea.height / 2;
+
+        //   if (newY <= 0 && newY < self.mapa.rows * self.mapa.tileSize) {            
+        //     self.mapa.offsetY = newY;
+        //   } else {
+        //     self.mapa.offsetY = 0
+        //   }
+
+        //   let newX = -tile.left - self.mapa.viewArea.width / 2;
+
+        //   if (newX <= 0 && newX < self.mapa.cols * self.mapa.tileSize) {
+
+        //     self.mapa.offsetX = newX;
+
+        //   } else {
+        //     self.mapa.offsetX = 0
+        //   }
+        //   tile.selected = true;
+        // }
+        
       }
     });
 
@@ -152,14 +190,13 @@ class Jueguito {
   render (now) {
     this.requestId = undefined;
     this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    this.play();
+    
+    this.updateCositas();
     
     this.mapa.drawMap(this.ctx, this.zoom);
-
-    this.updateCositas();
-    // this.menu.showInfo(this.object_selected);
-
     this.drawCositas();
-    this.play();
+    // this.menu.showInfo(this.object_selected);
     // this.cositasColition();
   }
 
