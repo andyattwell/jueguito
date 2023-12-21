@@ -2,7 +2,7 @@ import $ from 'jquery';
 
 //constructor function to create all the grid points as objects containind the data for the points
 class GridPoint {
-  constructor(x, y, id) {
+  constructor(x, y) {
     this.x = x; // x location of the grid point
     this.y = y; // y location of the grid point
     this.f = 0; // total cost function
@@ -104,7 +104,7 @@ class Path extends Tile {
 class Grass extends Tile {
   constructor(x, y, id, size) {
     super(x, y, id, size);
-    this.type = 'path';
+    this.type = 'grass';
     this.walkable = true;
     this.color = "#51d343";
   }
@@ -112,28 +112,32 @@ class Grass extends Tile {
 
 class Mapa {
   
-  constructor(ctx, cols = 8, rows = 9, data) {
-    this.cols = cols;
-    this.rows = rows;
-    this.grid = new Array(cols);
+  constructor(ctx, data = null) {
+    this.cols = data.length ? data.length : 60;
+    this.rows = data.length ? data[0].length : 60;
+    this.grid = new Array(this.cols);
+    
     this.closedSet = [];
     this.openSet = [];
+    
     this.tileSize = 30;
+    
     this.listeners = {};
+    
     this.offsetX = 0;
     this.offsetY = 0;
+    
     this.ctx = ctx;
     this.viewArea = {
       width: window.innerWidth,
       height: window.innerHeight,
     }
 
-    if (data) {
-      this.cols = data.length;
-      this.rows = data[0].length;
+    if (data.length) {
+      this.import(data);
+    } else {
+      this.generate();
     }
-
-    this.init(data);
   }
 
   emit(method, payload = null) {
@@ -151,25 +155,12 @@ class Mapa {
     delete this.listeners[method];
   }
 
-  init(data = null) {
-    //making a 2D array
-    for (let i = 0; i < this.cols; i++) {
-      this.grid[i] = new Array(this.rows);
-    }
-
-    for (let x = 0; x < this.cols; x++) {
-      for (let y = 0; y < this.rows; y++) {
-        let tileData = {}
-        tileData.x = x;
-        tileData.y = y;
-        tileData.id = (x * this.cols) + y;
-        tileData.type = this.getRandomTile();
-        tileData.size = this.tileSize;
-
-        if (data) {
-          tileData = data[x][y];
-        }
-
+  import(data) {
+    this.grid = new Array(data.length);
+    for (let x = 0; x < data.length; x++) {
+      this.grid[x] = new Array(data[x].length);
+      for (let y = 0; y < data[x].length; y++) {
+        const tileData = data[x][y];
         let entity = Path;
         if (tileData.type === 'rock') {
           entity = Rock;
@@ -184,6 +175,34 @@ class Mapa {
           tileData.y, 
           tileData.id,
           tileData.size
+        );
+      }
+    }
+    this.updateNeighbors();
+  }
+
+  generate() {
+    //making a 2D array
+    for (let i = 0; i < this.cols; i++) {
+      this.grid[i] = new Array(this.rows);
+    }
+
+    for (let x = 0; x < this.cols; x++) {
+      for (let y = 0; y < this.rows; y++) {
+        let type = this.getRandomTile();
+        let entity = Path;
+        if (type === 'rock') {
+          entity = Rock;
+        } else if (type === 'water') {
+          entity = Water;
+        } else if (type === 'grass') {
+          entity = Grass;
+        }
+        this.grid[x][y] = new entity(
+          x,
+          y, 
+          (x * this.cols) + y,
+          this.tileSize
         );
       }
     }
@@ -216,8 +235,7 @@ class Mapa {
           type: tile.type,
           color: tile.color,
           id: tile.id,
-          left: tile.left,
-          top: tile.top
+          size: tile.size
         })
       }
       data.push(row)

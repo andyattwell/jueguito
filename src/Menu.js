@@ -86,10 +86,6 @@ class Menu {
 
     let $menu = $('<div class="navbar navbar-expand-sm navbar-dark bg-dark" id="app-menu">');
     let $container = $('<div class="container-fluid">')
-    // let $brandBtn = $('<a class="navbar-brand" href="#">Navbar</a>');
-
-    // $container.append($brandBtn);
-
     let $ul = $('<ul class="navbar-nav me-auto mb-2 mb-lg-0">');
 
     this.items.forEach((item) => {
@@ -154,9 +150,7 @@ class Menu {
     $inspactor.html('<div class="content">');
     $inspactor.append('<a href="#" class="toggle"></a>')
 
-    if (item.type === 'path' || item.type === 'water' || item.type === 'rock') {{
-      this.showTileInfo(item);
-    }}
+    
 
     if (item.type === 'cosita') {
       $inspactor.children('.content').append('<h5>Cosita ID: ' + item.id + "</h5>")
@@ -167,6 +161,8 @@ class Menu {
       if (item.currentPath && item.currentPath.length >= 1) {
         $inspactor.children('.content').append('<p>Destination X: ' + item.currentPath[item.currentPath.length - 1].x + " - Y: " + item.currentPath[item.currentPath.length - 1].y +"</p>")
       }
+    } else {
+      this.showTileInfo(item);
     }
 
     $('.toggle').on('click', function (e) {
@@ -229,16 +225,25 @@ class Menu {
       const file = e.target.files.item(0)
       const text = await file.text();
       const mapData = JSON.parse(text);
-      if(mapData.length > 0) {
-        self.emit('action', { action: 'generateMap', data: mapData })
-      }
+      self.emit('action', { action: 'generateMap', data: mapData })
       input.remove();
     })
 
   }
 
   saveMap() {
-    const mapStr = JSON.stringify(this.parent.mapa.exportGrid());
+    let cositas = this.parent.cositas.map((c) => {
+      return {
+        x: c.x,
+        y: c.y,
+      }
+    });
+    const data = {
+      grid: this.parent.mapa.exportGrid(),
+      cositas
+    }
+    console.log({data})
+    const mapStr = JSON.stringify(data);
     let file = new Blob([mapStr], {type: 'text/plain'});
     const filename = 'map.json';
 

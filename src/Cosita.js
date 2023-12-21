@@ -9,6 +9,7 @@ class Cosita {
     this.isMoving = false;
     this.selected = false;
     this.speed = 1;
+    this.color = "#FFFFFF"
     
     this.map = map;
     this.interval = null;
@@ -18,9 +19,9 @@ class Cosita {
     this.listeners = {};
     
     if (spawn) {
-      const pos = this.centerPosition(spawn.x, spawn.y);
-      this.x = pos.x;
-      this.y = pos.y;
+      // const pos = this.centerPosition(spawn.x, spawn.y);
+      this.x = spawn.x;
+      this.y = spawn.y;
     } else {
       this.x = 0;
       this.y = 0;
@@ -113,30 +114,25 @@ class Cosita {
   }
 
   update() {
-    // if (this.selected === true) {
-    //   this.color = "#f5f230";
-    // } else {
-    //   this.color = "#fff";
-    // }
 
     if (this.currentPath === null || this.currentPath.length < 1) {
       return false;
     }
 
     let targetCell = this.currentPath[0];
-
+    
     if (!targetCell) {
       return false;
     }
 
-    if (targetCell !== this.current && (targetCell.type !== 'path' || targetCell.occupied == true)) {
+    if (targetCell !== this.current && (targetCell.walkable !== true || targetCell.occupied == true)) {
       this.moveTo(this.current.x, this.current.y)
       return false;
     }
 
     let targetPosX = targetCell.left + targetCell.size / 2 - this.width / 2;
     let targetPosY = targetCell.top + targetCell.size / 2 - this.height / 2;
-    
+
     let diffX = Math.abs(parseInt(this.x - targetPosX));
     let diffY = Math.abs(parseInt(this.y - targetPosY));
 
@@ -181,6 +177,7 @@ class Cosita {
   }
 
   moveTo(endX, endY) {
+
     const tile = this.currentTile()
     const self = this;
     if (this.currentPath && this.currentPath.length >= 1) {
@@ -224,7 +221,7 @@ class Cosita {
       for (let y = 0; y < this.map.rows; y++) {
         const cell = this.map.grid[x][y];
         
-        if(cell.type !== 'path') {
+        if(cell.walkable !== true) {
           
           const tileBoundry = {
             left: cell.left,
@@ -288,7 +285,7 @@ class Cosita {
       return false;
     }
 
-    if (nextCell.type !== 'path') {
+    if (nextCell.walkable !== true) {
       // this.map.grid[cellX][cellY].color = "#f53051";
       return nextCell;
     }

@@ -36,10 +36,9 @@ class Jueguito {
       self.keyActionHandler(event.key);
     });
 
-    // this.generateMap();
   }
 
-  generateMap(grid = null) {
+  generateMap(data = null) {
     const self = this;
 
     if (this.mapa) {
@@ -49,8 +48,7 @@ class Jueguito {
       }
     }
 
-    let cols = grid ? grid.length : 60;
-    let rows = grid ? grid[0].length : 60;
+
     $('canvas').remove();
     this.ctx = null;
 
@@ -60,12 +58,20 @@ class Jueguito {
     this.canvas = $canvas;
     self.ctx = this.canvas[0].getContext('2d');
 
-    this.mapa = new Mapa(self.ctx, cols, rows, grid);
+    let grid = data?.grid ? data.grid : [];
+    this.mapa = new Mapa(self.ctx, grid);
+
     $canvas.attr('width', window.innerWidth);
     $canvas.attr('height',window.innerHeight);
 
-    this.cositas = [];
-    this.addCositas(2);
+    let cositas = [];
+    if (data?.cositas) {
+      cositas = data.cositas;
+    } else {
+      cositas.push({x:1, y:1})
+    }
+
+    self.addCositas(cositas);
     
     this.play();
 
@@ -104,12 +110,12 @@ class Jueguito {
     })
   }
 
-  addCositas(amount = 1) {
+  addCositas(cositas = []) {
     this.cositas = [];
 
-    for (let index = 0; index < amount; index++) {
+    for (let index = 0; index < cositas.length; index++) {
       // let spawn = this.mapa.pickSpawn();
-      let spawn = {x: 1, y: 1};
+      let spawn = { x: cositas[index].x, y: cositas[index].y };
       let cosita = new Cosita(index, this.mapa, spawn);
       this.cositas.push(cosita);
     }
