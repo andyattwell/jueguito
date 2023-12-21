@@ -2,8 +2,7 @@ import $ from 'jquery';
 
 //constructor function to create all the grid points as objects containind the data for the points
 class GridPoint {
-  constructor(x, y, id, type, left, top, size = 30) {
-    this.id = id; // tile id
+  constructor(x, y, id) {
     this.x = x; // x location of the grid point
     this.y = y; // y location of the grid point
     this.f = 0; // total cost function
@@ -11,13 +10,6 @@ class GridPoint {
     this.h = 0; // heuristic estimated cost function from current grid point to the goal
     this.neighbors = []; // neighbors of the current grid point
     this.parent = undefined; // immediate source of the current grid point
-    this.type = type; // path | water | rock
-    this.left = left; // x position in pixels
-    this.top = top; // y position in pixels
-    this.size = size; // size in pixels
-    this.occupied = false; // is the current tile ocupied?
-    this.selected = false; // is the current tile selected?
-    this.color = this.getColor(); // tile color based on the type
   }
 
   // update neighbors array for a given grid point
@@ -37,20 +29,24 @@ class GridPoint {
       this.neighbors.push(grid[i][j - 1]);
     }
   };
+}
+
+class Tile extends GridPoint{
+  constructor(x, y, id, size) {
+    super(x, y);
+    this.id = id; // tile id
+    // this.type = type; // path | water | rock
+    this.size = size; // size in pixels
+    this.left = x * size; // x position in pixels
+    this.top = y * size; // y position in pixels
+    this.walkable = true;
+    this.occupied = false; // is the current tile ocupied?
+    this.selected = false; // is the current tile selected?
+    this.color = "#000000"; // tile color based on the type
+  }
 
   getColor = function () {
-    let typeColor = "#000000";
-    
-    if (this.type === 'path') {
-      typeColor = '#51d343';
-    } else if (this.type === 'water') {
-      typeColor = '#2093d5';
-    } else if (this.type === 'rock') {
-      typeColor = '#685e70';
-    } else {
-      typeColor = '#000';
-    }
-
+    let typeColor = this.color;
     let specialColor = false;
 
     if (this.planned === true) {
@@ -76,7 +72,42 @@ class GridPoint {
     const b = Math.round(bA + (bB - bA) * amount).toString(16).padStart(2, '0');
     return '#' + r + g + b;
   }
+}
 
+class Rock extends Tile {
+  constructor(x, y, id, size) {
+    super(x, y, id, size);
+    this.type = 'rock';
+    this.walkable = false;
+    this.color = "#685e70";
+  }
+}
+
+class Water extends Tile {
+  constructor(x, y, id, size) {
+    super(x, y, id, size);
+    this.type = 'water';
+    this.walkable = false;
+    this.color = "#2093d5";
+  }
+}
+
+class Path extends Tile {
+  constructor(x, y, id, size) {
+    super(x, y, id, size);
+    this.type = 'path';
+    this.walkable = true;
+    this.color = "#aa9f2b";
+  }
+}
+
+class Grass extends Tile {
+  constructor(x, y, id, size) {
+    super(x, y, id, size);
+    this.type = 'path';
+    this.walkable = true;
+    this.color = "#51d343";
+  }
 }
 
 class Mapa {
@@ -133,21 +164,25 @@ class Mapa {
         tileData.y = y;
         tileData.id = (x * this.cols) + y;
         tileData.type = this.getRandomTile();
-        tileData.left = x * this.tileSize;
-        tileData.top = y * this.tileSize;
         tileData.size = this.tileSize;
 
         if (data) {
           tileData = data[x][y];
         }
 
-        this.grid[x][y] = new GridPoint(
+        let entity = Path;
+        if (tileData.type === 'rock') {
+          entity = Rock;
+        } else if (tileData.type === 'water') {
+          entity = Water;
+        } else if (tileData.type === 'grass') {
+          entity = Grass;
+        }
+
+        this.grid[x][y] = new entity(
           tileData.x,
           tileData.y, 
-          tileData.id, 
-          tileData.type,
-          tileData.left,
-          tileData.top,
+          tileData.id,
           tileData.size
         );
       }
@@ -202,10 +237,10 @@ class Mapa {
       return [];
     }
     
-    if (end.type !== 'path' || end.occupied === true) {
+    if (end.walkable !== true || end.occupied === true) {
       let newEnd = null
       for (let index = 0; index < end.neighbors.length; index++) {
-        if (!newEnd && end.neighbors[index].type === 'path' && end.neighbors[index].occupied === false){
+        if (!newEnd && end.neighbors[index].walkable === true && end.neighbors[index].occupied === false){
           newEnd = end.neighbors[index];
         }
       }
@@ -269,7 +304,7 @@ class Mapa {
           neighbor.h = this.heuristic(neighbor, end);
           neighbor.f = neighbor.g + neighbor.h;
 
-          neighbor.f += neighbor.type !== 'path' ? 10000 : 0;
+          neighbor.f += neighbor.walkable !== true ? 10000 : 0;
           neighbor.f += neighbor.occupied ? 10000 : 0;
 
           neighbor.parent = current;
@@ -350,6 +385,7 @@ class Mapa {
         ctx.beginPath();
         ctx.rect(offsetX + i * tileSize, offsetY + j * tileSize, tileSize, tileSize);
         ctx.fillStyle = tile.getColor();
+
         ctx.fill();
         ctx.closePath();
         if (tile.selected === true) {
@@ -357,12 +393,12 @@ class Mapa {
           ctx.stroke();
         }
 
-        ctx.fillStyle = '#fff';
-        ctx.font="10px Arial";
-        ctx.strokeStyle = "#fff";
-        const textx = offsetX + i * this.tileSize * zoom + 5;
-        const texty = offsetY + j * this.tileSize * zoom + 20;
-        ctx.fillText(tile.id, textx, texty);
+        // ctx.fillStyle = '#fff';
+        // ctx.font="10px Arial";
+        // ctx.strokeStyle = "#fff";
+        // const textx = offsetX + i * this.tileSize * zoom + 5;
+        // const texty = offsetY + j * this.tileSize * zoom + 20;
+        // ctx.fillText(tile.id, textx, texty);
 
       }
     }
@@ -371,10 +407,11 @@ class Mapa {
   getRandomTile() {
     const types = [
       'path', 
+      'grass', 
       'path', 
       'path', 
       'path', 
-      'path', 
+      'grass',
       'path', 
       'rock', 
       'water'
@@ -400,7 +437,7 @@ class Mapa {
       let randomRow = parseInt(Math.random() * this.rows);
       let randomCol = parseInt(Math.random() * this.cols);
       let tile = this.grid[randomCol][randomRow];
-      if (tile && tile.type === 'path') {
+      if (tile && tile.walkable === true) {
         spawn = tile
       }
     }

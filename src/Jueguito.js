@@ -93,6 +93,15 @@ class Jueguito {
         }
       }
     });
+
+    $(window).on('resize', () => {
+      self.mapa.viewArea = {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      }
+      self.canvas.attr('width', window.innerWidth);
+      self.canvas.attr('height',window.innerHeight);
+    })
   }
 
   addCositas(amount = 1) {
