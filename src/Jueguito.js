@@ -11,6 +11,7 @@ class Jueguito {
     this.cositas = [];
     this.menu = new Menu(this);
     // this.inspector = new Inspector();
+    this.playing = false;
     this.object_selected = null;
 
     this.canvas = null;
@@ -40,10 +41,16 @@ class Jueguito {
 
   generateMap(grid = null) {
     const self = this;
+
+    if (this.mapa) {
+      let r = confirm('The current map will be lost.')
+      if (!r) {
+        return false;
+      }
+    }
+
     let cols = grid ? grid.length : 60;
     let rows = grid ? grid[0].length : 60;
-    
-    
     $('canvas').remove();
     this.ctx = null;
 
@@ -75,13 +82,15 @@ class Jueguito {
     });
     
     $(window).bind('mousewheel DOMMouseScroll', function(event){
-      if (event.originalEvent.wheelDelta > 0 || event.originalEvent.detail < 0) {
-        if (self.zoom < 2){
-          self.zoom += 0.1;
+      if ($(event.target).is('canvas')) {
+        if (event.originalEvent.wheelDelta > 0 || event.originalEvent.detail < 0) {
+          if (self.zoom < 2){
+            self.zoom += 0.1;
+          }
         }
-      }
-      else if (self.zoom > 0.6){
-        self.zoom -= 0.1;
+        else if (self.zoom > 0.6){
+          self.zoom -= 0.1;
+        }
       }
     });
   }
@@ -99,8 +108,9 @@ class Jueguito {
 
   play() {
     const self = this;
-    if (!this.requestId) {
+    if (!this.requestId && this.ctx) {
       $("#"+this.id).children('#pause-menu').remove()
+      this.playing = true;
       this.requestId = window.requestAnimationFrame((time) => {
         self.render(time)
       });
@@ -110,6 +120,7 @@ class Jueguito {
   stop() {
     if (this.requestId) {
       $("#"+this.id).append("<div id='pause-menu'><p>Pause</p></div>")
+      this.playing = false;
       window.cancelAnimationFrame(this.requestId);
       this.requestId = undefined;
     }
@@ -130,7 +141,7 @@ class Jueguito {
     this.mapa.drawMap(this.ctx, this.zoom);
 
     this.updateCositas();
-    this.menu.showInfo(this.object_selected);
+    // this.menu.showInfo(this.object_selected);
 
     this.drawCositas();
     this.play();
@@ -188,7 +199,9 @@ class Jueguito {
     // if (this.object_selected && this.object_selected.type === 'cosita') {
     //   this.object_selected.keyAction(eventKey);
     // }
-    this.mapa.scroll(eventKey);
+    if (this.mapa) {
+      this.mapa.scroll(eventKey);
+    }
   }
 
   clickHandler(e) {
@@ -242,6 +255,7 @@ class Jueguito {
     }
 
     self.object_selected = match
+    self.menu.showInfo(self.object_selected);
   }
 
   rightClickHandler(e) {
@@ -251,26 +265,29 @@ class Jueguito {
       return false;
     }
 
-    const position = $('canvas').position();
-    let mouseX = e.pageX;
-    if (this.mapa.offsetX < 0) {
-      mouseX -= this.mapa.offsetX
+    if (this.object_selected && this.object_selected.type === 'cosita') {
+      const position = $('canvas').position();
+      let mouseX = e.pageX;
+      if (this.mapa.offsetX < 0) {
+        mouseX -= this.mapa.offsetX
+      }
+      let mouseY = e.pageY - position.top;
+      if (this.mapa.offsetY < 0) {
+        mouseY -= this.mapa.offsetY
+      }
+      const cellX = parseInt(mouseX / this.mapa.tileSize / this.zoom);
+      const cellY = parseInt(mouseY / this.mapa.tileSize / this.zoom);
+  
+      const tile = this.mapa.grid[cellX][cellY];
+      if (tile) {
+        this.object_selected.moveTo(tile.x, tile.y)
+      }
+    } else if (this.object_selected) {
+      this.object_selected.selected = false;
+      this.object_selected = null;
+      this.menu.removeInfo();
     }
-    let mouseY = e.pageY - position.top;
-    if (this.mapa.offsetY < 0) {
-      mouseY -= this.mapa.offsetY
-    }
-    const cellX = parseInt(mouseX / this.mapa.tileSize / this.zoom);
-    const cellY = parseInt(mouseY / this.mapa.tileSize / this.zoom);
 
-    const tile = this.mapa.grid[cellX][cellY];
-    if (
-      (this.object_selected && this.object_selected.type === 'cosita') && tile
-    ) {
-      this.object_selected.moveTo(tile.x, tile.y)
-      // if (this.mapa.grid[tile.x][tile.y].type === 'path') {
-      // }
-    }
     return false;
   }
 

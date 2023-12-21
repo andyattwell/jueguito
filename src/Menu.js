@@ -86,9 +86,9 @@ class Menu {
 
     let $menu = $('<div class="navbar navbar-expand-sm navbar-dark bg-dark" id="app-menu">');
     let $container = $('<div class="container-fluid">')
-    let $brandBtn = $('<a class="navbar-brand" href="#">Navbar</a>');
+    // let $brandBtn = $('<a class="navbar-brand" href="#">Navbar</a>');
 
-    $container.append($brandBtn);
+    // $container.append($brandBtn);
 
     let $ul = $('<ul class="navbar-nav me-auto mb-2 mb-lg-0">');
 
@@ -132,82 +132,86 @@ class Menu {
       $ul.append($li);
     })
     $container.append($ul)
-
-    let $ulInspector = $('<ul class="navbar-nav" id="inspector-nav">');
-    let $liInspector = $('<li class="nav-item">');
-    let $aInspector = $('<a class="nav-link" href="#">')
-    $aInspector.text('Inspector');
-
-    $aInspector.on('click', self.toggleInspector);
-
-    $liInspector.append($aInspector);
-    $ulInspector.append($liInspector);
-
-    $container.append($ulInspector)
-    
     $menu.append($container);
-
-    
     $parent.append($menu);
-
   }
   
   menuBtnActionHandler($target) {
     this.emit('action', { action: $target.attr('id') })
   }
 
-  toggleInspector (e) {
-    e.preventDefault();
-    if ($('#inspector').length >= 1) {
-      $('#inspector').remove();
-    } else {
-      $('#inspector-nav').append('<div id="inspector">');
-    }
-    return false;
+  removeInfo() {
+    $('#inspector').remove();
   }
 
   showInfo(item) {
-    // $('#inspector-nav').remove("#inspector");
-    // console.log('item', item)
-    if (!item) {
-      $('#inspector-nav').hide();
-      return false;
-    }
-    $('#inspector-nav').show();
-
     let $inspactor = $('#inspector');
-
     if ($inspactor.length < 1) {
-      return false
+      $('#app-menu').append('<div id="inspector">');
+      $inspactor = $('#inspector');
     }
 
-    $inspactor.html("");
-
-    $inspactor.append('<h1>Inspector</h1>');
+    $inspactor.html('<div class="content">');
+    $inspactor.append('<a href="#" class="toggle"></a>')
 
     if (item.type === 'path' || item.type === 'water' || item.type === 'rock') {{
-      $inspactor.append('<p>Tile ID: ' + item.id + "</p>")
-      $inspactor.append('<p>Tile Type: ' + item.type + "</p>")
-      $inspactor.append('<p>Tile X: ' + item.x + "</p>")
-      $inspactor.append('<p>Tile Y: ' + item.y + "</p>")
-      $inspactor.append('<p>left: ' + item.left + "</p>")
-      $inspactor.append('<p>top: ' + item.top + "</p>")
-      $inspactor.append('<p>occupied: ' + item.occupied + "</p>")
+      this.showTileInfo(item);
     }}
 
     if (item.type === 'cosita') {
-      $inspactor.append('<p>Cosita ID: ' + item.id + "</p>")
-      $inspactor.append('<p>X: ' + item.x + " - Y: " + item.y +"</p>")
-      $inspactor.append('<p>OffsetX: ' + item.map.offsetX + " - OffsetY: " + item.map.offsetY +"</p>")
-      $inspactor.append('<p>Canvas width: ' + item.map.ctx.canvas.width + " - Height: " + item.map.ctx.canvas.height +"</p>")
-      $inspactor.append('<p>Current Tile X: ' + item.currentTile().x + " - Y: " + item.currentTile().y +"</p>")
+      $inspactor.children('.content').append('<h5>Cosita ID: ' + item.id + "</h5>")
+      $inspactor.children('.content').append('<p>X: ' + item.x + " - Y: " + item.y +"</p>")
+      $inspactor.children('.content').append('<p>OffsetX: ' + item.map.offsetX + " - OffsetY: " + item.map.offsetY +"</p>")
+      $inspactor.children('.content').append('<p>Canvas width: ' + item.map.ctx.canvas.width + " - Height: " + item.map.ctx.canvas.height +"</p>")
+      $inspactor.children('.content').append('<p>Current Tile X: ' + item.currentTile().x + " - Y: " + item.currentTile().y +"</p>")
       if (item.currentPath && item.currentPath.length >= 1) {
-        $inspactor.append('<p>Destination X: ' + item.currentPath[item.currentPath.length - 1].x + " - Y: " + item.currentPath[item.currentPath.length - 1].y +"</p>")
+        $inspactor.children('.content').append('<p>Destination X: ' + item.currentPath[item.currentPath.length - 1].x + " - Y: " + item.currentPath[item.currentPath.length - 1].y +"</p>")
       }
     }
 
-    $('#inspector-nav').append($inspactor)
+    $('.toggle').on('click', function (e) {
+      $('#inspector').toggleClass('open');
+    })
 
+  }
+
+  showTileInfo(tile) {
+    let $inspactor = $('#inspector > .content');
+    const htmlResult = `
+      <h5>Tile id: ${tile.id}</h5>
+      <p>
+        Type: <select class="form-control" value="${tile.type}" id="tileType">
+          <option value="path" ${tile.type === 'path' ? 'selected' : ''}>Path</option>
+          <option value="water" ${tile.type === 'water' ? 'selected' : ''}>Water</option>
+          <option value="rock" ${tile.type === 'rock' ? 'selected' : ''}>Rock</option>
+        </select>
+      </p>
+      <h5>Position: </h5>
+      <p>
+        <div class="row">
+          <div class="col-6">
+            X: ${tile.x}
+          </div>
+          <div class="col-6">
+            Y: ${tile.y}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-6">
+            Left: ${tile.left}
+          </div>
+          <div class="col-6">
+            Top: ${tile.top}
+          </div>
+        </div>
+      </p>
+    `;
+
+    $inspactor.html(htmlResult);
+
+    $("select#tileType").on('change', (e) => {
+      tile.type = $(e.target).val()
+    })
   }
 
   openMap() {

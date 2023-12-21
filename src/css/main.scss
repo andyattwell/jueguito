@@ -46,15 +46,23 @@ body{
 
 #inspector {
   width: 300px;
-  min-height: 200px;
-  padding: 15px;
+  height: 200px;
   color: #fff;
   position: fixed;
-  top: 50px;
-  right: 0;
+  bottom: -160px;
+  right: 0px;
   background-color: #000;
+  transition: bottom 1s;
 
-  &::after {
+  &.open {
+    bottom: 0px;
+    .content {
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+  }
+
+  a.toggle {
     display: block;
     width: 40px;
     height: 40px;
@@ -64,20 +72,27 @@ body{
     top: 0;
     left: -40px;
     z-index: 1000;
+
+    &::before {
+      display: block;
+      content: "";
+      color: #fff;
+      position: absolute;
+      top: 20px;
+      left: 18px;
+      
+      border-top: 0.3em solid;
+      border-right: 0.3em solid transparent;
+      border-bottom: 0;
+      border-left: 0.3em solid transparent;
+      z-index: 10000;
+    }
   }
 
-  &::before {
-    display: block;
-    content: "";
-    color: #fff;
-    position: absolute;
-    top: 20px;
-    left: -20px;
-    
-    border-top: 0.3em solid;
-    border-right: 0.3em solid transparent;
-    border-bottom: 0;
-    border-left: 0.3em solid transparent;
-    z-index: 10000;
+  .content {
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    padding: 10px 15px;
   }
 }
