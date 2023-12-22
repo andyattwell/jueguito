@@ -41,7 +41,13 @@ class Toolbar {
       ctx.rect(this.buttonSize * i, this.y, this.buttonSize, this.buttonSize);
       ctx.fillStyle = this.buttons[i].color;
       ctx.fill();
+      if (this.buttons[i].name === this.selectedTool?.name) {
+        ctx.strokeStyle = '#ffb800';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
       ctx.closePath();
+
 
       ctx.fillStyle = '#fff';
       ctx.font="10px Arial";
@@ -56,6 +62,7 @@ class Toolbar {
       ctx.strokeStyle = '#000000';
       ctx.rect(this.mousePosition.x, this.mousePosition.y, 30, 30);
       ctx.fillStyle = this.selectedTool.color;
+      ctx.lineWidth = 2;
       ctx.fill();
       ctx.stroke();
       ctx.closePath();

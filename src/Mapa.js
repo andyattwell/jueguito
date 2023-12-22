@@ -228,13 +228,7 @@ class Mapa {
         row.push({
           x: tile.x,
           y: tile.y,
-          f: 0,
-          g: 0,
-          h: 0,
-          neighbors: [],
-          parent: [],
           type: tile.type,
-          color: tile.color,
           id: tile.id,
           size: tile.size
         })
