@@ -1,6 +1,7 @@
 import Cosita from "./Cosita.js";
 import Mapa from "./Mapa.js";
 import Menu from "./Menu.js";
+import Toolbar from "./Toolbar.js";
 // import Inspector from "./Inspector.js";
 import $ from 'jquery';
 
@@ -10,6 +11,7 @@ class Jueguito {
     this.mapa = null;
     this.cositas = [];
     this.menu = new Menu(this);
+    this.toolbar = null;
     // this.inspector = new Inspector();
     this.playing = false;
     this.object_selected = null;
@@ -18,6 +20,9 @@ class Jueguito {
     this.ctx = null;
     this.requestId = null;
     this.zoom = 1;
+    this.dragging = false;
+    this.dragStart = null;
+    this.mousePosition = {x:0, y:0};
   }
 
   async start() {
@@ -48,7 +53,6 @@ class Jueguito {
       }
     }
 
-
     $('canvas').remove();
     this.ctx = null;
 
@@ -63,6 +67,8 @@ class Jueguito {
 
     $canvas.attr('width', window.innerWidth);
     $canvas.attr('height',window.innerHeight);
+
+    this.toolbar = new Toolbar(this, 0, window.innerHeight - 95);
 
     let cositas = [];
     if (data?.cositas) {
@@ -80,7 +86,9 @@ class Jueguito {
     })
 
     $(this.canvas).on("contextmenu", (e) => {
+      e.preventDefault();
       self.rightClickHandler(e)
+      return false;
     });
 
     $(this.canvas).on("contextmenu", (e) => {
@@ -92,8 +100,6 @@ class Jueguito {
       let mouseX = event.pageX;
       let mouseY = event.pageY - position.top;
       
-
-      // console.log({mouseX, mouseY})
       if ($(event.target).is('canvas')) {
         const cellX = parseInt((mouseX / self.mapa.tileSize) / self.zoom);
         const cellY = parseInt((mouseY / self.mapa.tileSize) / self.zoom);
@@ -145,7 +151,39 @@ class Jueguito {
       }
       self.canvas.attr('width', window.innerWidth);
       self.canvas.attr('height',window.innerHeight);
+      self.toolbar.y = window.innerHeight - 95;
     })
+
+    $(this.canvas).on('mousedown', (e) => {
+      if (e.which === 2) {
+        this.dragging = true;
+        // this.dragStart = {
+        //   x: e.pageX,
+        //   y: e.pageY
+        // };
+      }
+    })
+
+    $(this.canvas).on('mouseup', (e) => {
+      if (e.which === 2) {
+        this.dragging = false;
+        this.dragStart = null;
+      }
+    })
+
+    $(this.canvas).on("mousemove", (e) => {
+      // console.log(e.pageX, e.pageY);
+      const position = $('canvas').position();
+      self.mousePosition = {
+        x: e.pageX,
+        y: e.pageY - position.top
+      }
+      self.toolbar.mousePosition = self.mousePosition
+      if (self.dragging) {
+        self.mapa.drag(self.dragStart, self.mousePosition, self.zoom)
+        self.dragStart = self.mousePosition;
+      }
+    });
   }
 
   addCositas(cositas = []) {
@@ -194,10 +232,9 @@ class Jueguito {
     
     this.updateCositas();
     
-    this.mapa.drawMap(this.ctx, this.zoom);
+    this.mapa.render(this.ctx, this.zoom);
     this.drawCositas();
-    // this.menu.showInfo(this.object_selected);
-    // this.cositasColition();
+    this.toolbar.render(this.ctx);
   }
 
   updateCositas() {
@@ -212,29 +249,6 @@ class Jueguito {
       cosita.draw(this.ctx, this.zoom);
     }
   }
-
-  // cositasColition () {
-  //   for (let y = 0; y < this.mapa.grid.length; y++) {
-  //     for (let x = 0; x < this.mapa.grid[y].length; x++) {
-  //       const tile = this.mapa.grid[y][x];
-  //       tile.occupied = false;
-
-  //       for (let c = 0; c < this.cositas.length; c++) {
-  //         const cosita = this.cositas[c];
-  //         if (
-  //           cosita.x >= tile.left && 
-  //           cosita.x <= tile.left + tile.size &&
-  //           cosita.y >= tile.top &&
-  //           cosita.y <= tile.top + tile.size
-  //         ) {
-  //           tile.occupied = true
-  //         }
-  //       }
-        
-  //     }
-      
-  //   }
-  // }
 
   keyActionHandler(eventKey) {
 
@@ -265,13 +279,24 @@ class Jueguito {
     const self = this;
     const position = $('canvas').position();
     let mouseX = e.pageX;
+    let mouseY = e.pageY - position.top;
+
+    if (
+      (mouseX >= this.toolbar.x && mouseX <= this.toolbar.x + this.toolbar.width) &&
+      (mouseY >= this.toolbar.y && mouseY <= this.toolbar.y + this.toolbar.height)
+    ) {
+      this.toolbar.handleClick(mouseX, mouseY)
+      return false;
+    }
+
     if (this.mapa.offsetX < 0) {
       mouseX -= this.mapa.offsetX
     }
-    let mouseY = e.pageY - position.top;
+
     if (this.mapa.offsetY < 0) {
       mouseY -= this.mapa.offsetY
     }
+
     let match = null;
 
     self.mapa.grid.forEach(cols => {
@@ -287,10 +312,10 @@ class Jueguito {
       const top = mouseY >= cosita.y * this.zoom;
       const bottom = mouseY <= (cosita.y + cosita.height) * this.zoom;
       cosita.selected = false
-      cosita.color = "#fff";
+      // cosita.color = "#fff";
       if (left === true && right === true && top === true && bottom === true  ) {
         cosita.selected = true;
-        cosita.color = "#f5f230";
+        // cosita.color = "#f5f230";
         match = cosita;
       }
     });
@@ -301,13 +326,19 @@ class Jueguito {
 
       const tile = self.mapa.grid[cellX][cellY];
       if (tile) {
-        match = tile
-        tile.selected = true;
+        if (self.toolbar.selectedTool) {
+          self.toolbar.useTool(tile);
+        } else {
+          match = tile
+          tile.selected = true;
+        }
       }
     }
 
-    self.object_selected = match
-    self.menu.showInfo(self.object_selected);
+    if (match) {
+      self.object_selected = match
+      self.menu.showInfo(self.object_selected);
+    }
   }
 
   rightClickHandler(e) {
@@ -317,7 +348,14 @@ class Jueguito {
       return false;
     }
 
-    if (this.object_selected && this.object_selected.type === 'cosita') {
+    if (this.toolbar.selectedTool) {
+      this.toolbar.selectedTool = false
+      if (this.object_selected) {
+        this.object_selected.selected = false;
+      }
+      this.object_selected = null
+      return false;
+    } else if (this.object_selected && this.object_selected.type === 'cosita') {
       const position = $('canvas').position();
       let mouseX = e.pageX;
       if (this.mapa.offsetX < 0) {

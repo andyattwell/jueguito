@@ -246,7 +246,6 @@ class Mapa {
 
   findPath(startX, startY, endX, endY) {
     
-    console.log('findPath')
     let start = this.grid[startX][startY];
     let end = this.grid[endX][endY];
     let openSet = [start];
@@ -359,6 +358,21 @@ class Mapa {
     }
   }
 
+  drag(start, mousePosition, zoom) {
+    const x = start ? (mousePosition.x - start.x) : 0;
+    const y = start ? (mousePosition.y - start.y) : 0;
+    if (this.offsetY <= 0) {
+      this.offsetY += y;
+    } else {
+      this.offsetY = 0;
+    }
+    if (this.offsetX <= 0) {
+      this.offsetX += x
+    } else {
+      this.offsetX = 0
+    }
+  }
+
   scroll(keyName, zoom) {
     switch (keyName) {
       case "w":
@@ -386,7 +400,7 @@ class Mapa {
     }
   }
 
-  drawMap(ctx, zoom) {
+  render(ctx, zoom) {
     const offsetX = this.offsetX;
     const offsetY = this.offsetY;
 
@@ -469,12 +483,12 @@ class Mapa {
 
   replaceTile(tile, type) {
     // let entity = Path;
-    let color = "#51d343";
+    let color = "#aa9f2b";
     let walkable = true;
     if (type === 'grass') {
       // entity = Grass;
       walkable = true;
-      color = "#aa9f2b";
+      color = "#51d343";
     } else if (type === 'rock') {
       // entity = Rock;
       walkable = false;

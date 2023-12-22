@@ -57,7 +57,6 @@ class Cosita {
   }
 
   keyAction(keyName) {
-    console.log({keyName})
     let x = this.x;
     let y = this.y;
     let targetX = this.x;
@@ -93,7 +92,6 @@ class Cosita {
     }
 
     const collition = this.detectCollitionV2(targetX, targetY);
-    console.log({collition})
     if (collition) {
       return false;
     }
@@ -124,29 +122,6 @@ class Cosita {
     if (!targetCell) {
       return false;
     }
-
-    // Avoid checking current tile beacause its occupied
-    // if (targetCell !== this.current) {
-    //   if ((targetCell.walkable !== true || targetCell.occupied == true)) {
-    //     // let newTarget = null;
-    //     // // Look for a new free and walkable target tile
-    //     // for (let i = 0; i < targetCell.neighbors.length ; i++) {
-    //     //   const tile = targetCell.neighbors[i];
-    //     //   if (tile.occupied == false && tile.walkable == true) {
-    //     //     newTarget = tile
-    //     //   }
-    //     // }
-    //     // if (newTarget) {
-    //       // }
-    //       console.log('Moving to new target')
-    //       const last = this.currentPath[this.currentPath.length-1];
-    //       this.moveTo(last.x, last.y)
-    //       return false;
-    //   }
-    //   // const last = this.currentPath[this.currentPath.length-1];
-    //   // this.moveTo(last.x, last.y)
-      
-    // }
 
     let targetPosX = targetCell.left + targetCell.size / 2 - this.width / 2;
     let targetPosY = targetCell.top + targetCell.size / 2 - this.height / 2;
@@ -207,8 +182,6 @@ class Cosita {
 
     this.currentPath = this.map.findPath(tile.x, tile.y, endX, endY)
       .filter((tile) => tile !== self.current);
-      
-    console.log(this.currentPath)
 
     if (this.currentPath.length === 0) {
       this.currentPath = [this.current]
@@ -282,10 +255,8 @@ class Cosita {
               top, 
               bottom
             })
-            console.log({myBoundry, tileBoundry})
             cell.color = "#000";
             collition = true;
-            console.log("ACA", cell.id, collition)
           }
 
         }   
@@ -328,7 +299,7 @@ class Cosita {
 
     ctx.beginPath();
     ctx.rect(this.map.offsetX + this.x * zoom , this.map.offsetY + this.y * zoom , this.width * zoom, this.height * zoom);
-    ctx.fillStyle = this.color;
+    ctx.fillStyle = this.selected ? '#f5f230' : this.color;
     ctx.fill();
     ctx.closePath();
   }

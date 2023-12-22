@@ -170,13 +170,12 @@ class Menu {
   }
 
   showTileInfo(tile) {
-    let self = this;
-    let $inspactor = $('#inspector > .content');
-    const htmlResult = `
+    $('#inspector > .content').html(`
       <h5>Tile id: ${tile.id}</h5>
       <p>
         Type: <select class="form-control" value="${tile.type}" id="tileType">
           <option value="path" ${tile.type === 'path' ? 'selected' : ''}>Path</option>
+          <option value="water" ${tile.type === 'grass' ? 'selected' : ''}>Grass</option>
           <option value="water" ${tile.type === 'water' ? 'selected' : ''}>Water</option>
           <option value="rock" ${tile.type === 'rock' ? 'selected' : ''}>Rock</option>
         </select>
@@ -200,15 +199,11 @@ class Menu {
           </div>
         </div>
       </p>
-    `;
+    `);
 
-    $inspactor.html(htmlResult);
-
+    const self = this;
     $("select#tileType").on('change', (e) => {
-      console.log('ACA', self.parent)
-      // tile.setType($(e.target).val());
-      let type = $(e.target).val();
-      self.parent.mapa.replaceTile(tile, type)
+      self.parent.mapa.replaceTile(tile, $(e.target).val())
     })
   }
 
