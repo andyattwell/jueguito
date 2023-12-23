@@ -1,9 +1,10 @@
+import * as THREE from 'three';
+import $ from 'jquery';
 import Cosita from "./Cosita.js";
 import Mapa from "./Mapa.js";
 import Menu from "./Menu.js";
 import Toolbar from "./Toolbar.js";
 // import Inspector from "./Inspector.js";
-import $ from 'jquery';
 
 class Jueguito {
   constructor(id) {
@@ -23,10 +24,41 @@ class Jueguito {
     this.dragging = false;
     this.dragStart = null;
     this.mousePosition = {x:0, y:0};
+
+    this.width = window.innerWidth;
+    this.height = window.innerHeight;
+
+    this.camera = null
+    this.scene = null
+    this.renderer = null
+
+    this.intersects = []
+    this.hovered = {}
+    this.raycaster = new THREE.Raycaster()
+    this.mouse = new THREE.Vector2() 
   }
 
   async start() {
     const self = this
+
+    this.camera = new THREE.PerspectiveCamera( 45, this.width / this.height, 0.01, 20 );
+    this.camera.position.z = 1;
+    this.camera.rotateX(45)
+    this.scene = new THREE.Scene();
+
+    this.renderer = new THREE.WebGLRenderer( { antialias: true } );
+
+    this.renderer.setSize( window.innerWidth, window.innerHeight );
+    this.renderer.setClearColor({ color: "#FFFFFF" })
+    // this.renderer.setAnimationLoop( this.animation );
+    document.body.appendChild( this.renderer.domElement );
+    
+    const geometry = new THREE.BoxGeometry( 0.2, 0.2, 0.2 );
+    const material = new THREE.MeshNormalMaterial();
+    
+    const mesh = new THREE.Mesh( geometry, material );    
+    mesh.position.set(0,0,-7.0)
+    this.scene.add( mesh );
 
     this.menu.addEventListener('action', (data) => {
       if(typeof this[data.action] === 'function'){
@@ -41,6 +73,24 @@ class Jueguito {
       self.keyActionHandler(event.key);
     });
 
+    this.animate();
+
+  }
+
+  animate() {
+    const self = this
+    requestAnimationFrame( () => {
+      self.animate()
+    } );
+
+    // cube.rotation.x += 0.01;
+    // cube.rotation.y += 0.01;
+    // this.updateCositas();
+
+    // this.drawCositas();
+    // this.toolbar.render(this.ctx);
+  
+    self.renderer.render( self.scene, self.camera );
   }
 
   generateMap(data = null) {
@@ -53,49 +103,46 @@ class Jueguito {
       }
     }
 
-    $('canvas').remove();
-    this.ctx = null;
+    // $('canvas').remove();
+    // this.ctx = null;
 
-    const $canvas = $('<canvas>');
-    $canvas.css('background-color', '#030303');
-    $("#"+this.id).append($canvas);
-    this.canvas = $canvas;
-    self.ctx = this.canvas[0].getContext('2d');
+    // const $canvas = $('<canvas>');
+    // $canvas.css('background-color', '#030303');
+    // $("#"+this.id).append($canvas);
+    // this.canvas = $canvas;
+    // self.ctx = this.canvas[0].getContext('2d');
 
     let grid = data?.grid ? data.grid : [];
-    this.mapa = new Mapa(self.ctx, grid);
+    this.mapa = new Mapa(self.scene, grid);
+    this.mapa.render(this.scene, this.zoom);
+    // $canvas.attr('width', window.innerWidth);
+    // $canvas.attr('height',window.innerHeight);
 
-    $canvas.attr('width', window.innerWidth);
-    $canvas.attr('height',window.innerHeight);
-
-    this.toolbar = new Toolbar(this, 0, window.innerHeight - 95);
+    // this.toolbar = new Toolbar(this, 0, window.innerHeight - 95);
 
     let cositas = [];
     if (data?.cositas) {
       cositas = data.cositas;
     } else {
-      cositas.push({x:1, y:1})
+      cositas.push({x:10, y:10})
     }
 
     self.addCositas(cositas);
-    
-    this.play();
+    self.addListeners();
+    // this.play();
+    // this.animate();
+  }
 
-    $(this.canvas).on('click', (e) => {
-      self.clickHandler(e);
-    })
+  addListeners() {
+    const self = this;
 
-    $(this.canvas).on("contextmenu", (e) => {
+    window.addEventListener("contextmenu", (e) => {
       e.preventDefault();
       self.rightClickHandler(e)
       return false;
     });
-
-    $(this.canvas).on("contextmenu", (e) => {
-      self.rightClickHandler(e)
-    });
     
-    $(window).bind('mousewheel DOMMouseScroll', function(event){
+    window.addEventListener('mousewheel DOMMouseScroll', function(event){
       const position = $('canvas').position();
       let mouseX = event.pageX;
       let mouseY = event.pageY - position.top;
@@ -104,83 +151,94 @@ class Jueguito {
         const cellX = parseInt((mouseX / self.mapa.tileSize) / self.zoom);
         const cellY = parseInt((mouseY / self.mapa.tileSize) / self.zoom);
 
-
         if (event.originalEvent.wheelDelta > 0 || event.originalEvent.detail < 0) {
-          if (self.zoom < 2){
-            self.zoom += 0.1;
+          if (self.camera.position.z > 0) {
+            self.camera.position.set(self.camera.position.x, self.camera.position.y, self.camera.position.z - 1)
           }
-
-
-        } else if (self.zoom > 0.6){
-          self.zoom -= 0.1;
+        } else {
+          if (self.camera.position.z < 8) {
+            self.camera.position.set(self.camera.position.x, self.camera.position.y, self.camera.position.z + 1)
+          }
         }
-        // self.mapa.offsetY = mouseY
-
-        // self.mapa.offsetX = mouseX
-        // const tile = self.mapa.grid[cellX][cellY];
-
-        // if (tile) {
-        //   console.log({tile})
-        //   let newY = -tile.top - self.mapa.viewArea.height / 2;
-
-        //   if (newY <= 0 && newY < self.mapa.rows * self.mapa.tileSize) {            
-        //     self.mapa.offsetY = newY;
-        //   } else {
-        //     self.mapa.offsetY = 0
-        //   }
-
-        //   let newX = -tile.left - self.mapa.viewArea.width / 2;
-
-        //   if (newX <= 0 && newX < self.mapa.cols * self.mapa.tileSize) {
-
-        //     self.mapa.offsetX = newX;
-
-        //   } else {
-        //     self.mapa.offsetX = 0
-        //   }
-        //   tile.selected = true;
-        // }
         
       }
     });
 
-    $(window).on('resize', () => {
+    window.addEventListener('resize', () => {
       self.mapa.viewArea = {
         width: window.innerWidth,
         height: window.innerHeight,
       }
-      self.canvas.attr('width', window.innerWidth);
-      self.canvas.attr('height',window.innerHeight);
-      self.toolbar.y = window.innerHeight - 95;
+      this.renderer.setSize( window.innerWidth, window.innerHeight );
+      // self.toolbar.y = window.innerHeight - 95;
     })
 
-    $(this.canvas).on('mousedown', (e) => {
+    window.addEventListener('mousedown', (e) => {
       if (e.which === 2) {
         this.dragging = true;
-        // this.dragStart = {
-        //   x: e.pageX,
-        //   y: e.pageY
-        // };
+        return false;
       }
+      self.clickHandler(e);
     })
 
-    $(this.canvas).on('mouseup', (e) => {
+    window.addEventListener('mouseup', (e) => {
       if (e.which === 2) {
         this.dragging = false;
         this.dragStart = null;
       }
     })
 
-    $(this.canvas).on("mousemove", (e) => {
-      // console.log(e.pageX, e.pageY);
+    window.addEventListener("pointermove", (e) => {
       const position = $('canvas').position();
       self.mousePosition = {
-        x: e.pageX,
-        y: e.pageY - position.top
+        x: e.clientX,
+        y: e.clientY - position.top
       }
-      self.toolbar.mousePosition = self.mousePosition
+
+      this.mouse.set((e.clientX / this.width) * 2 - 1, -(e.clientY / this.height) * 2 + 1.2)
+      this.raycaster.setFromCamera(this.mouse, this.camera)
+      this.intersects = this.raycaster.intersectObjects(this.scene.children, true)
+
+      Object.keys(this.hovered).forEach((key) => {
+        const hit = this.intersects.find((hit) => hit.object.uuid === key)
+        if (hit === undefined) {
+          const hoveredItem = this.hovered[key]
+          if (hoveredItem.object.onPointerOver) hoveredItem.object.onPointerOut(hoveredItem)
+          delete this.hovered[key]
+        }
+      })
+
+      if (this.intersects.length) {
+        if (!this.hovered[this.intersects[0].object.uuid]) {
+          this.hovered[this.intersects[0].object.uuid] = this.intersects[0]
+          if (this.intersects[0].object.onPointerOver) this.intersects[0].object.onPointerOver(this.intersects[0])
+        }
+      }
+    
+      // this.intersects.forEach((hit) => {
+      //   // If a hit has not been flagged as hovered we must call onPointerOver
+      //   if (!this.hovered[hit.object.uuid]) {
+      //     this.hovered[hit.object.uuid] = hit
+      //     if (hit.object.onPointerOver) hit.object.onPointerOver(hit)
+      //   }
+      //   // Call onPointerMove
+      //   if (hit.object.onPointerMove) hit.object.onPointerMove(hit)
+      // })
+
+      // self.toolbar.mousePosition = self.mousePosition
+
       if (self.dragging) {
-        self.mapa.drag(self.dragStart, self.mousePosition, self.zoom)
+        
+        const x = self.dragStart ? (self.mousePosition.x - self.dragStart.x) * .03 : 0;
+        const y = self.dragStart ? (self.mousePosition.y - self.dragStart.y) * .03 : 0;
+        
+        let newX = self.camera.position.x;
+        let newY = self.camera.position.y;
+        
+        newY += y
+        newX += x
+
+        self.camera.position.set(newX, newY, self.camera.position.z)
         self.dragStart = self.mousePosition;
       }
     });
@@ -194,6 +252,8 @@ class Jueguito {
       let spawn = { x: cositas[index].x, y: cositas[index].y };
       let cosita = new Cosita(index, this.mapa, spawn);
       this.cositas.push(cosita);
+      let cube = cosita.createCube(this.scene);
+      console.log({cube})
     }
   }
 
@@ -265,80 +325,102 @@ class Jueguito {
     // if (this.object_selected && this.object_selected.type === 'cosita') {
     //   this.object_selected.keyAction(eventKey);
     // }
-    if (this.mapa) {
-      this.mapa.scroll(eventKey, this.zoom);
+
+    // if (this.mapa) {
+    //   this.mapa.scroll(eventKey, this.zoom);
+    // }
+    console.log(this.camera.position.x, this.camera.position.y)
+    switch (eventKey) {
+      case "w":
+        this.camera.position.set(this.camera.position.x, this.camera.position.y+1)
+        break;
+      case "s":
+        this.camera.position.set(this.camera.position.x, this.camera.position.y-1)
+        break;
+      case "a":
+        this.camera.position.set(this.camera.position.x-1, this.camera.position.y)
+        break;
+      case "d":
+        this.camera.position.set(this.camera.position.x+1, this.camera.position.y)
+        break;
+      default:
+        break;
     }
   }
 
   clickHandler(e) {
-
-    if (!this.requestId) {
-      return false;
-    }
-
-    const self = this;
-    const position = $('canvas').position();
-    let mouseX = e.pageX;
-    let mouseY = e.pageY - position.top;
-
-    if (
-      (mouseX >= this.toolbar.x && mouseX <= this.toolbar.x + this.toolbar.width) &&
-      (mouseY >= this.toolbar.y && mouseY <= this.toolbar.y + this.toolbar.height)
-    ) {
-      this.toolbar.handleClick(mouseX, mouseY)
-      return false;
-    }
-
-    if (this.mapa.offsetX < 0) {
-      mouseX -= this.mapa.offsetX
-    }
-
-    if (this.mapa.offsetY < 0) {
-      mouseY -= this.mapa.offsetY
-    }
-
-    let match = null;
-
-    self.mapa.grid.forEach(cols => {
-      cols.forEach((tile) => {
-        tile.selected = false;
-        return tile
-      })
+    this.intersects.forEach((hit) => {
+      // Call onClick
+      console.log({hit})
+      if (hit.object.onClick) hit.object.onClick(hit)
     })
+    // if (!this.requestId) {
+    //   return false;
+    // }
 
-    self.cositas.forEach(cosita => {
-      const left = cosita.x * this.zoom <= mouseX;
-      const right = (cosita.x + cosita.width) * this.zoom >= mouseX;
-      const top = mouseY >= cosita.y * this.zoom;
-      const bottom = mouseY <= (cosita.y + cosita.height) * this.zoom;
-      cosita.selected = false
-      // cosita.color = "#fff";
-      if (left === true && right === true && top === true && bottom === true  ) {
-        cosita.selected = true;
-        // cosita.color = "#f5f230";
-        match = cosita;
-      }
-    });
+    // const self = this;
+    // const position = $('canvas').position();
+    // let mouseX = e.pageX;
+    // let mouseY = e.pageY - position.top;
 
-    if (!match) {
-      const cellX = parseInt((mouseX / self.mapa.tileSize) / this.zoom);
-      const cellY = parseInt((mouseY / self.mapa.tileSize) / this.zoom);
+    // if (
+    //   (mouseX >= this.toolbar.x && mouseX <= this.toolbar.x + this.toolbar.width) &&
+    //   (mouseY >= this.toolbar.y && mouseY <= this.toolbar.y + this.toolbar.height)
+    // ) {
+    //   this.toolbar.handleClick(mouseX, mouseY)
+    //   return false;
+    // }
 
-      const tile = self.mapa.grid[cellX][cellY];
-      if (tile) {
-        if (self.toolbar.selectedTool) {
-          self.toolbar.useTool(tile);
-        } else {
-          match = tile
-          tile.selected = true;
-        }
-      }
-    }
+    // if (this.mapa.offsetX < 0) {
+    //   mouseX -= this.mapa.offsetX
+    // }
 
-    if (match) {
-      self.object_selected = match
-      self.menu.showInfo(self.object_selected);
-    }
+    // if (this.mapa.offsetY < 0) {
+    //   mouseY -= this.mapa.offsetY
+    // }
+
+    // let match = null;
+
+    // self.mapa.grid.forEach(cols => {
+    //   cols.forEach((tile) => {
+    //     tile.selected = false;
+    //     return tile
+    //   })
+    // })
+
+    // self.cositas.forEach(cosita => {
+    //   const left = cosita.x * this.zoom <= mouseX;
+    //   const right = (cosita.x + cosita.width) * this.zoom >= mouseX;
+    //   const top = mouseY >= cosita.y * this.zoom;
+    //   const bottom = mouseY <= (cosita.y + cosita.height) * this.zoom;
+    //   cosita.selected = false
+    //   // cosita.color = "#fff";
+    //   if (left === true && right === true && top === true && bottom === true  ) {
+    //     cosita.selected = true;
+    //     // cosita.color = "#f5f230";
+    //     match = cosita;
+    //   }
+    // });
+
+    // if (!match) {
+    //   const cellX = parseInt((mouseX / self.mapa.tileSize) / this.zoom);
+    //   const cellY = parseInt((mouseY / self.mapa.tileSize) / this.zoom);
+
+    //   const tile = self.mapa.grid[cellX][cellY];
+    //   if (tile) {
+    //     if (self.toolbar.selectedTool) {
+    //       self.toolbar.useTool(tile);
+    //     } else {
+    //       match = tile
+    //       tile.selected = true;
+    //     }
+    //   }
+    // }
+
+    // if (match) {
+    //   self.object_selected = match
+    //   self.menu.showInfo(self.object_selected);
+    // }
   }
 
   rightClickHandler(e) {

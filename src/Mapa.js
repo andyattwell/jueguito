@@ -1,4 +1,50 @@
 import $ from 'jquery';
+import * as THREE from 'three';
+
+class Cube extends THREE.Mesh {
+  constructor(color, type) {
+    super()
+    this.color = color;
+    this.material = [
+      new THREE.MeshBasicMaterial({color: color}),
+      new THREE.MeshBasicMaterial({color: color}),
+      new THREE.MeshBasicMaterial({color: color}),
+      new THREE.MeshBasicMaterial({color: color}),
+      new THREE.MeshBasicMaterial({color: color}),
+      new THREE.MeshBasicMaterial({color: color})
+    ];
+
+    // this.material = new THREE.MeshStandardMaterial(cubeMaterials);
+    this.geometry = new THREE.BoxGeometry(.2, .2, .2);
+
+    this.cubeSize = .2
+    this.cubeActive = false
+  }
+
+  render() {
+    this.rotation.x = this.rotation.y += 0.01
+  }
+
+  onResize(width, height, aspect) {
+    // this.cubeSize = .2
+    this.scale.setScalar(this.cubeSize * (this.cubeActive ? 1.5 : 1))
+  }
+
+  onPointerOver(e) {
+    this.material.at(4).color.set('hotpink')
+    this.material.at(4).color.convertSRGBToLinear()
+  }
+
+  onPointerOut(e) {
+    this.material.at(4).color.set(this.color)
+    // this.material.at(4).color.convertSRGBToLinear()
+  }
+
+  onClick(e) {
+    this.cubeActive = !this.cubeActive
+    this.scale.setScalar(this.cubeSize * (this.cubeActive ? 1 : 5))
+  }
+}
 
 //constructor function to create all the grid points as objects containind the data for the points
 class GridPoint {
@@ -10,6 +56,7 @@ class GridPoint {
     this.h = 0; // heuristic estimated cost function from current grid point to the goal
     this.neighbors = []; // neighbors of the current grid point
     this.parent = undefined; // immediate source of the current grid point
+
   }
 
   // update neighbors array for a given grid point
@@ -31,10 +78,11 @@ class GridPoint {
   };
 }
 
-class Tile extends GridPoint{
+class Tile extends GridPoint {
   constructor(x, y, id, size) {
     super(x, y);
-    this.id = id; // tile id
+
+    // this.id = id; // tile id
     // this.type = type; // path | water | rock
     this.size = size; // size in pixels
     this.left = x * size; // x position in pixels
@@ -43,13 +91,53 @@ class Tile extends GridPoint{
     this.occupied = false; // is the current tile ocupied?
     this.selected = false; // is the current tile selected?
     this.color = "#000000"; // tile color based on the type
+    this.hover = false;
+
+    // this.mesh = this.createCube();
+
+    // this.material = [
+    //   new THREE.MeshBasicMaterial({color:this.color}),
+    //   new THREE.MeshBasicMaterial({color:this.color}),
+    //   new THREE.MeshBasicMaterial({color:this.color}),
+    //   new THREE.MeshBasicMaterial({color:this.color}),
+    //   new THREE.MeshBasicMaterial({color:this.color}),
+    //   new THREE.MeshBasicMaterial({color:this.color})
+    // ];
+
+    // var cubeMaterial = new THREE.MeshStandardMaterial(cubeMaterials);
+    // this.geometry = new THREE.BoxGeometry(this.tileSize, this.tileSize, this.tileSize);
+
+    // var cube = new THREE.Mesh(this.geometry, cubeMaterials);
+
+  }
+
+  createCube() {
+    var cubeMaterials = [
+        new THREE.MeshBasicMaterial({color:this.color}),
+        new THREE.MeshBasicMaterial({color:this.color}),
+        new THREE.MeshBasicMaterial({color:this.color}),
+        new THREE.MeshBasicMaterial({color:this.color}),
+        new THREE.MeshBasicMaterial({color:this.color}),
+        new THREE.MeshBasicMaterial({color:this.color})
+    ];
+
+    // var cubeMaterial = new THREE.MeshStandardMaterial(cubeMaterials);
+    var cubeGeometry = new THREE.BoxGeometry(this.tileSize, this.tileSize, this.tileSize);
+
+    var cube = new THREE.Mesh(cubeGeometry, cubeMaterials);
+
+    return cube;
   }
 
   getColor = function () {
     let typeColor = this.color;
     let specialColor = false;
 
-    if (this.planned === true) {
+    if (this.selected === true) {
+      specialColor = '#fff0ff'
+    } if (this.hover === true) {
+      specialColor = '#fff0ff'
+    } if (this.planned === true) {
       specialColor = "#fff700";
     } else if (this.occupied === true) {
       specialColor = '#e000ff' 
@@ -62,6 +150,14 @@ class Tile extends GridPoint{
     }
 
     return color;
+  }
+
+  onPointerOver() {
+    this.hover = true
+  }
+
+  onClick() {
+    this.selected = true;
   }
   
   blendColors(colorA, colorB, amount) {
@@ -113,7 +209,7 @@ class Grass extends Tile {
 
 class Mapa {
   
-  constructor(ctx, data = null) {
+  constructor(scene, data = null) {
     this.cols = data.length ? data.length : 60;
     this.rows = data.length ? data[0].length : 60;
     this.grid = new Array(this.cols);
@@ -121,14 +217,14 @@ class Mapa {
     this.closedSet = [];
     this.openSet = [];
     
-    this.tileSize = 30;
+    this.tileSize = 0.2;
     
     this.listeners = {};
     
     this.offsetX = 0;
     this.offsetY = 0;
     
-    this.ctx = ctx;
+    this.scene = scene;
     this.viewArea = {
       width: window.innerWidth,
       height: window.innerHeight,
@@ -394,7 +490,7 @@ class Mapa {
     }
   }
 
-  render(ctx, zoom) {
+  render(scene, zoom) {
     const offsetX = this.offsetX;
     const offsetY = this.offsetY;
 
@@ -402,25 +498,30 @@ class Mapa {
 
     for (let i = 0; i < this.cols; i++) {
 
-      if (offsetX + i * tileSize < 0 - tileSize || offsetX + i * tileSize > this.viewArea.width + tileSize) {
-        continue;
-      }
+      // if (offsetX + i * tileSize < 0 - tileSize || offsetX + i * tileSize > this.viewArea.width + tileSize) {
+      //   continue;
+      // }
 
       for (let j = 0; j < this.rows; j++) {
-        if (offsetY + j * tileSize < 0 - tileSize || offsetY + j * tileSize > this.viewArea.height + tileSize) {
-          continue;
-        }
+        // if (offsetY + j * tileSize < 0 - tileSize || offsetY + j * tileSize > this.viewArea.height + tileSize) {
+        //   continue;
+        // }
         const tile = this.grid[i][j];
-        ctx.beginPath();
-        ctx.rect(offsetX + i * tileSize, offsetY + j * tileSize, tileSize, tileSize);
-        ctx.fillStyle = tile.getColor();
+        // console.log({tile})
+        const cube = new Cube(tile.color);      
+        cube.position.set(offsetX + i * tileSize, offsetY + j * tileSize, -2)
+        scene.add( cube );
 
-        ctx.fill();
-        ctx.closePath();
-        if (tile.selected === true) {
-          ctx.strokeStyle = 'red';
-          ctx.stroke();
-        }
+        // ctx.beginPath();
+        // ctx.rect(offsetX + i * tileSize, offsetY + j * tileSize, tileSize, tileSize);
+        // ctx.fillStyle = tile.getColor();
+
+        // ctx.fill();
+        // ctx.closePath();
+        // if (tile.selected === true) {
+        //   ctx.strokeStyle = 'red';
+        //   ctx.stroke();
+        // }
 
         // ctx.fillStyle = '#fff';
         // ctx.font="10px Arial";
@@ -431,6 +532,7 @@ class Mapa {
 
       }
     }
+    return scene
   }
 
   getRandomTile() {

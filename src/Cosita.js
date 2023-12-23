@@ -1,11 +1,12 @@
 import $ from 'jquery';
+import * as THREE from 'three';
 
 class Cosita {
   constructor(id, map, spawn) {
     this.id = id;
     this.type = 'cosita';
-    this.width = 15;
-    this.height = 15;
+    this.width = .15;
+    this.height = .15;
     this.isMoving = false;
     this.selected = false;
     this.speed = 1;
@@ -302,6 +303,26 @@ class Cosita {
     ctx.fillStyle = this.selected ? '#f5f230' : this.color;
     ctx.fill();
     ctx.closePath();
+  }
+
+  createCube(scene) {
+    const color = this.selected ? '#f5f230' : this.color;
+    var cubeMaterials = [
+        new THREE.MeshBasicMaterial({color:"#FFFFFF"}),
+        new THREE.MeshBasicMaterial({color:"#FFFFFF"}),
+        new THREE.MeshBasicMaterial({color:"#FFFFFF"}),
+        new THREE.MeshBasicMaterial({color:"#FFFFFF"}),
+        new THREE.MeshBasicMaterial({color:"#FFFFFF"}),
+        new THREE.MeshBasicMaterial({color:"#FFFFFF"})
+    ];
+
+    // var cubeMaterial = new THREE.MeshStandardMaterial(cubeMaterials);
+    var cubeGeometry = new THREE.BoxGeometry(this.width, this.height, this.height);
+
+    var cube = new THREE.Mesh(cubeGeometry, cubeMaterials);
+    cube.position.set(this.x, this.y, -1.8)
+    scene.add(cube);
+    return cube;
   }
 }
 export default Cosita
