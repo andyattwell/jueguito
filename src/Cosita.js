@@ -1,16 +1,19 @@
 import $ from 'jquery';
 import * as THREE from 'three';
 
-class Cosita {
+class Cosita extends THREE.Mesh {
   constructor(id, map, spawn) {
-    this.id = id;
+    super()
+    
+    // this.id = id;
     this.type = 'cosita';
     this.width = .15;
     this.height = .15;
     this.isMoving = false;
     this.selected = false;
-    this.speed = 1;
+    this.speed = .01;
     this.color = "#FFFFFF"
+    this.cubeActive = false;
     
     this.map = map;
     this.interval = null;
@@ -28,9 +31,21 @@ class Cosita {
       this.y = 0;
     }
 
-    const _ct = this.currentTile();
-    this.current = this.map.grid[_ct.x][_ct.y]; // current tile
+    this.material = [
+      new THREE.MeshBasicMaterial({color: this.color}),
+      new THREE.MeshBasicMaterial({color: this.color}),
+      new THREE.MeshBasicMaterial({color: this.color}),
+      new THREE.MeshBasicMaterial({color: this.color}),
+      new THREE.MeshBasicMaterial({color: this.color}),
+      new THREE.MeshBasicMaterial({color: this.color})
+    ];
 
+    // this.material = new THREE.MeshStandardMaterial(cubeMaterials);
+    this.geometry = new THREE.BoxGeometry(this.width, this.width, this.width);
+
+    const _ct = this.currentTile(this.x, this.y);
+    this.current = this.map.grid[_ct.x][_ct.y]; // current tile
+    this.position.set(this.x, this.y, -1.8)
   }
 
   emit(method, payload = null) {
@@ -102,9 +117,15 @@ class Cosita {
 
   }
 
-  currentTile() {
-    const cellX = parseInt(this.x / this.map.tileSize);
-    const cellY = parseInt(this.y / this.map.tileSize);
+  currentTile(x, y) {
+    if (x < 0) {
+      x = 0
+    }
+    if (y < 0) {
+      y = 0
+    }
+    const cellX = parseInt(x / this.map.tileSize);
+    const cellY = parseInt(y / this.map.tileSize);
 
     return {
       x: cellX,
@@ -124,35 +145,37 @@ class Cosita {
       return false;
     }
 
-    let targetPosX = targetCell.left + targetCell.size / 2 - this.width / 2;
-    let targetPosY = targetCell.top + targetCell.size / 2 - this.height / 2;
+    // let targetPosX = targetCell.left + targetCell.size / 2 - this.width / 2;
+    // let targetPosY = targetCell.top + targetCell.size / 2 - this.height / 2;
 
-    let diffX = Math.abs(parseInt(this.x - targetPosX));
-    let diffY = Math.abs(parseInt(this.y - targetPosY));
+    let targetPosX = targetCell.position.x;
+    let targetPosY = targetCell.position.y;
 
-    let nextX = this.x;
-    let nextY = this.y;
+    let diffX = parseFloat(Math.abs(this.position.x - targetPosX).toFixed(2));
+    let diffY = parseFloat(Math.abs(this.position.y - targetPosY).toFixed(2));
 
-    if (diffX >= 1) {
-      if (targetPosX > this.x) {
+    let nextX = this.position.x;
+    let nextY = this.position.y;
+
+    if (diffX >= this.speed) {
+      if (targetPosX > this.position.x) {
         nextX += this.speed; 
-      } else if (targetPosX < this.x) {
+      } else if (targetPosX < this.position.x) {
         nextX -= this.speed; 
       }
     }
 
-    if (diffY >= 1) {
-      if (targetPosY > this.y) {
+    if (diffY >= this.speed) {
+      if (targetPosY > this.position.y) {
         nextY += this.speed;
-      } else if (targetPosY < this.y) {
+      } else if (targetPosY < this.position.y) {
         nextY -= this.speed;
       }
     }
 
-    this.x = nextX
-    this.y = nextY
-
-    if (diffY <= 1 && diffX <= 1) {
+    
+    this.position.set(nextX, nextY)
+    if (diffY <= this.speed && diffX <= this.speed) {
       this.currentPath.shift();
       targetCell.planned = false;
       
@@ -163,35 +186,36 @@ class Cosita {
         this.current.occupied = true;
       }
 
-      const last = this.currentPath[this.currentPath.length-1];
-      if (last) {
-        this.moveTo(last.x, last.y)
-      }
+      // const last = this.currentPath[this.currentPath.length-1];
+      // if (last) {
+      //   this.moveTo(last.x, last.y)
+      // }
     }
   }
 
   moveTo(endX, endY) {
-
-    const tile = this.currentTile()
+    const endtile = this.currentTile(endX, endY)
+    const tile = this.currentTile(this.position.x, this.position.y)
     const self = this;
-    if (this.currentPath && this.currentPath.length >= 1) {
-      this.currentPath.map(tile => {
-        tile.planned = false;
-        return tile;
-      });
-    }
+    // if (this.currentPath && this.currentPath.length >= 1) {
+    //   this.currentPath.map(tile => {
+    //     tile.planned = false;
+    //     return tile;
+    //   });
+    // }
 
-    this.currentPath = this.map.findPath(tile.x, tile.y, endX, endY)
-      .filter((tile) => tile !== self.current);
+    this.currentPath = this.map.findPath(tile.x, tile.y, endtile.x, endtile.y)
+      // .filter((tile) => tile !== self.current);
+      // console.log('currentPath', this.currentPath)
 
-    if (this.currentPath.length === 0) {
-      this.currentPath = [this.current]
-    }
+    // if (this.currentPath.length === 0) {
+    //   this.currentPath = [this.current]
+    // }
 
-    this.currentPath.map(tile => {
-      tile.planned = true;
-      return tile;
-    });
+    // this.currentPath.map(tile => {
+    //   tile.planned = true;
+    //   return tile;
+    // });
   }
 
   detectCollitionV2(targetX, targetY) {
@@ -287,42 +311,35 @@ class Cosita {
     return collition;
 
   }
+  
+  // onResize(width, height, aspect) {
+  //   // this.cubeSize = .2
+  //   this.scale.setScalar(this.cubeSize * (this.cubeActive ? 1.5 : 1))
+  // }
 
-  draw (ctx, zoom) {
+  onPointerOver(e) {
+    const self = this;
 
-    if (this.map.offsetX + this.x * zoom  < 0 || this.map.offsetX + this.x * zoom  > this.map.viewArea.width) {
-      return;
-    }
-
-    if (this.map.offsetY + this.y * zoom  < 0 || this.map.offsetY + this.y * zoom  > this.map.viewArea.height) {
-      return;
-    }
-
-    ctx.beginPath();
-    ctx.rect(this.map.offsetX + this.x * zoom , this.map.offsetY + this.y * zoom , this.width * zoom, this.height * zoom);
-    ctx.fillStyle = this.selected ? '#f5f230' : this.color;
-    ctx.fill();
-    ctx.closePath();
+    this.material.forEach((color, i) => {
+      self.material.at(i).color.set('yellow')
+      self.material.at(i).color.convertSRGBToLinear()
+    })
   }
 
-  createCube(scene) {
-    const color = this.selected ? '#f5f230' : this.color;
-    var cubeMaterials = [
-        new THREE.MeshBasicMaterial({color:"#FFFFFF"}),
-        new THREE.MeshBasicMaterial({color:"#FFFFFF"}),
-        new THREE.MeshBasicMaterial({color:"#FFFFFF"}),
-        new THREE.MeshBasicMaterial({color:"#FFFFFF"}),
-        new THREE.MeshBasicMaterial({color:"#FFFFFF"}),
-        new THREE.MeshBasicMaterial({color:"#FFFFFF"})
-    ];
+  onPointerOut(e) {
+    // this.material.at(4).color.set(this.color)
+    const self = this;
+    this.material.forEach((color, i) => {
+      self.material.at(i).color.set(this.color)
+      // color.convertSRGBToLinear()
+    })
+    // this.material.at(4).color.convertSRGBToLinear()
+  }
 
-    // var cubeMaterial = new THREE.MeshStandardMaterial(cubeMaterials);
-    var cubeGeometry = new THREE.BoxGeometry(this.width, this.height, this.height);
-
-    var cube = new THREE.Mesh(cubeGeometry, cubeMaterials);
-    cube.position.set(this.x, this.y, -1.8)
-    scene.add(cube);
-    return cube;
+  onClick(e) {
+    this.cubeActive = !this.cubeActive
+    this.color = this.cubeActive ? "#f5f230" : "#FFFFFF";
+    this.material.at(4).color.set(this.color)
   }
 }
 export default Cosita

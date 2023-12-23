@@ -21,6 +21,12 @@ class Cube extends THREE.Mesh {
     this.cubeActive = false
   }
 
+  setColor = function (color) {
+    this.material.forEach((c, i) => {
+      this.material.at(i).color.set(color || this.color)
+    })
+  }
+
   render() {
     this.rotation.x = this.rotation.y += 0.01
   }
@@ -31,12 +37,14 @@ class Cube extends THREE.Mesh {
   }
 
   onPointerOver(e) {
-    this.material.at(4).color.set('hotpink')
-    this.material.at(4).color.convertSRGBToLinear()
+    this.setColor('hotpink');
+    // this.material.at(4).color.set('hotpink')
+    // this.material.at(4).color.convertSRGBToLinear()
   }
 
   onPointerOut(e) {
-    this.material.at(4).color.set(this.color)
+    this.setColor();
+    // this.material.at(4).color.set(this.color)
     // this.material.at(4).color.convertSRGBToLinear()
   }
 
@@ -47,15 +55,19 @@ class Cube extends THREE.Mesh {
 }
 
 //constructor function to create all the grid points as objects containind the data for the points
-class GridPoint {
+class GridPoint extends Cube {
   constructor(x, y) {
+    super("#FFFFFF")
+
     this.x = x; // x location of the grid point
     this.y = y; // y location of the grid point
     this.f = 0; // total cost function
     this.g = 0; // cost function from start to the current grid point
     this.h = 0; // heuristic estimated cost function from current grid point to the goal
     this.neighbors = []; // neighbors of the current grid point
-    this.parent = undefined; // immediate source of the current grid point
+    this.top_parent = undefined; // immediate source of the current grid point
+
+    this.color = "#FFFFFF";
 
   }
 
@@ -76,6 +88,7 @@ class GridPoint {
       this.neighbors.push(grid[i][j - 1]);
     }
   };
+
 }
 
 class Tile extends GridPoint {
@@ -93,40 +106,6 @@ class Tile extends GridPoint {
     this.color = "#000000"; // tile color based on the type
     this.hover = false;
 
-    // this.mesh = this.createCube();
-
-    // this.material = [
-    //   new THREE.MeshBasicMaterial({color:this.color}),
-    //   new THREE.MeshBasicMaterial({color:this.color}),
-    //   new THREE.MeshBasicMaterial({color:this.color}),
-    //   new THREE.MeshBasicMaterial({color:this.color}),
-    //   new THREE.MeshBasicMaterial({color:this.color}),
-    //   new THREE.MeshBasicMaterial({color:this.color})
-    // ];
-
-    // var cubeMaterial = new THREE.MeshStandardMaterial(cubeMaterials);
-    // this.geometry = new THREE.BoxGeometry(this.tileSize, this.tileSize, this.tileSize);
-
-    // var cube = new THREE.Mesh(this.geometry, cubeMaterials);
-
-  }
-
-  createCube() {
-    var cubeMaterials = [
-        new THREE.MeshBasicMaterial({color:this.color}),
-        new THREE.MeshBasicMaterial({color:this.color}),
-        new THREE.MeshBasicMaterial({color:this.color}),
-        new THREE.MeshBasicMaterial({color:this.color}),
-        new THREE.MeshBasicMaterial({color:this.color}),
-        new THREE.MeshBasicMaterial({color:this.color})
-    ];
-
-    // var cubeMaterial = new THREE.MeshStandardMaterial(cubeMaterials);
-    var cubeGeometry = new THREE.BoxGeometry(this.tileSize, this.tileSize, this.tileSize);
-
-    var cube = new THREE.Mesh(cubeGeometry, cubeMaterials);
-
-    return cube;
   }
 
   getColor = function () {
@@ -152,10 +131,6 @@ class Tile extends GridPoint {
     return color;
   }
 
-  onPointerOver() {
-    this.hover = true
-  }
-
   onClick() {
     this.selected = true;
   }
@@ -177,6 +152,7 @@ class Rock extends Tile {
     this.type = 'rock';
     this.walkable = false;
     this.color = "#685e70";
+    this.setColor();
   }
 }
 
@@ -186,6 +162,7 @@ class Water extends Tile {
     this.type = 'water';
     this.walkable = false;
     this.color = "#2093d5";
+    this.setColor();
   }
 }
 
@@ -195,6 +172,7 @@ class Path extends Tile {
     this.type = 'path';
     this.walkable = true;
     this.color = "#aa9f2b";
+    this.setColor();
   }
 }
 
@@ -204,6 +182,7 @@ class Grass extends Tile {
     this.type = 'grass';
     this.walkable = true;
     this.color = "#51d343";
+    this.setColor();
   }
 }
 
@@ -298,7 +277,7 @@ class Mapa {
         this.grid[x][y] = new entity(
           x,
           y, 
-          (x * this.cols) + y,
+          x * y + 1,
           this.tileSize
         );
       }
@@ -335,6 +314,7 @@ class Mapa {
   }
 
   findPath(startX, startY, endX, endY) {
+    console.log({startX, startY, endX, endY})
     
     let start = this.grid[startX][startY];
     let end = this.grid[endX][endY];
@@ -369,12 +349,12 @@ class Mapa {
       if (current === end) {
         let temp = current;
         path.push(temp);
-        while (temp.parent) {
+        while (temp.top_parent) {
           try {
-            path.push(temp.parent);
-            temp = temp.parent;
+            path.push(temp.top_parent);
+            temp = temp.top_parent;
           } catch (error) {
-            temp.parent = null
+            temp.top_parent = null
           }
         }
         this.clearAll();
@@ -409,7 +389,6 @@ class Mapa {
   
         if (!openSet.includes(neighbor)) {
 
-          
           neighbor.g = possibleG;
           neighbor.h = this.heuristic(neighbor, end);
           neighbor.f = neighbor.g + neighbor.h;
@@ -417,7 +396,7 @@ class Mapa {
           neighbor.f += neighbor.walkable !== true ? 10000 : 0;
           neighbor.f += neighbor.occupied ? 10000 : 0;
 
-          neighbor.parent = current;
+          neighbor.top_parent = current;
           if (!neighbor.occupied) {
             openSet.push(neighbor);
           }
@@ -443,7 +422,7 @@ class Mapa {
         this.grid[i][j].f = 0;
         this.grid[i][j].g = 0;
         this.grid[i][j].h = 0;
-        this.grid[i][j].parent = undefined;
+        this.grid[i][j].top_parent = undefined;
       }
     }
   }
@@ -507,10 +486,9 @@ class Mapa {
         //   continue;
         // }
         const tile = this.grid[i][j];
-        // console.log({tile})
-        const cube = new Cube(tile.color);      
-        cube.position.set(offsetX + i * tileSize, offsetY + j * tileSize, -2)
-        scene.add( cube );
+        // const cube = new Cube(tile.color);      
+        tile.position.set(offsetX + i * tileSize, offsetY + j * tileSize, -2)
+        scene.add( tile );
 
         // ctx.beginPath();
         // ctx.rect(offsetX + i * tileSize, offsetY + j * tileSize, tileSize, tileSize);
