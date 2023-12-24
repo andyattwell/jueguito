@@ -11,7 +11,7 @@ class Cosita extends THREE.Mesh {
     this.height = .15;
     this.isMoving = false;
     this.selected = false;
-    this.speed = .01;
+    this.speed = .05;
     this.color = "#FFFFFF"
     this.cubeActive = false;
     
@@ -119,10 +119,10 @@ class Cosita extends THREE.Mesh {
 
   currentTile(x, y) {
     if (x < 0) {
-      x = 0
+      x = 1
     }
     if (y < 0) {
-      y = 0
+      y = 1
     }
     const cellX = parseInt(x / this.map.tileSize);
     const cellY = parseInt(y / this.map.tileSize);
@@ -133,7 +133,7 @@ class Cosita extends THREE.Mesh {
     }
   }
 
-  update() {
+  update(camera, controls) {
 
     if (this.currentPath === null || this.currentPath.length < 1) {
       return false;
@@ -173,49 +173,65 @@ class Cosita extends THREE.Mesh {
       }
     }
 
+    const oldObjectPosition = new THREE.Vector3();
+    this.getWorldPosition(oldObjectPosition);
     
     this.position.set(nextX, nextY)
+
+    // const newObjectPosition = new THREE.Vector3();
+    // this.getWorldPosition(newObjectPosition);
+    // const delta = newObjectPosition.clone().sub(oldObjectPosition);
+    // camera.position.add(delta);
+
+    // controls.update()
+    
+
     if (diffY <= this.speed && diffX <= this.speed) {
       this.currentPath.shift();
       targetCell.planned = false;
+      targetCell.setColor();
       
       if (!this.current || this.current != targetCell) {
         this.current.occupied = false;
+        this.current.setColor();
         this.lastTile = this.current;
         this.current = targetCell;
         this.current.occupied = true;
+        // const last = this.currentPath[this.currentPath.length-1];
+        // if (last) {
+        //   this.moveTo(last)
+        // }
       }
-
-      // const last = this.currentPath[this.currentPath.length-1];
-      // if (last) {
-      //   this.moveTo(last.x, last.y)
-      // }
+      
+      
     }
   }
 
-  moveTo(endX, endY) {
-    const endtile = this.currentTile(endX, endY)
+  moveTo(end) {
+    const endtile = this.currentTile(end.position.x, end.position.y)
     const tile = this.currentTile(this.position.x, this.position.y)
     const self = this;
-    // if (this.currentPath && this.currentPath.length >= 1) {
-    //   this.currentPath.map(tile => {
-    //     tile.planned = false;
-    //     return tile;
-    //   });
-    // }
+
+    if (this.currentPath && this.currentPath.length >= 1) {
+      this.currentPath.map(tile => {
+        tile.planned = false;
+        tile.setColor();
+      });
+    }
 
     this.currentPath = this.map.findPath(tile.x, tile.y, endtile.x, endtile.y)
-      // .filter((tile) => tile !== self.current);
+      .filter((tile) => tile !== self.current);
       // console.log('currentPath', this.currentPath)
 
     // if (this.currentPath.length === 0) {
     //   this.currentPath = [this.current]
     // }
 
-    // this.currentPath.map(tile => {
-    //   tile.planned = true;
-    //   return tile;
-    // });
+    this.currentPath.map(tile => {
+      tile.planned = true;
+      tile.setColor();
+      return tile;
+    });
   }
 
   detectCollitionV2(targetX, targetY) {
@@ -311,35 +327,58 @@ class Cosita extends THREE.Mesh {
     return collition;
 
   }
-  
-  // onResize(width, height, aspect) {
-  //   // this.cubeSize = .2
-  //   this.scale.setScalar(this.cubeSize * (this.cubeActive ? 1.5 : 1))
-  // }
+
+  blendColors(colorA, colorB, amount) {
+    const [rA, gA, bA] = colorA.match(/\w\w/g).map((c) => parseInt(c, 16));
+    const [rB, gB, bB] = colorB.match(/\w\w/g).map((c) => parseInt(c, 16));
+    const r = Math.round(rA + (rB - rA) * amount).toString(16).padStart(2, '0');
+    const g = Math.round(gA + (gB - gA) * amount).toString(16).padStart(2, '0');
+    const b = Math.round(bA + (bB - bA) * amount).toString(16).padStart(2, '0');
+    return '#' + r + g + b;
+  }
+
+  getColor = function () {
+    let color = this.color;
+    let specialColor = false;
+
+    if (this.selected === true) {
+      specialColor = '#fe350c'
+    } if (this.hover === true) {
+      specialColor = '#fed20c'
+    }
+
+    if (specialColor) {
+      color = this.blendColors(color, specialColor, 0.5);
+    }
+
+    return color;
+  }
+
+  setColor(color) {
+    this.material.forEach((c, i) => {
+      this.material.at(i).color.set(color || this.getColor())
+    })
+  }
 
   onPointerOver(e) {
-    const self = this;
-
-    this.material.forEach((color, i) => {
-      self.material.at(i).color.set('yellow')
-      self.material.at(i).color.convertSRGBToLinear()
-    })
+    this.hover = true
+    console.log('ACA')
+    this.setColor();
   }
 
   onPointerOut(e) {
-    // this.material.at(4).color.set(this.color)
-    const self = this;
-    this.material.forEach((color, i) => {
-      self.material.at(i).color.set(this.color)
-      // color.convertSRGBToLinear()
-    })
-    // this.material.at(4).color.convertSRGBToLinear()
+    this.hover = false
+    this.setColor();
   }
 
   onClick(e) {
-    this.cubeActive = !this.cubeActive
-    this.color = this.cubeActive ? "#f5f230" : "#FFFFFF";
-    this.material.at(4).color.set(this.color)
+    this.selected = true;
+    this.setColor();
+  }
+  
+  deselect() {
+    this.selected = false;
+    this.setColor();
   }
 }
 export default Cosita

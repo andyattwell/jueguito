@@ -21,37 +21,6 @@ class Cube extends THREE.Mesh {
     this.cubeActive = false
   }
 
-  setColor = function (color) {
-    this.material.forEach((c, i) => {
-      this.material.at(i).color.set(color || this.color)
-    })
-  }
-
-  render() {
-    this.rotation.x = this.rotation.y += 0.01
-  }
-
-  onResize(width, height, aspect) {
-    // this.cubeSize = .2
-    this.scale.setScalar(this.cubeSize * (this.cubeActive ? 1.5 : 1))
-  }
-
-  onPointerOver(e) {
-    this.setColor('hotpink');
-    // this.material.at(4).color.set('hotpink')
-    // this.material.at(4).color.convertSRGBToLinear()
-  }
-
-  onPointerOut(e) {
-    this.setColor();
-    // this.material.at(4).color.set(this.color)
-    // this.material.at(4).color.convertSRGBToLinear()
-  }
-
-  onClick(e) {
-    this.cubeActive = !this.cubeActive
-    this.scale.setScalar(this.cubeSize * (this.cubeActive ? 1 : 5))
-  }
 }
 
 //constructor function to create all the grid points as objects containind the data for the points
@@ -113,7 +82,7 @@ class Tile extends GridPoint {
     let specialColor = false;
 
     if (this.selected === true) {
-      specialColor = '#fff0ff'
+      specialColor = '#fff033'
     } if (this.hover === true) {
       specialColor = '#fff0ff'
     } if (this.planned === true) {
@@ -131,8 +100,32 @@ class Tile extends GridPoint {
     return color;
   }
 
+  setColor = function (color) {
+    this.material.forEach((c, i) => {
+      this.material.at(i).color.set(color || this.getColor())
+    })
+  }
+
   onClick() {
     this.selected = true;
+    this.setColor()
+  }
+
+  deselect() {
+    this.selected = false;
+    this.setColor()
+  }
+
+  onResize(width, height, aspect) {}
+
+  onPointerOver(e) {
+    this.hover = true;
+    this.setColor();
+  }
+
+  onPointerOut(e) {
+    this.hover = false;
+    this.setColor();
   }
   
   blendColors(colorA, colorB, amount) {
@@ -381,10 +374,6 @@ class Mapa {
           continue;
         }
 
-        if (neighbor.walkable !== true || neighbor.occupied == true) {
-          continue;
-        }
-
         let possibleG = current.g + 1;
   
         if (!openSet.includes(neighbor)) {
@@ -397,6 +386,11 @@ class Mapa {
           neighbor.f += neighbor.occupied ? 10000 : 0;
 
           neighbor.top_parent = current;
+          
+          if (neighbor.walkable !== true || neighbor.occupied == true) {
+            continue;
+          }
+
           if (!neighbor.occupied) {
             openSet.push(neighbor);
           }
@@ -469,45 +463,12 @@ class Mapa {
     }
   }
 
-  render(scene, zoom) {
-    const offsetX = this.offsetX;
-    const offsetY = this.offsetY;
-
-    const tileSize = this.tileSize * zoom
-
+  render(scene) {
     for (let i = 0; i < this.cols; i++) {
-
-      // if (offsetX + i * tileSize < 0 - tileSize || offsetX + i * tileSize > this.viewArea.width + tileSize) {
-      //   continue;
-      // }
-
       for (let j = 0; j < this.rows; j++) {
-        // if (offsetY + j * tileSize < 0 - tileSize || offsetY + j * tileSize > this.viewArea.height + tileSize) {
-        //   continue;
-        // }
         const tile = this.grid[i][j];
-        // const cube = new Cube(tile.color);      
-        tile.position.set(offsetX + i * tileSize, offsetY + j * tileSize, -2)
+        tile.position.set(i * this.tileSize, j * this.tileSize, -2)
         scene.add( tile );
-
-        // ctx.beginPath();
-        // ctx.rect(offsetX + i * tileSize, offsetY + j * tileSize, tileSize, tileSize);
-        // ctx.fillStyle = tile.getColor();
-
-        // ctx.fill();
-        // ctx.closePath();
-        // if (tile.selected === true) {
-        //   ctx.strokeStyle = 'red';
-        //   ctx.stroke();
-        // }
-
-        // ctx.fillStyle = '#fff';
-        // ctx.font="10px Arial";
-        // ctx.strokeStyle = "#fff";
-        // const textx = offsetX + i * this.tileSize * zoom + 5;
-        // const texty = offsetY + j * this.tileSize * zoom + 20;
-        // ctx.fillText(tile.id, textx, texty);
-
       }
     }
     return scene
