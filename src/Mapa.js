@@ -20,12 +20,15 @@ class GridPoint extends THREE.Mesh {
     this.color = "#000000"; // tile color based on the type
     this.hover = false;
 
+    this.name = "tile-" + (this.x * this.y + 1)
+
   }
 
   // update neighbors array for a given grid point
   updateNeighbors = function (grid, cols, rows) {
     let i = this.x;
     let j = this.y;
+    this.neighbors = [];
     if (i < cols - 1) {
       this.neighbors.push(grid[i + 1][j]);
     }
@@ -107,7 +110,7 @@ class Cube extends GridPoint {
       new THREE.MeshBasicMaterial({color: color}),
       new THREE.MeshBasicMaterial({color: color})
     ];
-    this.position.z = size / 2;
+    this.position.set(this.left, this.top, this.size / 2)
       // this.material = new THREE.MeshStandardMaterial(cubeMaterials);
     this.geometry = new THREE.BoxGeometry(size, size, size);
   }
@@ -119,7 +122,7 @@ class Plane extends GridPoint {
     this.color = color;
     this.material = new THREE.MeshBasicMaterial({color: color})
     this.geometry = new THREE.PlaneGeometry(size, size)
-    this.position.z = 0;
+    this.position.set(this.left, this.top, 0)
   }
 
   setColor (color) {
@@ -132,19 +135,7 @@ class Rock extends Cube {
     super(x, y, "#685e70", size);
     this.type = 'rock';
     this.walkable = false;
-    this.color = "#685e70";
     this.setColor();
-
-    this.material = [
-      new THREE.MeshBasicMaterial({color: this.color}),
-      new THREE.MeshBasicMaterial({color: this.color}),
-      new THREE.MeshBasicMaterial({color: this.color}),
-      new THREE.MeshBasicMaterial({color: this.color}),
-      new THREE.MeshBasicMaterial({color: this.color}),
-      new THREE.MeshBasicMaterial({color: this.color})
-    ];
-
-    this.geometry = new THREE.BoxGeometry(.2, .2, .2);
   }
 
   setColor (color) {
@@ -159,7 +150,6 @@ class Water extends Plane {
     super(x, y, "#2093d5", size);
     this.type = 'water';
     this.walkable = false;
-    this.color = "#2093d5";
     this.position.z = 0;
     this.setColor();
   }
@@ -170,7 +160,6 @@ class Path extends Plane {
     super(x, y, "#aa9f2b", size);
     this.type = 'path';
     this.walkable = true;
-    this.color = "#aa9f2b";
     this.position.z = 0;
     this.setColor();
   }
@@ -181,7 +170,6 @@ class Grass extends Plane {
     super(x, y, "#51d343", size);
     this.type = 'grass';
     this.walkable = true;
-    this.color = "#51d343";
     this.setColor();
   }
 }
@@ -200,6 +188,8 @@ class Mapa {
     
     this.offsetX = 0;
     this.offsetY = 0;
+
+    this.scene = scene;
 
     if (data.length) {
       this.import(data);
@@ -354,9 +344,10 @@ class Mapa {
           continue;
         }
 
-        // if (neighbor.walkable !== true || neighbor.occupied == true) {
-        //   continue;
-        // }
+        if (neighbor.walkable !== true || neighbor.occupied == true) {
+          continue;
+        }
+
         let possibleG = current.g + 1;
   
         if (!openSet.includes(neighbor)) {
@@ -405,7 +396,6 @@ class Mapa {
     for (let i = 0; i < this.cols; i++) {
       for (let j = 0; j < this.rows; j++) {
         const tile = this.grid[i][j];
-        let z = 0;
         tile.position.set(tile.left, tile.top, tile.z)
         scene.add( tile );
       }
@@ -449,31 +439,26 @@ class Mapa {
     return spawn || this.grid[0][0];
   }
 
-  replaceTile(tile, type) {
-    // let entity = Path;
-    console.log(tile, type)
-    let color = "#aa9f2b";
-    let walkable = true;
-    if (type === 'grass') {
-      // entity = Grass;
-      walkable = true;
-      color = "#51d343";
-    } else if (type === 'rock') {
-      // entity = Rock;
-      walkable = false;
-      color = "#685e70";
-    } else if (type === 'water') {
-      // entity = Water;
-      walkable = false;
-      color = "#2093d5";
+  replaceTile(tile, newType) {
+    if (tile.type === newType) {
+      return false;
+    }
+    let entity = Path;
+    if (newType === 'grass') {
+      entity = Grass;
+    } else if (newType === 'rock') {
+      entity = Rock;
+    } else if (newType === 'water') {
+      entity = Water;
     }
 
-    tile.type = type;
-    tile.color = color;
-    tile.walkable = walkable;
-    tile.setColor();
-    // this.grid[tile.x][tile.y] = new entity(tile.x, tile.y, tile.id, tile.size)
-    // this.updateNeighbors();
+    const newTile = new entity(tile.x, tile.y, tile.size)
+    this.grid[tile.x][tile.y] = newTile;
+
+    this.scene.remove(tile);
+    this.scene.add(newTile);
+
+    this.updateNeighbors();
   }
 }
 

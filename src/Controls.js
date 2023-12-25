@@ -219,7 +219,9 @@ class Controls {
         if (this.parent.cosita_selected && hit.object.type !== 'cosita') {
           
           if (this.parent.target_selected) {
-            this.parent.target_selected.deselect();
+            if (this.parent.target_selected.deselect) {
+              this.parent.target_selected.deselect();
+            }
           }
 
           this.parent.target_selected = hit.object;
