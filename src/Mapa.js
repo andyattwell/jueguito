@@ -1,4 +1,3 @@
-import $ from 'jquery';
 import * as THREE from 'three';
 class GridPoint extends THREE.Mesh {
   constructor(x, y) {
@@ -452,6 +451,7 @@ class Mapa {
 
   replaceTile(tile, type) {
     // let entity = Path;
+    console.log(tile, type)
     let color = "#aa9f2b";
     let walkable = true;
     if (type === 'grass') {
@@ -468,9 +468,10 @@ class Mapa {
       color = "#2093d5";
     }
 
-    this.grid[tile.x][tile.y].type = type;
-    this.grid[tile.x][tile.y].color = color;
-    this.grid[tile.x][tile.y].walkable = walkable;
+    tile.type = type;
+    tile.color = color;
+    tile.walkable = walkable;
+    tile.setColor();
     // this.grid[tile.x][tile.y] = new entity(tile.x, tile.y, tile.id, tile.size)
     // this.updateNeighbors();
   }

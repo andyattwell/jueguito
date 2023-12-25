@@ -29,7 +29,7 @@ class Menu {
         children: [
           {
             label: 'Generar',
-            id: 'generateMap'
+            id: 'newGame'
           },
           {
             label: 'Guardar',
@@ -222,10 +222,9 @@ class Menu {
       const file = e.target.files.item(0)
       const text = await file.text();
       const mapData = JSON.parse(text);
-      self.emit('action', { action: 'generateMap', data: mapData })
+      self.emit('action', { action: 'newGame', data: mapData })
       input.remove();
     })
-
   }
 
   saveMap() {
@@ -239,7 +238,6 @@ class Menu {
       grid: this.parent.mapa.exportGrid(),
       cositas
     }
-    console.log({data})
     const mapStr = JSON.stringify(data);
     let file = new Blob([mapStr], {type: 'text/plain'});
     const filename = 'map.json';

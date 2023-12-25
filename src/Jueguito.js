@@ -1,11 +1,9 @@
 import * as THREE from 'three';
-// import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-// import $ from 'jquery';
 import Cosita from "./Cosita.js";
 import Mapa from "./Mapa.js";
 import Menu from "./Menu.js";
 import Controls from "./Controls.js"
-// import Toolbar from "./Toolbar.js";
+import Toolbar from "./Toolbar.js";
 // import Inspector from "./Inspector.js";
 
 class Jueguito {
@@ -35,16 +33,16 @@ class Jueguito {
     this.scene = new THREE.Scene();
 
     this.renderer = new THREE.WebGLRenderer( { antialias: true } );
-    this.renderer.setSize( window.innerWidth, window.innerHeight );
-    this.renderer.setClearColor({ color: "#FFFFFF" })
-    document.body.appendChild( this.renderer.domElement );
+    this.renderer.setSize( this.width, this.height );
+    this.renderer.setClearColor({ color: "#000000" })
+    document.querySelector('#app').appendChild( this.renderer.domElement );
 
     // ambient
-    this.scene.add( new THREE.AmbientLight( '#FFFFFF' ) );
+    // this.scene.add( new THREE.AmbientLight( '#FFFFFF' ) );
     // light
-    var light = new THREE.DirectionalLight( '#FFFFFF', 1 );
-    light.position.set( 1,1,3);
-    this.scene.add( light );
+    // var light = new THREE.DirectionalLight( '#FFFFFF', 1 );
+    // light.position.set( 1,1,3);
+    // this.scene.add( light );
 
     this.menu.addEventListener('action', (data) => {
       if(typeof this[data.action] === 'function'){
@@ -73,15 +71,10 @@ class Jueguito {
     this.updateCositas();
     this.renderScene();
 
-    // this.toolbar.render(this.ctx);
-  
   }
 
-  generateMap(data = null) {
+  newGame(data = null) {
     const self = this;
-    // this.stop();
-    // this.start();
-
     if (this.mapa) {
       let r = confirm('The current map will be lost.')
       if (!r) {
@@ -91,24 +84,25 @@ class Jueguito {
     
     this.scene.clear();
 
+    const axesHelper = new THREE.AxesHelper( 5 );
+    this.scene.add( axesHelper );
+
     let grid = data?.grid ? data.grid : [];
     this.mapa = new Mapa(self.scene, grid);
     this.mapa.render(this.scene);
-    // this.toolbar = new Toolbar(this, 0, window.innerHeight - 95);
-    
+
     this.camera.position.y = -1
     this.camera.position.x = 3
     this.camera.position.z = 3
     this.camera.lookAt(3,0,2);
 
-    let cositas = [];
-    console.log({data})
+    this.toolbar = new Toolbar(this);
+
+    let cositas = [{x:2, y:2}];
     if (data?.cositas) {
       cositas = data.cositas;
-    } else {
-      cositas.push({x:1, y:1})
     }
-
+    
     this.addCositas(cositas);
     this.play();
   }
@@ -125,7 +119,7 @@ class Jueguito {
     }
   }
 
-  renderScene = () => {
+  renderScene() {
     if (this.renderer) this.renderer.render(this.scene, this.camera);
   };
 

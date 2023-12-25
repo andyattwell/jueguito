@@ -35,10 +35,6 @@ class Controls {
     window.addEventListener('resize', () => {
       self.parent.height = window.innerHeight;
       self.parent.width = window.innerWidth;
-      self.parent.mapa.viewArea = {
-        width: window.innerWidth,
-        height: window.innerHeight,
-      }
       self.parent.renderer.setSize( window.innerWidth, window.innerHeight );
       // self.toolbar.y = window.innerHeight - 95;
     })
@@ -128,7 +124,7 @@ class Controls {
     }
 
     if (eventKey === 'r') {
-      this.parent.generateMap();
+      this.parent.newGame();
       return false;
     }
     
@@ -174,9 +170,9 @@ class Controls {
           break;
       }
 
+      
       const delta = newObjectPosition.clone().sub(oldObjectPosition);
       this.parent.camera.position.add(delta);
-      
       // this.camera.lookAt(hit.object.position);
       // this.controls.target.set(new THREE.Vector3(0,0,0))
       // this.controls.update();
@@ -189,24 +185,36 @@ class Controls {
   
   rightClickHandler(e) {
     e.preventDefault();
+
     if (this.parent.cosita_selected) {
       this.parent.cosita_selected.deselect()
       this.parent.cosita_selected.following = false;
       this.parent.cosita_selected = null;
     }
+
     if (this.parent.target_selected) {
-      this.parent.target_selected.deselect()
+      if (this.parent.target_selected.deselect) {
+        this.parent.target_selected.deselect()
+      }
       this.parent.target_selected = null;
     }
+
+    this.parent.toolbar.deselect();
 
     return false;
   }
 
   clickHandler(e) {
 
-    if (e.which === 1) {
+    if (e.which === 1 && e.target.tagName === 'CANVAS') {
       const hit = this.intersects[0];
       if (hit) {
+
+        if (this.parent.toolbar.selectedTool && hit.object.type !== 'cosita') {
+          this.parent.mapa.replaceTile(hit.object, this.parent.toolbar.selectedTool.name)
+          return false;
+        }
+
 
         if (this.parent.cosita_selected && hit.object.type !== 'cosita') {
           
@@ -222,7 +230,7 @@ class Controls {
             this.parent.cosita_selected.deselect();
           }
           
-          if (this.parent.target_selected) {
+          if (this.parent.target_selected && this.parent.target_selected.deselect) {
             this.parent.target_selected.deselect();
           }
 
