@@ -179,7 +179,7 @@ class Grass extends Plane {
 
 class Mapa {
   
-  constructor(scene, data = null) {
+  constructor(scene, data = null, options = null) {
     this.cols = data.length ? data.length : 60;
     this.rows = data.length ? data[0].length : 60;
     this.grid = new Array(this.cols);
@@ -197,7 +197,7 @@ class Mapa {
     if (data.length) {
       this.import(data);
     } else {
-      this.generate();
+      this.generate(options);
     }
   }
 
@@ -226,7 +226,7 @@ class Mapa {
     this.updateNeighbors();
   }
 
-  generate() {
+  generate(options = null) {
     //making a 2D array
     for (let i = 0; i < this.cols; i++) {
       this.grid[i] = new Array(this.rows);
@@ -234,7 +234,7 @@ class Mapa {
 
     for (let x = 0; x < this.cols; x++) {
       for (let y = 0; y < this.rows; y++) {
-        let type = this.getRandomTile();
+        let type = this.getRandomTile(options);
         let entity = Path;
         if (type === 'rock') {
           entity = Rock;
@@ -327,7 +327,8 @@ class Mapa {
         return path.reverse();
       }
 
-      if (current !== start) {
+
+      if (current !== start && current.walkable === true && current.occupied !== true) {
         closedSet.push(current);
       }
   
@@ -347,9 +348,9 @@ class Mapa {
           continue;
         }
 
-        // if (neighbor.walkable !== true || neighbor.occupied == true) {
-        //   continue;
-        // }
+        if (neighbor.walkable !== true || neighbor.occupied == true) {
+          continue;
+        }
 
         let possibleG = current.g + 1;
   
@@ -409,8 +410,8 @@ class Mapa {
     return scene
   }
 
-  getRandomTile() {
-    const types = [
+  getRandomTile(options) {
+    let types = [
       'path', 
       'grass', 
       'path', 
@@ -421,9 +422,18 @@ class Mapa {
       'rock', 
       'water'
     ];
-    // const types = [
-    //   'path', 
-    // ];
+
+    if (options && options.types) {
+      types = []
+      for (let i = 0; i < options.types.length; i++) {
+        const element = options.types[i];
+        const amount = element.prob * 10;
+        for (let x = 0; x < amount; x++) {
+          types.push(element.type)
+        }
+      }
+    }
+
     const randomNumber = parseInt(Math.random() * types.length);
     return types[randomNumber];
   }

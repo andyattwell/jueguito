@@ -83,19 +83,21 @@ class Cosita extends THREE.Mesh {
     let nextX = this.position.x;
     let nextY = this.position.y;
 
-    if (diffX >= targetCell.speed) {
+    const speed = targetCell.speed || 0.1
+
+    if (diffX >= speed) {
       if (targetPosX > this.position.x) {
-        nextX += targetCell.speed; 
+        nextX += speed; 
       } else if (targetPosX < this.position.x) {
-        nextX -= targetCell.speed; 
+        nextX -= speed; 
       }
     }
 
-    if (diffY >= targetCell.speed) {
+    if (diffY >= speed) {
       if (targetPosY > this.position.y) {
-        nextY += targetCell.speed;
+        nextY += speed;
       } else if (targetPosY < this.position.y) {
-        nextY -= targetCell.speed;
+        nextY -= speed;
       }
     }
 
@@ -117,7 +119,10 @@ class Cosita extends THREE.Mesh {
       camera.lookAt(this.position);
     }
 
-    if (diffY <= targetCell.speed && diffX <= targetCell.speed) {
+    if (!speed) {
+      console.log({diffY, diffX, speed:targetCell})
+    }
+    if (diffY <= speed && diffX <= speed) {
       this.currentPath.shift();
       targetCell.planned = false;
       targetCell.setColor();
@@ -143,15 +148,19 @@ class Cosita extends THREE.Mesh {
     const tile = this.currentTile(this.position.x, this.position.y)
     const self = this;
 
+    if (tile === end) {
+      this.currentPath = [];
+      return false;
+    }
     if (this.currentPath && this.currentPath.length >= 1) {
-      this.currentPath.map(tile => {
-        tile.planned = true;
-        tile.setColor();
-        return tile;
-      });
-      
       if (end === this.currentPath[this.currentPath.length -1]) {
         return false;
+      } else {
+        this.currentPath.map(tile => {
+          tile.planned = false;
+          tile.setColor();
+          return tile;
+        });
       }
     }
 

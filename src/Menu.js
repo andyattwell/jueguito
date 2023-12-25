@@ -29,7 +29,10 @@ class Menu {
         children: [
           {
             label: 'Generar',
-            id: 'newGame'
+            id: 'newGame',
+            callback: () => {
+              this.generateMap();
+            }
           },
           {
             label: 'Guardar',
@@ -205,6 +208,101 @@ class Menu {
     $("select#tileType").on('change', (e) => {
       self.parent.mapa.replaceTile(tile, $(e.target).val())
     })
+  }
+
+  generateMap() {
+    const $modal = $('<div class="modal" tabindex="-1" role="dialog" id="generate-modal"></div>');
+    $modal.html(`
+      <div class="modal-dialog" role="document">
+        <div class="modal-content bg-dark text-white">
+          <div class="modal-header">
+            <h5 class="modal-title">Modal title</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="generate-submit">Save changes</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    `)
+    
+    $("#app").append($modal)
+
+    const $form = $('<form id="generate-form">')
+
+    const tyleTypes = [
+      {
+        name: 'path',
+        prob: .5
+      },
+      {
+        name: 'grass',
+        prob: .5
+      },
+      {
+        name: 'water',
+        prob: .25
+      },
+      {
+        name: 'rock',
+        prob: .25
+      }
+    ]
+    $form.append('<h4 class="mb-3">Tile probabilities</h4>');
+
+    for (let i = 0; i < tyleTypes.length; i++) {
+      const tile = tyleTypes[i];
+      const $formGroup = $('<div class="form-group row mb-3">');
+      
+      const $check = $('<input type="checkbox" name="'+tile.name+'" class="type-check"/>');
+      const $label = $('<label for="'+tile.name+'" class="form-label ms-3">'+tile.name+'</label>')
+      const col2 = $('<div class="col-sm-3">');
+      col2.append($check);
+      col2.append($label);
+      $formGroup.append(col2)
+
+      const $probInput = $('<input type="number" name="'+tile.name+'_prob" class="form-control-plaintext bg-white text-black" id="path-prob" max="1" min="0.1" step="0.1" value="'+tile.prob+'">')
+      $probInput.hide();
+      const col10 = $('<div class="col-sm-9">');
+      col10.append($probInput);
+      $formGroup.append(col10);
+      $form.append($formGroup);
+
+      $check.on('click', function () {
+        if ($(this).is(':checked')) {
+          $probInput.show();
+        } else{
+          $probInput.hide();
+        }
+      })
+    }
+
+    $modal.find('.modal-body').append($form)
+    $("#generate-modal").show();
+
+    const self = this
+    $("#generate-submit").on('click', function (e) {
+      e.preventDefault();
+      // const vals = $("#generate-form").serializeArray();
+      let typesSelected = [];
+      $(".type-check:checked").each((index, check) => {
+        typesSelected.push({
+          type: $(check).attr('name'),
+          prob: $('input[name="' + $(check).attr('name') + '_prob"]').val()
+        })
+      })
+      console.log('ACA')
+      self.emit('action', {action: 'newGame', data: {options: { types: typesSelected }}})
+      $modal.hide();
+      $modal.remove();
+      return false;
+    })
+
   }
 
   openMap() {

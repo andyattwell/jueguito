@@ -81,6 +81,7 @@ class Jueguito {
         return false;
       }
     }
+    console.log(data)
     
     this.scene.clear();
 
@@ -88,7 +89,8 @@ class Jueguito {
     // this.scene.add( axesHelper );
 
     let grid = data?.grid ? data.grid : [];
-    this.mapa = new Mapa(self.scene, grid);
+    const options = data?.options;
+    this.mapa = new Mapa(self.scene, grid, options);
     this.mapa.render(this.scene);
 
     this.camera.position.y = -1
