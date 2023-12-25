@@ -81,7 +81,7 @@ class Menu {
 
   drawMenu() {
     const self = this
-    const $parent = $("#" + this.parentId);
+    const $parent = $("body");
     $parent.remove("#app-menu");
 
     let $menu = $('<div class="navbar navbar-expand-sm navbar-dark bg-dark" id="app-menu">');
@@ -231,8 +231,8 @@ class Menu {
   saveMap() {
     let cositas = this.parent.cositas.map((c) => {
       return {
-        x: c.x,
-        y: c.y,
+        x: c.position.x,
+        y: c.position.y,
       }
     });
     const data = {

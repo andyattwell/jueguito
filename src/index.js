@@ -7,5 +7,5 @@ import Jueguito from "./Jueguito.js";
 
 $(() => {
   var jueguito = new Jueguito("app");
-  jueguito.init();
+  jueguito.start();
 })

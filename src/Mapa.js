@@ -1,32 +1,8 @@
 import $ from 'jquery';
 import * as THREE from 'three';
-
-class Cube extends THREE.Mesh {
-  constructor(color, type) {
-    super()
-    this.color = color;
-    this.material = [
-      new THREE.MeshBasicMaterial({color: color}),
-      new THREE.MeshBasicMaterial({color: color}),
-      new THREE.MeshBasicMaterial({color: color}),
-      new THREE.MeshBasicMaterial({color: color}),
-      new THREE.MeshBasicMaterial({color: color}),
-      new THREE.MeshBasicMaterial({color: color})
-    ];
-
-    // this.material = new THREE.MeshStandardMaterial(cubeMaterials);
-    this.geometry = new THREE.BoxGeometry(.2, .2, .2);
-
-    this.cubeSize = .2
-    this.cubeActive = false
-  }
-
-}
-
-//constructor function to create all the grid points as objects containind the data for the points
-class GridPoint extends Cube {
+class GridPoint extends THREE.Mesh {
   constructor(x, y) {
-    super("#FFFFFF")
+    super()
 
     this.x = x; // x location of the grid point
     this.y = y; // y location of the grid point
@@ -36,7 +12,14 @@ class GridPoint extends Cube {
     this.neighbors = []; // neighbors of the current grid point
     this.top_parent = undefined; // immediate source of the current grid point
 
-    this.color = "#FFFFFF";
+    this.size = .2; // size in pixels
+    this.left = x * .2; // x position in pixels
+    this.top = y * .2; // y position in pixels
+    this.walkable = true;
+    this.occupied = false; // is the current tile ocupied?
+    this.selected = false; // is the current tile selected?
+    this.color = "#000000"; // tile color based on the type
+    this.hover = false;
 
   }
 
@@ -58,26 +41,7 @@ class GridPoint extends Cube {
     }
   };
 
-}
-
-class Tile extends GridPoint {
-  constructor(x, y, id, size) {
-    super(x, y);
-
-    // this.id = id; // tile id
-    // this.type = type; // path | water | rock
-    this.size = size; // size in pixels
-    this.left = x * size; // x position in pixels
-    this.top = y * size; // y position in pixels
-    this.walkable = true;
-    this.occupied = false; // is the current tile ocupied?
-    this.selected = false; // is the current tile selected?
-    this.color = "#000000"; // tile color based on the type
-    this.hover = false;
-
-  }
-
-  getColor = function () {
+  getColor () {
     let typeColor = this.color;
     let specialColor = false;
 
@@ -100,12 +64,15 @@ class Tile extends GridPoint {
     return color;
   }
 
-  setColor = function (color) {
-    this.material.forEach((c, i) => {
-      this.material.at(i).color.set(color || this.getColor())
-    })
+  blendColors(colorA, colorB, amount) {
+    const [rA, gA, bA] = colorA.match(/\w\w/g).map((c) => parseInt(c, 16));
+    const [rB, gB, bB] = colorB.match(/\w\w/g).map((c) => parseInt(c, 16));
+    const r = Math.round(rA + (rB - rA) * amount).toString(16).padStart(2, '0');
+    const g = Math.round(gA + (gB - gA) * amount).toString(16).padStart(2, '0');
+    const b = Math.round(bA + (bB - bA) * amount).toString(16).padStart(2, '0');
+    return '#' + r + g + b;
   }
-
+  
   onClick() {
     this.selected = true;
     this.setColor()
@@ -127,51 +94,92 @@ class Tile extends GridPoint {
     this.hover = false;
     this.setColor();
   }
-  
-  blendColors(colorA, colorB, amount) {
-    const [rA, gA, bA] = colorA.match(/\w\w/g).map((c) => parseInt(c, 16));
-    const [rB, gB, bB] = colorB.match(/\w\w/g).map((c) => parseInt(c, 16));
-    const r = Math.round(rA + (rB - rA) * amount).toString(16).padStart(2, '0');
-    const g = Math.round(gA + (gB - gA) * amount).toString(16).padStart(2, '0');
-    const b = Math.round(bA + (bB - bA) * amount).toString(16).padStart(2, '0');
-    return '#' + r + g + b;
-  }
-
 }
 
-class Rock extends Tile {
-  constructor(x, y, id, size) {
-    super(x, y, id, size);
+class Cube extends GridPoint {
+  constructor(x, y, color, size) {
+    super(x, y)
+    this.color = color;
+    this.material = [
+      new THREE.MeshBasicMaterial({color: color}),
+      new THREE.MeshBasicMaterial({color: color}),
+      new THREE.MeshBasicMaterial({color: color}),
+      new THREE.MeshBasicMaterial({color: color}),
+      new THREE.MeshBasicMaterial({color: color}),
+      new THREE.MeshBasicMaterial({color: color})
+    ];
+    this.position.z = size / 2;
+      // this.material = new THREE.MeshStandardMaterial(cubeMaterials);
+    this.geometry = new THREE.BoxGeometry(size, size, size);
+  }
+}
+
+class Plane extends GridPoint {
+  constructor(x, y, color, size) {
+    super(x, y)
+    this.color = color;
+    this.material = new THREE.MeshBasicMaterial({color: color})
+    this.geometry = new THREE.PlaneGeometry(size, size)
+    this.position.z = 0;
+  }
+
+  setColor (color) {
+    this.material = new THREE.MeshBasicMaterial({color: color || this.getColor()})
+  }
+}
+
+class Rock extends Cube {
+  constructor(x, y, size) {
+    super(x, y, "#685e70", size);
     this.type = 'rock';
     this.walkable = false;
     this.color = "#685e70";
     this.setColor();
+
+    this.material = [
+      new THREE.MeshBasicMaterial({color: this.color}),
+      new THREE.MeshBasicMaterial({color: this.color}),
+      new THREE.MeshBasicMaterial({color: this.color}),
+      new THREE.MeshBasicMaterial({color: this.color}),
+      new THREE.MeshBasicMaterial({color: this.color}),
+      new THREE.MeshBasicMaterial({color: this.color})
+    ];
+
+    this.geometry = new THREE.BoxGeometry(.2, .2, .2);
+  }
+
+  setColor (color) {
+    this.material.forEach((c, i) => {
+      this.material.at(i).color.set(color || this.getColor())
+    })
   }
 }
 
-class Water extends Tile {
-  constructor(x, y, id, size) {
-    super(x, y, id, size);
+class Water extends Plane {
+  constructor(x, y, size) {
+    super(x, y, "#2093d5", size);
     this.type = 'water';
     this.walkable = false;
     this.color = "#2093d5";
+    this.position.z = 0;
     this.setColor();
   }
 }
 
-class Path extends Tile {
-  constructor(x, y, id, size) {
-    super(x, y, id, size);
+class Path extends Plane {
+  constructor(x, y, size) {
+    super(x, y, "#aa9f2b", size);
     this.type = 'path';
     this.walkable = true;
     this.color = "#aa9f2b";
+    this.position.z = 0;
     this.setColor();
   }
 }
 
-class Grass extends Tile {
-  constructor(x, y, id, size) {
-    super(x, y, id, size);
+class Grass extends Plane {
+  constructor(x, y, size) {
+    super(x, y, "#51d343", size);
     this.type = 'grass';
     this.walkable = true;
     this.color = "#51d343";
@@ -191,37 +199,14 @@ class Mapa {
     
     this.tileSize = 0.2;
     
-    this.listeners = {};
-    
     this.offsetX = 0;
     this.offsetY = 0;
-    
-    this.scene = scene;
-    this.viewArea = {
-      width: window.innerWidth,
-      height: window.innerHeight,
-    }
 
     if (data.length) {
       this.import(data);
     } else {
       this.generate();
     }
-  }
-
-  emit(method, payload = null) {
-    const callback = this.listeners[method];
-    if(typeof callback === 'function'){
-      callback(payload);
-    }
-  }
-
-  addEventListener(method,callback) {
-    this.listeners[method] = callback;
-  }
-
-  removeEventListener (method) {
-    delete this.listeners[method];
   }
 
   import(data) {
@@ -241,8 +226,7 @@ class Mapa {
 
         this.grid[x][y] = new entity(
           tileData.x,
-          tileData.y, 
-          tileData.id,
+          tileData.y,
           tileData.size
         );
       }
@@ -269,8 +253,7 @@ class Mapa {
         }
         this.grid[x][y] = new entity(
           x,
-          y, 
-          x * y + 1,
+          y,
           this.tileSize
         );
       }
@@ -306,9 +289,7 @@ class Mapa {
     return data;
   }
 
-  findPath(startX, startY, endX, endY) {
-    console.log({startX, startY, endX, endY})
-    
+  findPath(startX, startY, endX, endY) {  
     let start = this.grid[startX][startY];
     let end = this.grid[endX][endY];
     let openSet = [start];
@@ -374,6 +355,9 @@ class Mapa {
           continue;
         }
 
+        // if (neighbor.walkable !== true || neighbor.occupied == true) {
+        //   continue;
+        // }
         let possibleG = current.g + 1;
   
         if (!openSet.includes(neighbor)) {
@@ -387,9 +371,6 @@ class Mapa {
 
           neighbor.top_parent = current;
           
-          if (neighbor.walkable !== true || neighbor.occupied == true) {
-            continue;
-          }
 
           if (!neighbor.occupied) {
             openSet.push(neighbor);
@@ -421,53 +402,12 @@ class Mapa {
     }
   }
 
-  drag(start, mousePosition, zoom) {
-    const x = start ? (mousePosition.x - start.x) : 0;
-    const y = start ? (mousePosition.y - start.y) : 0;
-    if (this.offsetY <= 0) {
-      this.offsetY += y;
-    } else {
-      this.offsetY = 0;
-    }
-    if (this.offsetX <= 0) {
-      this.offsetX += x
-    } else {
-      this.offsetX = 0
-    }
-  }
-
-  scroll(keyName, zoom) {
-    switch (keyName) {
-      case "w":
-        if (this.offsetY < 0) {
-          this.offsetY += this.tileSize * zoom;
-        }
-        break;
-      case "s":
-        if (this.offsetY * -1 < (this.rows * this.tileSize) * zoom - this.ctx.canvas.height) {
-          this.offsetY -= this.tileSize * zoom;
-        }
-        break;
-      case "a":
-        if (this.offsetX < 0) {
-          this.offsetX += this.tileSize * zoom
-        }
-        break;
-      case "d":
-        if (this.offsetX * -1 < (this.cols * this.tileSize) * zoom - this.ctx.canvas.width) {
-          this.offsetX -= this.tileSize * zoom
-        }
-        break;
-      default:
-        break;
-    }
-  }
-
   render(scene) {
     for (let i = 0; i < this.cols; i++) {
       for (let j = 0; j < this.rows; j++) {
         const tile = this.grid[i][j];
-        tile.position.set(i * this.tileSize, j * this.tileSize, -2)
+        let z = 0;
+        tile.position.set(tile.left, tile.top, tile.z)
         scene.add( tile );
       }
     }
@@ -491,12 +431,6 @@ class Mapa {
     // ];
     const randomNumber = parseInt(Math.random() * types.length);
     return types[randomNumber];
-  }
-
-  tileClickHandler($tileDiv, x, y) {
-    $('.tile').removeClass('selected');
-    $tileDiv.addClass('selected');
-    this.emit('click', {x, y})
   }
 
   pickSpawn() {
