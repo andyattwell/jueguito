@@ -84,8 +84,8 @@ class Jueguito {
     
     this.scene.clear();
 
-    const axesHelper = new THREE.AxesHelper( 5 );
-    this.scene.add( axesHelper );
+    // const axesHelper = new THREE.AxesHelper( 5 );
+    // this.scene.add( axesHelper );
 
     let grid = data?.grid ? data.grid : [];
     this.mapa = new Mapa(self.scene, grid);

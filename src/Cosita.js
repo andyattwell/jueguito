@@ -139,7 +139,6 @@ class Cosita extends THREE.Mesh {
   }
 
   moveTo(end) {
-    console.log({end})
     const endtile = this.currentTile(end.position.x, end.position.y)
     const tile = this.currentTile(this.position.x, this.position.y)
     const self = this;
