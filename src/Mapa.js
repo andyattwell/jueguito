@@ -123,6 +123,7 @@ class Plane extends GridPoint {
     this.material = new THREE.MeshBasicMaterial({color: color})
     this.geometry = new THREE.PlaneGeometry(size, size)
     this.position.set(this.left, this.top, 0)
+    this.speed = .03
   }
 
   setColor (color) {
@@ -149,8 +150,9 @@ class Water extends Plane {
   constructor(x, y, size) {
     super(x, y, "#2093d5", size);
     this.type = 'water';
-    this.walkable = false;
-    this.position.z = 0;
+    // this.walkable = false;
+    this.walkable = true;
+    this.speed = .01
     this.setColor();
   }
 }
@@ -160,7 +162,7 @@ class Path extends Plane {
     super(x, y, "#aa9f2b", size);
     this.type = 'path';
     this.walkable = true;
-    this.position.z = 0;
+    this.speed = .05
     this.setColor();
   }
 }
@@ -170,6 +172,7 @@ class Grass extends Plane {
     super(x, y, "#51d343", size);
     this.type = 'grass';
     this.walkable = true;
+    this.speed = .04
     this.setColor();
   }
 }
@@ -344,9 +347,9 @@ class Mapa {
           continue;
         }
 
-        if (neighbor.walkable !== true || neighbor.occupied == true) {
-          continue;
-        }
+        // if (neighbor.walkable !== true || neighbor.occupied == true) {
+        //   continue;
+        // }
 
         let possibleG = current.g + 1;
   
@@ -356,8 +359,11 @@ class Mapa {
           neighbor.h = this.heuristic(neighbor, end);
           neighbor.f = neighbor.g + neighbor.h;
 
-          neighbor.f += neighbor.walkable !== true ? 10000 : 0;
-          neighbor.f += neighbor.occupied ? 10000 : 0;
+          if (neighbor.walkable !== true || neighbor.occupied) {
+            neighbor.f += 10000;
+          } else {
+            neighbor.f -= (parseInt(neighbor.speed * 100))
+          }
 
           neighbor.top_parent = current;
           

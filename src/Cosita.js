@@ -8,7 +8,7 @@ class Cosita extends THREE.Mesh {
     this.width = .15;
     this.height = .15;
     this.selected = false;
-    this.speed = .05;
+    this.speed = .01;
     this.color = "#FFFFFF"
     
     this.map = map;
@@ -83,19 +83,19 @@ class Cosita extends THREE.Mesh {
     let nextX = this.position.x;
     let nextY = this.position.y;
 
-    if (diffX >= this.speed) {
+    if (diffX >= targetCell.speed) {
       if (targetPosX > this.position.x) {
-        nextX += this.speed; 
+        nextX += targetCell.speed; 
       } else if (targetPosX < this.position.x) {
-        nextX -= this.speed; 
+        nextX -= targetCell.speed; 
       }
     }
 
-    if (diffY >= this.speed) {
+    if (diffY >= targetCell.speed) {
       if (targetPosY > this.position.y) {
-        nextY += this.speed;
+        nextY += targetCell.speed;
       } else if (targetPosY < this.position.y) {
-        nextY -= this.speed;
+        nextY -= targetCell.speed;
       }
     }
 
@@ -117,7 +117,7 @@ class Cosita extends THREE.Mesh {
       camera.lookAt(this.position);
     }
 
-    if (diffY <= this.speed && diffX <= this.speed) {
+    if (diffY <= targetCell.speed && diffX <= targetCell.speed) {
       this.currentPath.shift();
       targetCell.planned = false;
       targetCell.setColor();
@@ -128,10 +128,10 @@ class Cosita extends THREE.Mesh {
         this.lastTile = this.current;
         this.current = targetCell;
         this.current.occupied = true;
-        // const last = this.currentPath[this.currentPath.length-1];
-        // if (last) {
-        //   this.moveTo(last)
-        // }
+        const last = this.currentPath[this.currentPath.length-1];
+        if (last) {
+          this.moveTo(last)
+        }
       }
       
       
@@ -145,14 +145,18 @@ class Cosita extends THREE.Mesh {
 
     if (this.currentPath && this.currentPath.length >= 1) {
       this.currentPath.map(tile => {
-        tile.planned = false;
+        tile.planned = true;
         tile.setColor();
+        return tile;
       });
+      
+      if (end === this.currentPath[this.currentPath.length -1]) {
+        return false;
+      }
     }
 
     this.currentPath = this.map.findPath(tile.x, tile.y, endtile.x, endtile.y)
       .filter((tile) => tile !== self.current);
-      // console.log('currentPath', this.currentPath)
 
     // if (this.currentPath.length === 0) {
     //   this.currentPath = [this.current]
