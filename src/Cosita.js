@@ -46,7 +46,7 @@ class Cosita extends THREE.Mesh {
   }
 
 
-  currentTile(x, y) {
+  currentTile(x, y, z) {
     if (x < 0) {
       x = 1
     }
@@ -55,10 +55,12 @@ class Cosita extends THREE.Mesh {
     }
     const cellX = parseInt(x / this.map.tileSize);
     const cellY = parseInt(y / this.map.tileSize);
+    const cellZ = parseInt(z / this.map.tileSize);
 
     return {
       x: cellX,
       y: cellY,
+      z: cellZ 
     }
   }
 
@@ -125,27 +127,23 @@ class Cosita extends THREE.Mesh {
     if (diffY <= speed && diffX <= speed) {
       this.currentPath.shift();
       targetCell.planned = false;
+      targetCell.occupied = false;
       targetCell.setColor();
-      
-      if (!this.current || this.current != targetCell) {
-        this.current.occupied = false;
-        this.current.setColor();
-        this.lastTile = this.current;
-        this.current = targetCell;
-        this.current.occupied = true;
-        const last = this.currentPath[this.currentPath.length-1];
-        if (last) {
-          this.moveTo(last)
-        }
+
+      this.lastTile = this.current;
+      this.current = targetCell;
+      this.current.setColor();
+      this.current.occupied = true;
+      const last = this.currentPath[this.currentPath.length-1];
+      if (last) {
+        this.moveTo(last)
       }
-      
-      
     }
   }
 
   moveTo(end) {
-    const endtile = this.currentTile(end.position.x, end.position.y)
-    const tile = this.currentTile(this.position.x, this.position.y)
+    const endtile = this.currentTile(end.position.x, end.position.y, end.position.z)
+    const tile = this.currentTile(this.position.x, this.position.y, this.position.z)
     const self = this;
 
     if (tile === end) {
@@ -164,7 +162,7 @@ class Cosita extends THREE.Mesh {
       }
     }
 
-    this.currentPath = this.map.findPath(tile.x, tile.y, endtile.x, endtile.y)
+    this.currentPath = this.map.findPath(tile, endtile)
       .filter((tile) => tile !== self.current);
 
     // if (this.currentPath.length === 0) {

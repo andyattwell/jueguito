@@ -31,19 +31,23 @@ class GridPoint extends THREE.Mesh {
   updateNeighbors = function (grid, cols, rows) {
     let i = this.x;
     let j = this.y;
+    let z = this.z;
+
     this.neighbors = [];
+
     if (i < cols - 1) {
-      this.neighbors.push(grid[i + 1][j]);
+      this.neighbors.push(grid[i + 1][j][z]);
     }
     if (i > 0) {
-      this.neighbors.push(grid[i - 1][j]);
+      this.neighbors.push(grid[i - 1][j][z]);
     }
     if (j < rows - 1) {
-      this.neighbors.push(grid[i][j + 1]);
+      this.neighbors.push(grid[i][j + 1][z]);
     }
     if (j > 0) {
-      this.neighbors.push(grid[i][j - 1]);
+      this.neighbors.push(grid[i][j - 1][z]);
     }
+
   };
 
   getColor () {
@@ -117,10 +121,10 @@ class Cube extends GridPoint {
       // this.material = new THREE.MeshStandardMaterial(cubeMaterials);
     this.geometry = new THREE.BoxGeometry(size, size, size);
   }
-  
+
   setColor (color) {
-    this.material.forEach((mat) => {
-      mat = new THREE.MeshBasicMaterial({color: color || this.getColor()})
+    this.material.forEach((c, i) => {
+      this.material.at(i).color.set(color || this.getColor())
     })
   }
 }
@@ -148,11 +152,6 @@ class Rock extends Cube {
     this.setColor();
   }
 
-  setColor (color) {
-    this.material.forEach((c, i) => {
-      this.material.at(i).color.set(color || this.getColor())
-    })
-  }
 }
 
 class Water extends Cube {
@@ -191,7 +190,7 @@ class Mapa {
   constructor(scene, data = null, options = null) {
     this.cols = data.length ? data.length : 60;
     this.rows = data.length ? data[0].length : 60;
-    this.grid = new Array(this.cols);
+    this.grid = [];
     
     this.closedSet = [];
     this.openSet = [];
@@ -241,7 +240,12 @@ class Mapa {
     //making a 2D array
     for (let i = 0; i < this.cols; i++) {
       this.grid[i] = new Array(this.rows);
+      for (let x = 0; x < this.rows; x++) {
+        this.grid[i][x] = [];
+      }
     }
+
+
     let noise;
     if (options?.useNoise === true) {
       noise = new ImprovedNoise()
@@ -260,17 +264,21 @@ class Mapa {
           entity = Grass;
         }
 
-        ns = 0;
+        let z = 0;
         if (options?.useNoise === true) {
           ns = noise.noise(x * .2, y * .2, 0)
+          z = parseInt(ns * 10);
         }
 
-        this.grid[x][y] = new entity(
-          x,
-          y,
-          ns,
-          this.tileSize
-        );
+        for (let h = 0; h <= Math.abs(z); h++) {
+          this.grid[x][y][h] = new entity(
+            x,
+            y,
+            h,
+            this.tileSize
+          );
+        }
+        
       }
     }
   
@@ -280,7 +288,9 @@ class Mapa {
   updateNeighbors() {
     for (let i = 0; i < this.cols; i++) {
       for (let j = 0; j < this.rows; j++) {
-        this.grid[i][j].updateNeighbors(this.grid, this.cols, this.rows);
+        for (let z = 0; z < this.grid[i][j].length; z++) {
+          this.grid[i][j][z].updateNeighbors(this.grid, this.cols, this.rows);
+        }
       }
     }
   }
@@ -304,9 +314,14 @@ class Mapa {
     return data;
   }
 
-  findPath(startX, startY, endX, endY) {  
-    let start = this.grid[startX][startY];
-    let end = this.grid[endX][endY];
+  findPath(start, end) {  
+    if (!end || !start) {
+      return false;
+    }
+    start = this.grid[start.x][start.y][start.z];
+    end = this.grid[end.x][end.y][end.z];
+    console.log({start})
+
     let openSet = [start];
     let closedSet = [];
     let path = [];
@@ -335,6 +350,7 @@ class Mapa {
       }
 
       let current = openSet[lowestIndex];
+
       if (current === end) {
         let temp = current;
         path.push(temp);
@@ -425,9 +441,13 @@ class Mapa {
   render(scene) {
     for (let i = 0; i < this.cols; i++) {
       for (let j = 0; j < this.rows; j++) {
-        const tile = this.grid[i][j];
-        tile.position.set(tile.left, tile.top, tile.z)
-        scene.add( tile );
+        for (let z = 0; z <= this.grid[i][j].length; z++) {
+          const tile = this.grid[i][j][z];
+          if (tile) {
+            tile.position.set(tile.left, tile.top, tile.z * tile.size)
+            scene.add( tile );
+          }
+        }
       }
     }
     return scene

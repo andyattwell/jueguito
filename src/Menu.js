@@ -260,7 +260,7 @@ class Menu {
       const tile = tyleTypes[i];
       $formGroup = $('<div class="form-group row mb-3">');
       
-      let $check = $('<input type="checkbox" name="'+tile.name+'" class="form-check-input type-check"/>');
+      let $check = $('<input type="checkbox" name="'+tile.name+'" class="form-check-input type-check" checked="true"/>');
       $label = $('<label for="'+tile.name+'" class="form-label ms-3">'+tile.name+'</label>')
       let col2 = $('<div class="col-sm-3">');
       col2.append($check);
@@ -268,7 +268,7 @@ class Menu {
       $formGroup.append(col2)
 
       const $probInput = $('<input type="number" name="'+tile.name+'_prob" class="form-control-plaintext bg-white text-black" id="path-prob" max="1" min="0.1" step="0.1" value="'+tile.prob+'">')
-      $probInput.hide();
+      // $probInput.hide();
       const col10 = $('<div class="col-sm-9">');
       col10.append($probInput);
       $formGroup.append(col10);
