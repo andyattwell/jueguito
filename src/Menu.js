@@ -254,14 +254,15 @@ class Menu {
       }
     ]
     $form.append('<h4 class="mb-3">Tile probabilities</h4>');
-
+    let $formGroup;
+    let $label;
     for (let i = 0; i < tyleTypes.length; i++) {
       const tile = tyleTypes[i];
-      const $formGroup = $('<div class="form-group row mb-3">');
+      $formGroup = $('<div class="form-group row mb-3">');
       
-      const $check = $('<input type="checkbox" name="'+tile.name+'" class="type-check"/>');
-      const $label = $('<label for="'+tile.name+'" class="form-label ms-3">'+tile.name+'</label>')
-      const col2 = $('<div class="col-sm-3">');
+      let $check = $('<input type="checkbox" name="'+tile.name+'" class="form-check-input type-check"/>');
+      $label = $('<label for="'+tile.name+'" class="form-label ms-3">'+tile.name+'</label>')
+      let col2 = $('<div class="col-sm-3">');
       col2.append($check);
       col2.append($label);
       $formGroup.append(col2)
@@ -282,6 +283,19 @@ class Menu {
       })
     }
 
+    $formGroup = $('<div class="form-group row mb-3">');
+    let col1 = $('<div class="col-sm-1">');
+    let $check = $('<input type="checkbox" name="use_noise" id="use_noise" class="form-check-input"/>');
+    col1.append($check);
+    
+    $label = $('<label for="use_noise" class="form-label ms-3">Use Noise</label>')
+    let col11 = $('<div class="col-sm-11">');
+    col11.append($label);
+
+    $formGroup.append(col1)
+    $formGroup.append(col11)
+    $form.append($formGroup)
+
     $modal.find('.modal-body').append($form)
     $("#generate-modal").show();
 
@@ -297,7 +311,14 @@ class Menu {
         })
       })
       console.log('ACA')
-      self.emit('action', {action: 'newGame', data: {options: { types: typesSelected }}})
+      self.emit('action', {
+        action: 'newGame', data: {
+          options: { 
+            types: typesSelected,
+            useNoise: $("#use_noise").is(':checked')
+          }        
+        }
+      })
       $modal.hide();
       $modal.remove();
       return false;

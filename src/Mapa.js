@@ -1,10 +1,13 @@
 import * as THREE from 'three';
+import {ImprovedNoise} from './lib/ImprovedNoise.js';
+
 class GridPoint extends THREE.Mesh {
-  constructor(x, y) {
+  constructor(x, y, z) {
     super()
 
     this.x = x; // x location of the grid point
     this.y = y; // y location of the grid point
+    this.z = z;
     this.f = 0; // total cost function
     this.g = 0; // cost function from start to the current grid point
     this.h = 0; // heuristic estimated cost function from current grid point to the goal
@@ -99,8 +102,8 @@ class GridPoint extends THREE.Mesh {
 }
 
 class Cube extends GridPoint {
-  constructor(x, y, color, size) {
-    super(x, y)
+  constructor(x, y, z, color, size) {
+    super(x, y, z)
     this.color = color;
     this.material = [
       new THREE.MeshBasicMaterial({color: color}),
@@ -110,19 +113,25 @@ class Cube extends GridPoint {
       new THREE.MeshBasicMaterial({color: color}),
       new THREE.MeshBasicMaterial({color: color})
     ];
-    this.position.set(this.left, this.top, this.size / 2)
+    this.position.set(this.left, this.top, this.z * this.size / 2)
       // this.material = new THREE.MeshStandardMaterial(cubeMaterials);
     this.geometry = new THREE.BoxGeometry(size, size, size);
+  }
+  
+  setColor (color) {
+    this.material.forEach((mat) => {
+      mat = new THREE.MeshBasicMaterial({color: color || this.getColor()})
+    })
   }
 }
 
 class Plane extends GridPoint {
-  constructor(x, y, color, size) {
-    super(x, y)
+  constructor(x, y, z,color, size) {
+    super(x, y, z)
     this.color = color;
     this.material = new THREE.MeshBasicMaterial({color: color})
     this.geometry = new THREE.PlaneGeometry(size, size)
-    this.position.set(this.left, this.top, 0)
+    this.position.set(this.left, this.top, this.z * this.size)
     this.speed = .03
   }
 
@@ -132,8 +141,8 @@ class Plane extends GridPoint {
 }
 
 class Rock extends Cube {
-  constructor(x, y, size) {
-    super(x, y, "#685e70", size);
+  constructor(x, y, z,size) {
+    super(x, y, z,"#685e70", size);
     this.type = 'rock';
     this.walkable = false;
     this.setColor();
@@ -146,9 +155,9 @@ class Rock extends Cube {
   }
 }
 
-class Water extends Plane {
-  constructor(x, y, size) {
-    super(x, y, "#2093d5", size);
+class Water extends Cube {
+  constructor(x, y, z,size) {
+    super(x, y, z,"#2093d5", size);
     this.type = 'water';
     // this.walkable = false;
     this.walkable = true;
@@ -157,9 +166,9 @@ class Water extends Plane {
   }
 }
 
-class Path extends Plane {
-  constructor(x, y, size) {
-    super(x, y, "#aa9f2b", size);
+class Path extends Cube {
+  constructor(x, y, z,size) {
+    super(x, y, z,"#aa9f2b", size);
     this.type = 'path';
     this.walkable = true;
     this.speed = .05
@@ -167,9 +176,9 @@ class Path extends Plane {
   }
 }
 
-class Grass extends Plane {
-  constructor(x, y, size) {
-    super(x, y, "#51d343", size);
+class Grass extends Cube {
+  constructor(x, y, z, size) {
+    super(x, y, z, "#51d343", size);
     this.type = 'grass';
     this.walkable = true;
     this.speed = .04
@@ -199,6 +208,8 @@ class Mapa {
     } else {
       this.generate(options);
     }
+
+    
   }
 
   import(data) {
@@ -231,7 +242,12 @@ class Mapa {
     for (let i = 0; i < this.cols; i++) {
       this.grid[i] = new Array(this.rows);
     }
+    let noise;
+    if (options?.useNoise === true) {
+      noise = new ImprovedNoise()
+    }
 
+    let ns;
     for (let x = 0; x < this.cols; x++) {
       for (let y = 0; y < this.rows; y++) {
         let type = this.getRandomTile(options);
@@ -243,9 +259,16 @@ class Mapa {
         } else if (type === 'grass') {
           entity = Grass;
         }
+
+        ns = 0;
+        if (options?.useNoise === true) {
+          ns = noise.noise(x * .2, y * .2, 0)
+        }
+
         this.grid[x][y] = new entity(
           x,
           y,
+          ns,
           this.tileSize
         );
       }
