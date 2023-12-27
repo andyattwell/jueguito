@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack"
+    "build": "webpack",
+    "serve": "webpack serve"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +27,7 @@
     "lodash": "^4.17.21",
     "popper.js": "^1.16.1",
     "sass": "^1.69.5",
-    "three": "^0.160.0"
+    "three": "^0.160.0",
+    "webpack-dev-server": "^4.15.1"
   }
 }
