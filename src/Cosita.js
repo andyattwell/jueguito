@@ -34,7 +34,7 @@ class Cosita extends THREE.Mesh {
     this.current = this.map.grid[this.x][this.y][this.z];
 
     this.lastTile = null;
-    this.position.set(this.current.position.x, this.current.position.y, this.current.position.z + this.current.size)
+    this.position.set(this.current.position.x, this.current.position.y, this.current.position.z + this.current.size / 2)
   }
 
   centerPosition(x, y) {
@@ -83,9 +83,9 @@ class Cosita extends THREE.Mesh {
       return false;
     }
 
-    let targetPosX = targetCell.position.x;
-    let targetPosY = targetCell.position.y;
-    let targetPosZ = targetCell.position.z + targetCell.size;
+    let targetPosX = targetCell.left;
+    let targetPosY = targetCell.top;
+    let targetPosZ = targetCell.position.z + targetCell.size / 2;
 
     let diffX = parseFloat(Math.abs(this.position.x - targetPosX).toFixed(2));
     let diffY = parseFloat(Math.abs(this.position.y - targetPosY).toFixed(2));
@@ -138,7 +138,7 @@ class Cosita extends THREE.Mesh {
     //     }
     // }
 
-    if (diffX >= speed) {
+    if (diffX > 0) {
       if (targetPosX > this.position.x) {
         nextX += speed; 
       } else if (targetPosX < this.position.x) {
@@ -146,7 +146,7 @@ class Cosita extends THREE.Mesh {
       }
     }
 
-    if (diffY >= speed) {
+    if (diffY > 0) {
       if (targetPosY > this.position.y) {
         nextY += speed;
       } else if (targetPosY < this.position.y) {
@@ -154,7 +154,7 @@ class Cosita extends THREE.Mesh {
       }
     }
 
-    if (diffZ >= speed) {
+    if (diffZ > 0) {
       if (targetPosZ > this.position.z) {
         nextZ += speed;
       } else if (targetPosZ < this.position.z) {

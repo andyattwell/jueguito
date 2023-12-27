@@ -212,6 +212,7 @@ class Controls {
 
     if (e.which === 1 && e.target.tagName === 'CANVAS') {
       const hit = this.intersects[0];
+      // console.log({hit})
       if (hit) {
         if (this.parent.toolbar.selectedTool && hit.object.type !== 'cosita') {
           // this.parent.mapa.replaceTile(hit.object, this.parent.toolbar.selectedTool.name)

@@ -126,18 +126,25 @@ class Cube extends GridPoint {
   constructor(x, y, z, color, size) {
     super(x, y, z)
     this.color = color;
-    this.material = [
-      new THREE.MeshBasicMaterial({color: color}),
-      new THREE.MeshBasicMaterial({color: color}),
-      new THREE.MeshBasicMaterial({color: color}),
-      new THREE.MeshBasicMaterial({color: color}),
-      new THREE.MeshBasicMaterial({color: color}),
-      new THREE.MeshBasicMaterial({color: color})
-    ];
     this.size = size;
+
+    if (z > 0) {
+      this.material = [
+        new THREE.MeshBasicMaterial({color: color}),
+        new THREE.MeshBasicMaterial({color: color}),
+        new THREE.MeshBasicMaterial({color: color}),
+        new THREE.MeshBasicMaterial({color: color}),
+        new THREE.MeshBasicMaterial({color: color}),
+        new THREE.MeshBasicMaterial({color: color})
+      ];
+      this.geometry = new THREE.BoxGeometry(this.size, this.size, this.size);
+    } else {
+      this.material = new THREE.MeshBasicMaterial({color: color})
+      this.geometry = new THREE.PlaneGeometry(size, size)
+    }
     this.position.set(this.left, this.top, this.z * this.size / 2)
       // this.material = new THREE.MeshStandardMaterial(cubeMaterials);
-    this.geometry = new THREE.BoxGeometry(this.size, this.size, this.size);
+    
   }
 
   setColor (color) {
@@ -145,9 +152,13 @@ class Cube extends GridPoint {
     if (!_color) {
       return false;
     }
-    this.material.forEach((c, i) => {
-      this.material.at(i).color.set(_color)
-    })
+    if (this.z > 0) {
+      this.material.forEach((c, i) => {
+        this.material.at(i).color.set(_color)
+      })
+    } else {
+      this.material = new THREE.MeshBasicMaterial({color: color || this.getColor()})
+    }
   }
 }
 
@@ -280,13 +291,11 @@ class Mapa {
       }
     }
 
-
     let noise;
     if (options?.useNoise === true) {
       noise = new ImprovedNoise()
     }
 
-    let ns;
     for (let x = 0; x < this.cols; x++) {
       for (let y = 0; y < this.rows; y++) {
         // let type = this.getRandomTile(options);
@@ -510,7 +519,7 @@ class Mapa {
         for (let z = 0; z <= this.grid[i][j].length; z++) {
           const tile = this.grid[i][j][z];
           if (tile && tile.type !== 'air') {
-            tile.position.set(tile.left, tile.top, tile.z * tile.size)
+            tile.position.set(tile.left, tile.top, (tile.z * tile.size))
             scene.add( tile );
           }
         }
@@ -572,13 +581,23 @@ class Mapa {
       return false;
     }
     this.grid[tile.x][tile.y][tile.z] = new Air(tile.x, tile.y, tile.z);
-    this.grid[tile.x][tile.y][tile.z - 1].occupied = false;
+    if (this.grid[tile.x][tile.y][tile.z - 1]) {
+      this.grid[tile.x][tile.y][tile.z - 1].occupied = false;
+    }
     this.scene.remove(tile);
   }
 
   addTile(hit, newType) {
 
     const tile = hit.object;
+    
+    let newZ = 0.1;
+    if (tile.z > 0) {
+      console.log("newZ")
+      newZ = (tile.z + hit.normal.z) * tile.size - 0.1;
+    }
+    console.log({newZ})
+    console.log({tile: tile.z})
 
     const x = tile.x + hit.normal.x
     const y = tile.y + hit.normal.y
@@ -603,7 +622,7 @@ class Mapa {
     }
 
     const newTile = new entity(x, y, z, tile.size)
-    newTile.position.set(x * tile.size, y * tile.size, z * tile.size);
+    newTile.position.set(x * tile.size, y * tile.size, newZ);
     tile.occupied = true;
     this.grid[x][y][z] = newTile;
     this.scene.add(newTile);

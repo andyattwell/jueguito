@@ -99,13 +99,34 @@ class Jueguito {
 
     this.toolbar = new Toolbar(this);
 
-    let cositas = [{x:2, y:2}];
+    let cositas = [{x:10, y:10, z:0},{x:11, y:10, z:0}];
     if (data?.cositas) {
       cositas = data.cositas;
     }
     
     this.addCositas(cositas);
+
+    // this.addLight();
+    
     this.play();
+  }
+
+  addLight() {
+    const spotLight = new THREE.SpotLight( 0xffffff );
+    spotLight.position.set( this.cositas[0].x, this.cositas[0].y, 10 );
+    // spotLight.map = new THREE.TextureLoader().load( url );
+
+    spotLight.castShadow = true;
+
+    spotLight.shadow.mapSize.width = 1024;
+    spotLight.shadow.mapSize.height = 1024;
+
+    spotLight.shadow.camera.near = 500;
+    spotLight.shadow.camera.far = 4000;
+    spotLight.shadow.camera.fov = 30;
+
+    this.scene.add( spotLight );
+
   }
 
   addCositas(cositas = []) {
@@ -113,8 +134,9 @@ class Jueguito {
 
     for (let index = 0; index < cositas.length; index++) {
       // let spawn = this.mapa.pickSpawn();
-      let spawn = { x: 10, y: 10, z: 0 };
-      let cosita = new Cosita(this.mapa, spawn);
+      // let spawn = { x: 10, y: 10, z: 0 };
+      console.log(cositas[index])
+      let cosita = new Cosita(this.mapa, cositas[index]);
       this.scene.add( cosita );
       this.cositas.push(cosita);
     }
