@@ -28,29 +28,48 @@ class GridPoint extends THREE.Mesh {
   }
 
   // update neighbors array for a given grid point
-  updateNeighbors = function (grid, cols, rows) {
+  updateNeighbors = function (grid, cols, rows, maxZ) {
     let i = this.x;
     let j = this.y;
     let z = this.z;
 
     this.neighbors = [];
-
+    // left
     if (i < cols - 1) {
       this.neighbors.push(grid[i + 1][j][z]);
     }
+
+    // right
     if (i > 0) {
       this.neighbors.push(grid[i - 1][j][z]);
     }
+
+    // front
     if (j < rows - 1) {
       this.neighbors.push(grid[i][j + 1][z]);
     }
+
+    // back
     if (j > 0) {
       this.neighbors.push(grid[i][j - 1][z]);
+    }
+
+    // up
+    if (z < maxZ - 1) {
+      this.neighbors.push(grid[i][j][z + 1]);
+    }
+
+    // down
+    if (z > 0) {
+      this.neighbors.push(grid[i][j][z - 1]);
     }
 
   };
 
   getColor () {
+    if (!this.color) {
+      return null;
+    }
     let typeColor = this.color;
     let specialColor = false;
 
@@ -117,14 +136,19 @@ class Cube extends GridPoint {
       new THREE.MeshBasicMaterial({color: color}),
       new THREE.MeshBasicMaterial({color: color})
     ];
+    this.size = size;
     this.position.set(this.left, this.top, this.z * this.size / 2)
       // this.material = new THREE.MeshStandardMaterial(cubeMaterials);
-    this.geometry = new THREE.BoxGeometry(size, size, size);
+    this.geometry = new THREE.BoxGeometry(this.size, this.size, this.size);
   }
 
   setColor (color) {
+    let _color = color || this.getColor();
+    if (!_color) {
+      return false;
+    }
     this.material.forEach((c, i) => {
-      this.material.at(i).color.set(color || this.getColor())
+      this.material.at(i).color.set(_color)
     })
   }
 }
@@ -142,6 +166,18 @@ class Plane extends GridPoint {
   setColor (color) {
     this.material = new THREE.MeshBasicMaterial({color: color || this.getColor()})
   }
+}
+
+class Air extends Cube {
+  constructor(x, y, z,size) {
+    super(x, y, z, null, size);
+    this.type = 'air';
+    this.walkable = true;
+    // this.material = null;
+    this.visible = false;
+    // this.setColor();
+  }
+
 }
 
 class Rock extends Cube {
@@ -190,6 +226,7 @@ class Mapa {
   constructor(scene, data = null, options = null) {
     this.cols = data.length ? data.length : 60;
     this.rows = data.length ? data[0].length : 60;
+    this.maxZ = 12;
     this.grid = [];
     
     this.closedSet = [];
@@ -241,7 +278,7 @@ class Mapa {
     for (let i = 0; i < this.cols; i++) {
       this.grid[i] = new Array(this.rows);
       for (let x = 0; x < this.rows; x++) {
-        this.grid[i][x] = [];
+        this.grid[i][x] = new Array(this.maxZ);
       }
     }
 
@@ -278,6 +315,15 @@ class Mapa {
             this.tileSize
           );
         }
+
+        for (let h = Math.abs(z) + 1; h < this.maxZ; h++) {
+          this.grid[x][y][h] = new Air(
+            x,
+            y,
+            h,
+            this.tileSize
+          );
+        }
         
       }
     }
@@ -289,7 +335,9 @@ class Mapa {
     for (let i = 0; i < this.cols; i++) {
       for (let j = 0; j < this.rows; j++) {
         for (let z = 0; z < this.grid[i][j].length; z++) {
-          this.grid[i][j][z].updateNeighbors(this.grid, this.cols, this.rows);
+          if (this.grid[i][j][z]) {
+            this.grid[i][j][z].updateNeighbors(this.grid, this.cols, this.rows, this.maxZ);
+          }
         }
       }
     }
@@ -315,18 +363,16 @@ class Mapa {
   }
 
   findPath(start, end) {  
-    if (!end || !start) {
-      return false;
+    if (!end || !start || end === start) {
+      return [];
     }
-    start = this.grid[start.x][start.y][start.z];
-    end = this.grid[end.x][end.y][end.z];
-    console.log({start})
 
     let openSet = [start];
     let closedSet = [];
     let path = [];
 
-    if (end === start) {
+    let tileTop = this.grid[end.x][end.y][end.z + 1];
+    if (tileTop && tileTop.type !== 'air') {
       return [];
     }
 
@@ -366,8 +412,14 @@ class Mapa {
         return path.reverse();
       }
 
-
-      if (current !== start && current.walkable === true && current.occupied !== true) {
+      let tileTop = this.grid[current.x][current.y][current.z + 1];
+      console.log({tileTop})
+      if (
+        current.walkable === true && 
+        current.type !== 'air' && 
+        current.occupied !== true
+        // (tileTop && tileTop.type === 'air')
+      ) {
         closedSet.push(current);
       }
   
@@ -379,15 +431,17 @@ class Mapa {
       for (let i = 0; i < neighbors.length; i++) {
         let neighbor = neighbors[i];
 
-        if (neighbor === start) {
-          continue;
+        if (!neighbor) {
+          console.log({current})
         }
 
-        if (closedSet.includes(neighbor)) {
-          continue;
-        }
-
-        if (neighbor.walkable !== true || neighbor.occupied == true) {
+        if (
+          neighbor === start || 
+          closedSet.includes(neighbor) ||
+          neighbor.walkable !== true || 
+          neighbor.occupied === true || 
+          neighbor.type === 'air'
+        ) {
           continue;
         }
 
@@ -398,19 +452,14 @@ class Mapa {
           neighbor.g = possibleG;
           neighbor.h = this.heuristic(neighbor, end);
           neighbor.f = neighbor.g + neighbor.h;
+          neighbor.f -= (parseInt(neighbor.speed * 100))
 
-          if (neighbor.walkable !== true || neighbor.occupied) {
-            neighbor.f += 10000;
-          } else {
-            neighbor.f -= (parseInt(neighbor.speed * 100))
-          }
+          // if (neighbor.walkable !== true || neighbor.occupied) {
+          //   neighbor.f += 10000;
+          // }
 
           neighbor.top_parent = current;
-          
-
-          if (!neighbor.occupied) {
-            openSet.push(neighbor);
-          }
+          openSet.push(neighbor);
         }
       }
       
@@ -423,17 +472,20 @@ class Mapa {
   heuristic(position0, position1) {
     let d1 = Math.abs(position1.x - position0.x);
     let d2 = Math.abs(position1.y - position0.y);
+    let d3 = Math.abs(position1.z - position0.z);
     
-    return d1 + d2;
+    return d1 + d2 + d3;
   }
 
   clearAll() {
     for (let i = 0; i < this.cols; i++) {
       for (let j = 0; j < this.rows; j++) {
-        this.grid[i][j].f = 0;
-        this.grid[i][j].g = 0;
-        this.grid[i][j].h = 0;
-        this.grid[i][j].top_parent = undefined;
+        for (let z = 0; z < this.grid[i][j].length; z++) {
+          this.grid[i][j][z].f = 0;
+          this.grid[i][j][z].g = 0;
+          this.grid[i][j][z].h = 0;
+          this.grid[i][j][z].top_parent = undefined;
+        }
       }
     }
   }
@@ -443,7 +495,7 @@ class Mapa {
       for (let j = 0; j < this.rows; j++) {
         for (let z = 0; z <= this.grid[i][j].length; z++) {
           const tile = this.grid[i][j][z];
-          if (tile) {
+          if (tile && tile.type !== 'air') {
             tile.position.set(tile.left, tile.top, tile.z * tile.size)
             scene.add( tile );
           }
@@ -511,8 +563,8 @@ class Mapa {
       entity = Water;
     }
 
-    const newTile = new entity(tile.x, tile.y, tile.size)
-    this.grid[tile.x][tile.y] = newTile;
+    const newTile = new entity(tile.x, tile.y, tile.z, tile.size)
+    this.grid[tile.x][tile.y][tile.z] = newTile;
 
     this.scene.remove(tile);
     this.scene.add(newTile);

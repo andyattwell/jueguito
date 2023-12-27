@@ -81,7 +81,6 @@ class Jueguito {
         return false;
       }
     }
-    console.log(data)
     
     this.scene.clear();
 
@@ -114,7 +113,7 @@ class Jueguito {
 
     for (let index = 0; index < cositas.length; index++) {
       // let spawn = this.mapa.pickSpawn();
-      let spawn = { x: cositas[index].x, y: cositas[index].y };
+      let spawn = { x: 10, y: 10, z: 0 };
       let cosita = new Cosita(this.mapa, spawn);
       this.scene.add( cosita );
       this.cositas.push(cosita);
