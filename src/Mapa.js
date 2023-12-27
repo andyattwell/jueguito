@@ -23,7 +23,7 @@ class GridPoint extends THREE.Mesh {
     this.color = "#000000"; // tile color based on the type
     this.hover = false;
 
-    this.name = "tile-" + (this.x * this.y + 1)
+    // this.name = "tile-" + (this.z * 100 * this.x * this.y)
 
   }
 
@@ -289,20 +289,13 @@ class Mapa {
     let ns;
     for (let x = 0; x < this.cols; x++) {
       for (let y = 0; y < this.rows; y++) {
-        let type = this.getRandomTile(options);
-        let entity = Path;
-        if (type === 'rock') {
-          entity = Rock;
-        } else if (type === 'water') {
-          entity = Water;
-        } else if (type === 'grass') {
-          entity = Grass;
-        }
+        // let type = this.getRandomTile(options);
+        let entity = this.getNoiseMapTile(x, y);
 
         let z = 0;
         if (options?.useNoise === true) {
           ns = noise.noise(x * .2, y * .2, 0)
-          z = parseInt(ns * 10);
+          // z = parseInt(ns * 10);
         }
 
         for (let h = 0; h <= Math.abs(z); h++) {
@@ -329,6 +322,30 @@ class Mapa {
     }
   
     this.updateNeighbors();
+  }
+
+  getNoiseMapTile(x, y) {
+    const noise = new ImprovedNoise()
+    const ns = noise.noise(x * .2, y * .2, 0)
+    const r = parseInt(ns * 10) + 10;
+    if (r > 11) {
+      return Water;
+    } else if (r < 11 && r > 9) {
+      return Grass;
+    } else if (r < 9 && r > 6) {
+      return Path;
+    } else {
+      const rock = parseInt(Math.random() * 9);
+      if (rock <= 0) {
+        return Rock;
+      }
+      const grass = parseInt(Math.random() * 2);
+      if (grass > 0) {
+        return Grass
+      } else {
+        return Path
+      }
+    }
   }
 
   updateNeighbors() {
@@ -362,7 +379,7 @@ class Mapa {
     return data;
   }
 
-  findPath(start, end) {  
+  findPath(start, end) {
     if (!end || !start || end === start) {
       return [];
     }
@@ -449,7 +466,7 @@ class Mapa {
           neighbor.g = possibleG;
           neighbor.h = this.heuristic(neighbor, end);
           neighbor.f = neighbor.g + neighbor.h;
-          neighbor.f -= (parseInt(neighbor.speed * 100))
+          neighbor.f -= (parseInt(neighbor.speed * 500))
 
           // if (neighbor.walkable !== true || neighbor.occupied) {
           //   neighbor.f += 10000;
@@ -503,16 +520,9 @@ class Mapa {
   }
 
   getRandomTile(options) {
+    
     let types = [
-      'path', 
-      'grass', 
-      'path', 
-      'path', 
-      'path', 
-      'grass',
-      'path', 
-      'rock', 
-      'water'
+      Path, Grass, Water, Grass
     ];
 
     if (options && options.types) {
@@ -520,8 +530,18 @@ class Mapa {
       for (let i = 0; i < options.types.length; i++) {
         const element = options.types[i];
         const amount = element.prob * 10;
+
+        let entity = Path;
+        if (element.type === 'rock') {
+          entity = Rock;
+        } else if (element.type === 'water') {
+          entity = Water;
+        } else if (element.type === 'grass') {
+          entity = Grass;
+        }
+
         for (let x = 0; x < amount; x++) {
-          types.push(element.type)
+          types.push(entity)
         }
       }
     }
@@ -552,6 +572,7 @@ class Mapa {
       return false;
     }
     this.grid[tile.x][tile.y][tile.z] = new Air(tile.x, tile.y, tile.z);
+    this.grid[tile.x][tile.y][tile.z - 1].occupied = false;
     this.scene.remove(tile);
   }
 
@@ -559,14 +580,14 @@ class Mapa {
 
     const tile = hit.object;
 
-    if (tile.z >= this.maxZ) {
-      return false;
-    }
-
     const x = tile.x + hit.normal.x
     const y = tile.y + hit.normal.y
     const z = tile.z + hit.normal.z
 
+    if (z >= this.maxZ) {
+      return false;
+    }
+    
     const tileTop = this.grid[x][y][z];
     if (tileTop && tileTop.type !== 'air') {
       return false;
