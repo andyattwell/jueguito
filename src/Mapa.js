@@ -79,8 +79,6 @@ class GridPoint extends THREE.Mesh {
       specialColor = '#fff0ff'
     } if (this.planned === true) {
       specialColor = "#fff700";
-    } else if (this.occupied === true) {
-      specialColor = '#e000ff' 
     }
 
     let color = typeColor
@@ -314,7 +312,9 @@ class Mapa {
             h,
             this.tileSize
           );
+          this.grid[x][y][h].occupied = true
         }
+        this.grid[x][y][Math.abs(z)].occupied = false;
 
         for (let h = Math.abs(z) + 1; h < this.maxZ; h++) {
           this.grid[x][y][h] = new Air(
@@ -371,10 +371,10 @@ class Mapa {
     let closedSet = [];
     let path = [];
 
-    let tileTop = this.grid[end.x][end.y][end.z + 1];
-    if (tileTop && tileTop.type !== 'air') {
-      return [];
-    }
+    // let tileTop = this.grid[end.x][end.y][end.z + 1];
+    // if (tileTop && tileTop.type !== 'air') {
+    //   return [];
+    // }
 
     if (end.walkable !== true || end.occupied === true) {
       let newEnd = null
@@ -412,13 +412,10 @@ class Mapa {
         return path.reverse();
       }
 
-      let tileTop = this.grid[current.x][current.y][current.z + 1];
-      console.log({tileTop})
       if (
         current.walkable === true && 
         current.type !== 'air' && 
         current.occupied !== true
-        // (tileTop && tileTop.type === 'air')
       ) {
         closedSet.push(current);
       }
@@ -548,6 +545,49 @@ class Mapa {
     i++;
 
     return spawn || this.grid[0][0];
+  }
+
+  removeTile(tile) {
+    if (tile.z <= 0) {
+      return false;
+    }
+    this.grid[tile.x][tile.y][tile.z] = new Air(tile.x, tile.y, tile.z);
+    this.scene.remove(tile);
+  }
+
+  addTile(hit, newType) {
+
+    const tile = hit.object;
+
+    if (tile.z >= this.maxZ) {
+      return false;
+    }
+
+    const x = tile.x + hit.normal.x
+    const y = tile.y + hit.normal.y
+    const z = tile.z + hit.normal.z
+
+    const tileTop = this.grid[x][y][z];
+    if (tileTop && tileTop.type !== 'air') {
+      return false;
+    }
+
+    let entity = Path;
+    if (newType === 'grass') {
+      entity = Grass;
+    } else if (newType === 'rock') {
+      entity = Rock;
+    } else if (newType === 'water') {
+      entity = Water;
+    }
+
+    const newTile = new entity(x, y, z, tile.size)
+    newTile.position.set(x * tile.size, y * tile.size, z * tile.size);
+    tile.occupied = true;
+    this.grid[x][y][z] = newTile;
+    this.scene.add(newTile);
+
+    this.updateNeighbors();
   }
 
   replaceTile(tile, newType) {

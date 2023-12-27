@@ -203,7 +203,6 @@ class Cosita extends THREE.Mesh {
 
       const next = this.currentPath[this.currentPath.length-1];
       if (next) {
-        console.log(next)
         this.moveTo(next)
       }
     }
@@ -237,7 +236,6 @@ class Cosita extends THREE.Mesh {
     this.currentPath = this.map.findPath(this.current, endTile)
       .filter((tile) => tile !== self.current);
 
-    console.log(this.currentPath)
     // if (this.currentPath.length === 0) {
     //   this.currentPath = [this.current]
     // }

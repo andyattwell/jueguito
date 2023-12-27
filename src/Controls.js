@@ -200,6 +200,10 @@ class Controls {
     }
 
     this.parent.toolbar.deselect();
+    const hit = this.intersects[0]
+    if (hit && hit.object.type !== 'cosita') {
+      this.parent.mapa.removeTile(hit.object)
+    }
 
     return false;
   }
@@ -209,9 +213,9 @@ class Controls {
     if (e.which === 1 && e.target.tagName === 'CANVAS') {
       const hit = this.intersects[0];
       if (hit) {
-
         if (this.parent.toolbar.selectedTool && hit.object.type !== 'cosita') {
-          this.parent.mapa.replaceTile(hit.object, this.parent.toolbar.selectedTool.name)
+          // this.parent.mapa.replaceTile(hit.object, this.parent.toolbar.selectedTool.name)
+          this.parent.mapa.addTile(hit, this.parent.toolbar.selectedTool.name)
           return false;
         }
 
