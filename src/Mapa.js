@@ -303,8 +303,8 @@ class Mapa {
 
         let z = 0;
         if (options?.useNoise === true) {
-          ns = noise.noise(x * .2, y * .2, 0)
-          // z = parseInt(ns * 10);
+          let ns = noise.noise(x * .2, y * .2, 0)
+          z = parseInt(ns * 10);
         }
 
         for (let h = 0; h <= Math.abs(z); h++) {

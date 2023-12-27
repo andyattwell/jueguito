@@ -199,7 +199,7 @@ class Controls {
       this.parent.target_selected = null;
     }
 
-    this.parent.toolbar.deselect();
+    this.parent.toolbar?.deselect();
     const hit = this.intersects[0]
     if (hit && hit.object.type !== 'cosita') {
       this.parent.mapa.removeTile(hit.object)
