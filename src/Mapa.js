@@ -230,11 +230,20 @@ class Grass extends Cube {
   }
 }
 
+class Prize extends Cube {
+  constructor(x, y, z, size) {
+    super(x, y, z, "#ce1fd7", size);
+    this.type = 'prize';
+    this.walkable = false;
+    this.setColor();
+  }
+}
+
 class Mapa {
   
   constructor(scene, data = null, options = null) {
-    this.cols = data.length ? data.length : 60;
-    this.rows = data.length ? data[0].length : 60;
+    this.cols = data.length ? data.length : 48;
+    this.rows = data.length ? data[0].length : 48;
     this.maxZ = 12;
     this.grid = [];
     
@@ -585,6 +594,7 @@ class Mapa {
       this.grid[tile.x][tile.y][tile.z - 1].occupied = false;
     }
     this.scene.remove(tile);
+    this.updateNeighbors();
   }
 
   addTile(hit, newType) {
@@ -619,6 +629,8 @@ class Mapa {
       entity = Rock;
     } else if (newType === 'water') {
       entity = Water;
+    } else if (newType === 'prize') {
+      entity = Prize;
     }
 
     const newTile = new entity(x, y, z, tile.size)

@@ -25,7 +25,9 @@ class Controls {
 
     // Right Click
     window.addEventListener("contextmenu", (e) => {
-      self.rightClickHandler(e)
+      if (e.target.tagName === 'CANVAS') {
+        self.rightClickHandler(e)
+      }
     });
 
     document.addEventListener('wheel', (e) => {
@@ -108,6 +110,27 @@ class Controls {
 
       const delta = newObjectPosition.clone().sub(oldObjectPosition);
       this.parent.camera.position.add(delta);
+
+      // ->>>>>>>>>>>>>>
+      
+      // vertical
+      // let rotX = this.parent.camera.rotation.x
+      // rotX += Math.PI * y
+      // if (rotX + Math.PI * y < 1 && rotX + Math.PI * y > 0.5) {
+      // }
+      // // horizontal
+      // let rotY = this.parent.camera.rotation.y;
+      // rotY -= Math.PI * x
+      // if (rotY - Math.PI * x < 0.3 && rotY - Math.PI * x > -0.3) {
+      // }
+      // let rotZ = this.parent.camera.rotation.z
+      // rotZ -= Math.PI * x
+      // if (rotZ - Math.PI * x < 0.3 && rotZ - Math.PI * x > -0.3) {
+      // }
+      // console.log({rotX, rotY, rotZ})
+
+      // this.parent.camera.rotation.setFromVector3(new THREE.Vector3( rotX, rotY, rotZ));
+      // this.parent.camera.lookAt(this.parent.camera.position.x, this.parent.camera.position.y + 10, this.parent.camera.position.z - 3)
 
       this.dragStart = {
         x: this.mouse.x,

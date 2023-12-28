@@ -57,18 +57,18 @@ class Jueguito {
 
   }
 
-  animate() {
+  animate(time) {
     const self = this
     // if (this.playing) {
     //   this.requestId = requestAnimationFrame( () => {
     //     self.animate()
     //   } );
     // }
-    requestAnimationFrame( () => {
-      self.animate()
+    requestAnimationFrame( (time) => {
+      self.animate(time)
     } );
     
-    this.updateCositas();
+    this.updateCositas(time);
     this.renderScene();
 
   }
@@ -183,9 +183,9 @@ class Jueguito {
     }
   }
 
-  updateCositas() {
+  updateCositas(time) {
     this.cositas.forEach((cosita) => {
-      cosita.update(this.camera);
+      cosita.update(this.camera, time);
     })
   }
 

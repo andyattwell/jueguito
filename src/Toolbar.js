@@ -29,6 +29,10 @@ class Toolbar {
       {
         name: 'water',
         color: '#2093d5'
+      },
+      {
+        name: 'prize',
+        color: '#ce1fd7'
       }
     ];
     this.selectedTool = null

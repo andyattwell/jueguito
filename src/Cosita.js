@@ -10,10 +10,12 @@ class Cosita extends THREE.Mesh {
     this.height = .15;
     this.selected = false;
     this.speed = .5;
-    this.color = "#FFFFFF"
-    
+    this.color = "#FFFFFF";
+    this.lastTime = 0;
     this.map = map;
     this.following = false;
+    this.queuedAction = null;
+    this.inventory = [];
     this.material = new THREE.MeshBasicMaterial({
       color: 0x000000,
       transparent: true,
@@ -94,9 +96,69 @@ class Cosita extends THREE.Mesh {
     }
   }
 
-  update(camera, controls) {
+  lookForNearStuff() {
+    
+    const lookInNeighbors = function (tile, depth) {
+      let found = null;
+
+      if(depth > 5) {
+        return false;
+      }
+      
+      for (let n = 0; n < tile.neighbors.length; n++) {
+        if (!found && tile.neighbors[n].type === 'prize') {
+          found = tile.neighbors[n]
+        } else if (!found) {
+          found = lookInNeighbors(tile.neighbors[n], depth + 1)
+        }
+      }
+      return found;
+    }
+
+    const prize = lookInNeighbors(this.current, 0);
+    if (prize) {
+      console.log({prize})
+      this.queuedAction = {
+        action: 'grab',
+        object: prize
+      }
+      this.moveTo(prize)
+    } else {
+
+      const minX = this.current.x > 0 ? this.current.x - 5 : 0;
+      const maxX = this.current.x < this.map.cols ? this.current.x + 5 : this.map.cols;
+      const diffX = maxX - minX;
+
+      const minY = this.current.y > 0 ? this.current.y - 5 : 0;
+      const maxY = this.current.y < this.map.rows ? this.current.y + 5 : this.map.rows;
+      const diffY = maxY - minY;
+
+      // const maxY = this.current.y + 5;
+
+      console.log({minX, minY})
+
+      const randX = parseInt(Math.random() * diffX);
+      const randY = parseInt(Math.random() * diffY);
+
+      const randTile = this.map.grid[minX + randX][minY + randY][0];
+      
+      if (randTile) {
+        console.log({randTile})
+        this.moveTo(randTile)
+      }
+    }
+
+  }
+
+  update(camera, time) {
 
     if (!this.currentPath || this.currentPath.length < 1) {
+
+      if (time - this.lastTime <= 2000 + Math.random() * 2000) {
+        return false;
+      }
+      this.lastTime = time;
+      this.lookForNearStuff()
       return false;
     }
 
@@ -159,7 +221,7 @@ class Cosita extends THREE.Mesh {
 
     let zRotation = 0;
     if (direction === 'back') {
-      zRotation = - Math.PI / 2
+      zRotation = -Math.PI / 2
     } else if (direction === 'front'){
       zRotation = Math.PI / 2;
     } else if (direction === 'left'){
@@ -191,6 +253,7 @@ class Cosita extends THREE.Mesh {
     }
     
     if (diffY <= speed && diffX <= speed && diffZ <= speed) {
+      this.lastTime = time;
       this.currentPath.shift();
       
       this.lastTile = this.current;
@@ -206,6 +269,8 @@ class Cosita extends THREE.Mesh {
       const next = this.currentPath[this.currentPath.length-1];
       if (next) {
         this.moveTo(next)
+      } else {
+        this.performAction()
       }
     }
   }
@@ -213,21 +278,14 @@ class Cosita extends THREE.Mesh {
   moveTo(endTile) {
     const self = this;
 
+    endTile = this.map.grid[endTile.x][endTile.y][0];
+
     if (this.current === endTile) {
       this.currentPath = [];
       return false;
     }
 
     if (this.currentPath && this.currentPath.length >= 1) {
-      // if (endTile === this.currentPath[this.currentPath.length -1]) {
-      //   return false;
-      // } else {
-      //   this.currentPath.map(tile => {
-      //     tile.planned = false;
-      //     tile.setColor();
-      //     return tile;
-      //   });
-      // }
       this.currentPath.map(tile => {
         tile.planned = false;
         tile.setColor();
@@ -247,6 +305,16 @@ class Cosita extends THREE.Mesh {
       tile.setColor();
       return tile;
     });
+  }
+
+  performAction() {
+    if (!this.queuedAction) {
+      return false
+    }
+    if (this.queuedAction.action === 'grab') {
+      this.inventory.push(this.queuedAction.object.type)
+      this.map.removeTile(this.queuedAction.object)
+    }
   }
 
   blendColors(colorA, colorB, amount) {
