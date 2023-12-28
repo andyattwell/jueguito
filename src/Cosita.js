@@ -112,16 +112,17 @@ class Cosita extends THREE.Mesh {
       if(depth > 120) {
         return false;
       }
-      
-      for (let n = 0; n < tile.neighbors.length; n++) {
 
-        if (!tile.neighbors[n] || done.includes(tile.neighbors[n])) {
+      for (let n = 0; n < tile.neighbors.length; n++ ) {
+        const neighbor = tile.neighbors[n];
+
+        if (!neighbor || done.includes(neighbor)) {
           continue;
         }
 
-        done.push(tile.neighbors[n]);
+        done.push(neighbor);
 
-        if (!found && tile.neighbors[n].type === 'prize') {
+        if (!found && neighbor.type === 'prize') {
           found = tile.neighbors[n]
         } else if (!found) {
           found = lookInNeighbors(tile.neighbors[n], depth + 1, done)
@@ -180,6 +181,7 @@ class Cosita extends THREE.Mesh {
       this.lookForNearStuff(time)
       return false;
     }
+    this.lastTime = time;
 
     let targetCell = this.currentPath[0];
     
@@ -275,7 +277,6 @@ class Cosita extends THREE.Mesh {
     }
     
     if (diffY <= speed && diffX <= speed && diffZ <= speed) {
-      this.lastTime = time;
       this.currentPath.shift();
       
       this.lastTile = this.current;
@@ -302,7 +303,7 @@ class Cosita extends THREE.Mesh {
 
     endTile = this.map.grid[endTile.x][endTile.y][0];
 
-    if (this.current === endTile) {
+    if (!endTile || this.current === endTile || endTile === 'undefined') {
       this.currentPath = [];
       return false;
     }

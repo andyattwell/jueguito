@@ -404,7 +404,7 @@ class Mapa {
   }
 
   findPath(start, end) {
-    if (!end || !start || end === start) {
+    if (!end || end === 'undefined' || !start || end === start) {
       return [];
     }
 
@@ -494,6 +494,9 @@ class Mapa {
           } catch (error) {
             console.log({neighbor, end})
             console.log({error})
+            openSet = [];
+            closedSet = [];
+            continue;
           }
           neighbor.f = neighbor.g + neighbor.h;
           neighbor.f -= (parseInt(neighbor.speed * 500))
