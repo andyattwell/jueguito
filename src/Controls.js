@@ -212,16 +212,15 @@ class Controls {
 
     if (e.which === 1 && e.target.tagName === 'CANVAS') {
       const hit = this.intersects[0];
-      // console.log({hit})
       if (hit) {
-        if (this.parent.toolbar.selectedTool && hit.object.type !== 'cosita') {
+        if (this.parent.toolbar.selectedTool && hit.object.type !== 'cosita' && hit.object.type !== 'Mesh') {
           // this.parent.mapa.replaceTile(hit.object, this.parent.toolbar.selectedTool.name)
           this.parent.mapa.addTile(hit, this.parent.toolbar.selectedTool.name)
           return false;
         }
 
 
-        if (this.parent.cosita_selected && hit.object.type !== 'cosita') {
+        if (this.parent.cosita_selected && hit.object.type !== 'cosita' && hit.object.type !== 'Mesh') {
           
           if (this.parent.target_selected) {
             if (this.parent.target_selected.deselect) {

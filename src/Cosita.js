@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 class Cosita extends THREE.Mesh {
   constructor(map, spawn) {
@@ -8,20 +9,24 @@ class Cosita extends THREE.Mesh {
     this.width = .15;
     this.height = .15;
     this.selected = false;
-    this.speed = .01;
+    this.speed = .5;
     this.color = "#FFFFFF"
     
     this.map = map;
     this.following = false;
-
-    this.material = [
-      new THREE.MeshBasicMaterial({color: this.color}),
-      new THREE.MeshBasicMaterial({color: this.color}),
-      new THREE.MeshBasicMaterial({color: this.color}),
-      new THREE.MeshBasicMaterial({color: this.color}),
-      new THREE.MeshBasicMaterial({color: this.color}),
-      new THREE.MeshBasicMaterial({color: this.color})
-    ];
+    this.material = new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      transparent: true,
+      opacity: 0
+    })
+    // this.material = [
+    //   new THREE.MeshBasicMaterial({color: this.color}),
+    //   new THREE.MeshBasicMaterial({color: this.color}),
+    //   new THREE.MeshBasicMaterial({color: this.color}),
+    //   new THREE.MeshBasicMaterial({color: this.color}),
+    //   new THREE.MeshBasicMaterial({color: this.color}),
+    //   new THREE.MeshBasicMaterial({color: this.color})
+    // ];
 
     // this.material = new THREE.MeshStandardMaterial(cubeMaterials);
     this.geometry = new THREE.BoxGeometry(this.width, this.width, this.width);
@@ -32,9 +37,36 @@ class Cosita extends THREE.Mesh {
 
     // const position = this.currentTile(this.x, this.y, this.z);
     this.current = this.map.grid[this.x][this.y][this.z];
+    this.position.set(this.current.position.x, this.current.position.y, this.current.position.z + this.current.size / 2)
 
     this.lastTile = null;
-    this.position.set(this.current.position.x, this.current.position.y, this.current.position.z + this.current.size / 2)
+
+    this.model = null;
+    const loader = new GLTFLoader();
+    const self = this
+    loader.load( '../models/bear/scene.gltf', function ( gltf ) {
+
+      let obj = gltf.scene.children[0]
+      obj.scale.x = obj.scale.x * .05 
+      obj.scale.y = obj.scale.y * .05
+      obj.scale.z = obj.scale.z * .05
+
+      obj.rotation.x = self.rotation.x
+      obj.rotation.y = self.rotation.y
+      obj.rotation.z = self.rotation.z
+
+      
+      self.add(obj);
+      self.setColor();
+      self.map.scene.add( self );
+
+      // scene.add( gltf.scene );
+
+    }, undefined, function ( error ) {
+
+      console.error( {error} );
+
+    } );
   }
 
   centerPosition(x, y) {
@@ -95,62 +127,25 @@ class Cosita extends THREE.Mesh {
     let nextY = this.position.y;
     let nextZ = this.position.z;
 
-    const speed = targetCell.speed || 0.1
+    const speed = (targetCell.speed || 0.1) * this.speed
 
-    // if (targetCell.position.z >= targetPosZ) {
-    //   // move up first then x and y
-    //   if (diffZ >= speed) {
-    //     nextZ += speed;
-    //   } else {
+    let direction = '';
 
-    //     if (diffX >= speed) {
-    //       if (targetPosX > this.position.x) {
-    //         nextX += speed; 
-    //       } else if (targetPosX < this.position.x) {
-    //         nextX -= speed; 
-    //       }
-    //     }
-
-    //     if (diffY >= speed) {
-    //       if (targetPosY > this.position.y) {
-    //         nextY += speed;
-    //       } else if (targetPosY < this.position.y) {
-    //         nextY -= speed;
-    //       }
-    //     }
-    //   }
-    // } else {
-    //     // move x and y and then down
-    //     if (diffX >= speed) {
-    //       if (targetPosX > this.position.x) {
-    //         nextX += speed; 
-    //       } else if (targetPosX < this.position.x) {
-    //         nextX -= speed; 
-    //       }
-    //     } else if (diffY >= speed) {
-    //       if (targetPosY > this.position.y) {
-    //         nextY += speed;
-    //       } else if (targetPosY < this.position.y) {
-    //         nextY -= speed;
-    //       }
-    //     } else if (diffZ >= speed) {
-    //       nextZ -= speed;
-    //     }
-    // }
-
-    if (diffX > 0) {
+    if (diffX > speed) {
       if (targetPosX > this.position.x) {
         nextX += speed; 
+        direction = 'right';
       } else if (targetPosX < this.position.x) {
-        nextX -= speed; 
+        nextX -= speed;
+        direction = 'left';
       }
-    }
-
-    if (diffY > 0) {
+    } else if (diffY > speed) {
       if (targetPosY > this.position.y) {
         nextY += speed;
+        direction = 'back';
       } else if (targetPosY < this.position.y) {
         nextY -= speed;
+        direction = 'front';
       }
     }
 
@@ -170,6 +165,22 @@ class Cosita extends THREE.Mesh {
     this.x = nextZ;
 
     this.position.set(nextX, nextY, nextZ)
+
+    let zRotation = 0;
+    if (direction === 'back') {
+      zRotation = - Math.PI / 2
+    } else if (direction === 'front'){
+      zRotation = Math.PI / 2;
+    } else if (direction === 'left'){
+      zRotation = 0;
+    } else if (direction === 'right'){
+      zRotation = Math.PI;
+    }
+
+    // this.rotation.set(this.rotation.x, this.rotation.y, Math.PI / 2)
+    if (direction !== '') {
+      this.rotation.setFromVector3(new THREE.Vector3( 0, 0, zRotation));
+    }
     
     if (this.following) {
       const oldObjectPosition = new THREE.Vector3();
@@ -274,9 +285,53 @@ class Cosita extends THREE.Mesh {
   }
 
   setColor(color) {
-    this.material.forEach((c, i) => {
-      this.material.at(i).color.set(color || this.getColor())
+    // this.material.forEach((c, i) => {
+    //   this.material.at(i).color.set(color || this.getColor())
+    // })
+    const obj = this.children[0].children[0];
+
+    obj.children.forEach((c, i) => {
+      let color = '';
+      if (c.name === 'Object_2') {
+        color = "#FF272A"
+      } else if (c.name === 'Object_3') {
+        color = "#F8FF16"
+      } else if (c.name === 'Object_4') {
+        color = "#F8FF16"
+      } else if (c.name === 'Object_5') {
+        color = "#00FF0F"
+      } else if (c.name === 'Object_6') {
+        color = "#F7FFE9"
+      } else if (c.name === 'Object_7') {
+        color = "#38000A"
+      } else if (c.name === 'Object_8') {
+        color = "#FF9215"
+      } else if (c.name === 'Object_9') {
+        color = "#F8FFAB"
+      } else if (c.name === 'Object_10') {
+        color = "#000000"
+      }
+
+      if (this.selected) {
+        color = this.blendColors(color, "#ffffff", 0.5);
+      } 
+
+      c.material = new THREE.MeshBasicMaterial({
+        color: color,
+      })
     })
+
+    // this.children.forEach((obj) => {
+    //   obj.children.forEach((p) => {
+    //     if (p.children) {
+    //       p.children.forEach((c) => {
+    //         c.material = new THREE.MeshBasicMaterial({
+    //           color: color || this.getColor(),
+    //         })
+    //       })
+    //     }
+    //   })
+    // })
   }
 
   onPointerOver(e) {

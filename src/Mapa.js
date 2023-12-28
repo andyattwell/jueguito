@@ -402,7 +402,7 @@ class Mapa {
     //   return [];
     // }
 
-    if (end.walkable !== true || end.occupied === true) {
+    if (end.walkable !== true || end.occupied === true && end.neighbors) {
       let newEnd = null
       for (let index = 0; index < end.neighbors.length; index++) {
         if (!newEnd && end.neighbors[index].walkable === true && end.neighbors[index].occupied === false){
@@ -597,7 +597,7 @@ class Mapa {
       newZ = (tile.z + hit.normal.z) * tile.size - 0.1;
     }
     console.log({newZ})
-    console.log({tile: tile.z})
+    console.log({tile: tile})
 
     const x = tile.x + hit.normal.x
     const y = tile.y + hit.normal.y

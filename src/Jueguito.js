@@ -135,9 +135,7 @@ class Jueguito {
     for (let index = 0; index < cositas.length; index++) {
       // let spawn = this.mapa.pickSpawn();
       // let spawn = { x: 10, y: 10, z: 0 };
-      console.log(cositas[index])
       let cosita = new Cosita(this.mapa, cositas[index]);
-      this.scene.add( cosita );
       this.cositas.push(cosita);
     }
   }
