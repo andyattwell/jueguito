@@ -26,11 +26,11 @@ class Cosita extends THREE.Mesh {
 
     this.x = spawn ? spawn.x : 0; // cell x
     this.y = spawn ? spawn.y : 0; // cell y
-    this.z = spawn ? spawn.z : this.map.grid[this.x][this.y].length - 1; // cell z
+    this.z = this.map.grid[this.x][this.y].length - 1; // cell z
 
     // const position = this.currentTile(this.x, this.y, this.z);
-    this.current = this.map.grid[this.x][this.y][this.map.grid[this.x][this.y].length - 1];
-    this.position.set(this.current.position.x, this.current.position.y, this.current.position.z + 0.2)
+    this.current = this.map.grid[this.x][this.y][this.z];
+    this.position.set(this.current.position.x, this.current.position.y, this.current.position.z + this.current.size)
 
     this.lastTile = null;
 
@@ -167,6 +167,7 @@ class Cosita extends THREE.Mesh {
       }
       
       if (randTile) {
+        console.log({randTile})
         this.moveTo(randTile)
       }
     }
@@ -299,7 +300,7 @@ class Cosita extends THREE.Mesh {
   moveTo(endTile) {
     const self = this;
 
-    // endTile = this.map.grid[endTile.x][endTile.y][0];
+    endTile = this.map.grid[endTile.x][endTile.y][0];
 
     if (this.current === endTile) {
       this.currentPath = [];

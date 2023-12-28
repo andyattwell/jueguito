@@ -138,11 +138,19 @@ class Cube extends GridPoint {
         new THREE.MeshBasicMaterial({color: color})
       ];
       this.geometry = new THREE.BoxGeometry(this.size, this.size, this.size);
+      this.position.set(this.x * this.size, this.y * this.size, this.z * this.size - .1)
     } else {
       this.material = new THREE.MeshBasicMaterial({color: color})
       this.geometry = new THREE.PlaneGeometry(size, size)
+      this.position.set(this.x * this.size, this.y * this.size, 0)
     }
-    this.position.set(this.left, this.top, this.z * this.size / 2)
+    // let newZ = tile.z + tile.size;
+    // if (tile.z > 0) {
+    //   newZ = (tile.z + hit.normal.z) * tile.size + tile.size;
+    // }
+    // newTile.position.set(x * tile.size, y * tile.size, tile.z);
+
+    
       // this.material = new THREE.MeshStandardMaterial(cubeMaterials);
     
   }
@@ -168,7 +176,7 @@ class Plane extends GridPoint {
     this.color = color;
     this.material = new THREE.MeshBasicMaterial({color: color})
     this.geometry = new THREE.PlaneGeometry(size, size)
-    this.position.set(this.left, this.top, this.z * this.size)
+    this.position.set(this.left, this.top, 0)
     this.speed = .03
   }
 
@@ -261,9 +269,7 @@ class Mapa {
       this.import(data);
     } else {
       this.generate(options);
-    }
-
-    
+    }    
   }
 
   import(data) {
@@ -324,9 +330,9 @@ class Mapa {
             this.tileSize
           );
           this.grid[x][y][h].occupied = true
+          this.scene.add( this.grid[x][y][h] );
         }
         this.grid[x][y][Math.abs(z)].occupied = false;
-
         // for (let h = Math.abs(z) + 1; h < this.maxZ; h++) {
         //   this.grid[x][y][h] = new Air(
         //     x,
@@ -528,18 +534,18 @@ class Mapa {
     }
   }
 
-  render(scene) {
+  render() {
     for (let i = 0; i < this.cols; i++) {
       for (let j = 0; j < this.rows; j++) {
         for (let z = 0; z <= this.grid[i][j].length; z++) {
           const tile = this.grid[i][j][z];
           if (tile && tile.type !== 'air') {
-            let newZ = tile.z + tile.size;
-            if (tile.z > 0) {
-              newZ = tile.z * tile.size;
-            }
-            tile.position.set(tile.left, tile.top, newZ)
-            scene.add( tile );
+            // let newZ = tile.z + tile.size;
+            // if (tile.z > 0) {
+            //   newZ = tile.z * tile.size;
+            // }
+            // tile.position.set(tile.left, tile.top, newZ)
+            this.scene.add( tile );
           }
         }
       }
@@ -599,11 +605,12 @@ class Mapa {
     if (tile.z <= 0) {
       return false;
     }
-    this.grid[tile.x][tile.y].slice(tile.z, 1);
     if (this.grid[tile.x][tile.y][tile.z - 1]) {
       this.grid[tile.x][tile.y][tile.z - 1].occupied = false;
     }
     this.scene.remove(tile);
+    this.grid[tile.x][tile.y] = this.grid[tile.x][tile.y].splice(tile.z, 1);
+
     this.updateNeighbors();
   }
 
@@ -611,11 +618,6 @@ class Mapa {
 
     const tile = hit.object;
     
-    let newZ = tile.z + tile.size;
-    if (tile.z > 0) {
-      newZ = (tile.z + hit.normal.z) * tile.size;
-    }
-
     const x = tile.x + hit.normal.x
     const y = tile.y + hit.normal.y
     const z = tile.z + hit.normal.z
@@ -624,10 +626,10 @@ class Mapa {
       return false;
     }
     
-    const tileTop = this.grid[x][y][z];
-    if (tileTop && tileTop.type !== 'air') {
-      return false;
-    }
+    // const tileTop = this.grid[x][y][z];
+    // if (tileTop && tileTop.type !== 'air') {
+    //   return false;
+    // }
 
     let entity = Path;
     if (newType === 'grass') {
@@ -641,7 +643,6 @@ class Mapa {
     }
 
     const newTile = new entity(x, y, z, tile.size)
-    newTile.position.set(x * tile.size, y * tile.size, newZ);
     tile.occupied = true;
     this.grid[x][y][z] = newTile;
     this.scene.add(newTile);
