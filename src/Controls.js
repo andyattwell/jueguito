@@ -66,7 +66,7 @@ class Controls {
       return false;
     }
 
-    this.mouse.set((e.clientX / this.parent.width) * 2 - 1, -(e.clientY / this.parent.height) * 2 + 1.1)
+    this.mouse.set((e.clientX / this.parent.width) * 2 - 1, -(e.clientY / this.parent.height) * 2 + 1.15)
     this.raycaster.setFromCamera(this.mouse, this.parent.camera)
     this.intersects = this.raycaster.intersectObjects(this.parent.scene.children, true)
 
@@ -260,10 +260,12 @@ class Controls {
       if (e.deltaY < 0) {
         if (this.parent.camera.position.z > 1) {
           this.parent.camera.position.z -= 1
+          this.parent.camera.position.y += 1
         }
       } else {
         if (this.parent.camera.position.z < 8) {
           this.parent.camera.position.z += 1
+          this.parent.camera.position.y -= 1
         }
       }
     }

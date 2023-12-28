@@ -19,16 +19,7 @@ class Cosita extends THREE.Mesh {
       transparent: true,
       opacity: 0
     })
-    // this.material = [
-    //   new THREE.MeshBasicMaterial({color: this.color}),
-    //   new THREE.MeshBasicMaterial({color: this.color}),
-    //   new THREE.MeshBasicMaterial({color: this.color}),
-    //   new THREE.MeshBasicMaterial({color: this.color}),
-    //   new THREE.MeshBasicMaterial({color: this.color}),
-    //   new THREE.MeshBasicMaterial({color: this.color})
-    // ];
-
-    // this.material = new THREE.MeshStandardMaterial(cubeMaterials);
+    
     this.geometry = new THREE.BoxGeometry(this.width, this.width, this.width);
 
     this.x = spawn ? spawn.x : 0; // cell x
@@ -115,9 +106,9 @@ class Cosita extends THREE.Mesh {
       return false;
     }
 
-    let targetPosX = targetCell.left;
-    let targetPosY = targetCell.top;
-    let targetPosZ = targetCell.position.z + targetCell.size / 2;
+    let targetPosX = targetCell.position.x;
+    let targetPosY = targetCell.position.y;
+    let targetPosZ = targetCell.position.z + 0.03;
 
     let diffX = parseFloat(Math.abs(this.position.x - targetPosX).toFixed(2));
     let diffY = parseFloat(Math.abs(this.position.y - targetPosY).toFixed(2));
@@ -313,8 +304,10 @@ class Cosita extends THREE.Mesh {
       }
 
       if (this.selected) {
+        color = this.blendColors(color, "#af30ff", 0.5);
+      } else if (this.hover) {
         color = this.blendColors(color, "#ffffff", 0.5);
-      } 
+      }
 
       c.material = new THREE.MeshBasicMaterial({
         color: color,

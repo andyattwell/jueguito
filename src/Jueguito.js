@@ -29,7 +29,7 @@ class Jueguito {
   start() {
 
     this.camera = new THREE.PerspectiveCamera( 45, this.width / this.height, 0.01, 1000 );
-    this.camera.position.z = 10
+    this.camera.position.z = 5
     this.scene = new THREE.Scene();
 
     this.renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -92,14 +92,24 @@ class Jueguito {
     this.mapa = new Mapa(self.scene, grid, options);
     this.mapa.render(this.scene);
 
-    this.camera.position.y = -1
-    this.camera.position.x = 3
-    this.camera.position.z = 3
-    this.camera.lookAt(3,0,2);
+    this.camera.position.y = -3
+    this.camera.position.x = this.mapa.cols / 2 * this.mapa.tileSize
+    this.camera.position.z = 8
+
+    this.camera.lookAt(this.mapa.cols / 2 * this.mapa.tileSize, this.mapa.rows / 2 * this.mapa.tileSize, 0);
 
     this.toolbar = new Toolbar(this);
 
-    let cositas = [{x:10, y:10, z:0},{x:11, y:10, z:0}];
+    let cositas = [{
+      x: this.mapa.cols / 2, 
+      y: this.mapa.rows / 2, 
+      z:0
+    },
+    {
+      x: this.mapa.cols / 2 + 1, 
+      y: this.mapa.rows / 2, 
+      z:0
+    }];
     if (data?.cositas) {
       cositas = data.cositas;
     }
