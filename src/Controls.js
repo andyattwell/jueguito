@@ -224,7 +224,8 @@ class Controls {
 
     this.parent.toolbar?.deselect();
     const hit = this.intersects[0]
-    if (hit && hit.object.type !== 'cosita') {
+    if (hit && hit.object.type !== 'cosita' && hit.object.type !== 'Mesh') {
+      console.log(hit.object)
       this.parent.mapa.removeTile(hit.object)
     }
 

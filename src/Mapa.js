@@ -35,32 +35,32 @@ class GridPoint extends THREE.Mesh {
 
     this.neighbors = [];
     // left
-    if (i < cols - 1) {
+    if (i < cols - 1 && grid[i + 1][j][z]) {
       this.neighbors.push(grid[i + 1][j][z]);
     }
 
     // right
-    if (i > 0) {
+    if (i > 0 && grid[i - 1][j][z]) {
       this.neighbors.push(grid[i - 1][j][z]);
     }
 
     // front
-    if (j < rows - 1) {
+    if (j < rows - 1 && grid[i][j + 1][z]) {
       this.neighbors.push(grid[i][j + 1][z]);
     }
 
     // back
-    if (j > 0) {
+    if (j > 0 && grid[i][j - 1][z]) {
       this.neighbors.push(grid[i][j - 1][z]);
     }
 
     // up
-    if (z < maxZ - 1) {
+    if (z < maxZ - 1 && grid[i][j][z + 1]) {
       this.neighbors.push(grid[i][j][z + 1]);
     }
 
     // down
-    if (z > 0) {
+    if (z > 0 && grid[i][j][z - 1]) {
       this.neighbors.push(grid[i][j][z - 1]);
     }
 
@@ -296,7 +296,7 @@ class Mapa {
     for (let i = 0; i < this.cols; i++) {
       this.grid[i] = new Array(this.rows);
       for (let x = 0; x < this.rows; x++) {
-        this.grid[i][x] = new Array(this.maxZ);
+        this.grid[i][x] = new Array();
       }
     }
 
@@ -327,14 +327,14 @@ class Mapa {
         }
         this.grid[x][y][Math.abs(z)].occupied = false;
 
-        for (let h = Math.abs(z) + 1; h < this.maxZ; h++) {
-          this.grid[x][y][h] = new Air(
-            x,
-            y,
-            h,
-            this.tileSize
-          );
-        }
+        // for (let h = Math.abs(z) + 1; h < this.maxZ; h++) {
+        //   this.grid[x][y][h] = new Air(
+        //     x,
+        //     y,
+        //     h,
+        //     this.tileSize
+        //   );
+        // }
         
       }
     }
@@ -465,6 +465,7 @@ class Mapa {
 
         if (!neighbor) {
           console.log({current})
+          continue;
         }
 
         if (
@@ -482,7 +483,12 @@ class Mapa {
         if (!openSet.includes(neighbor)) {
 
           neighbor.g = possibleG;
-          neighbor.h = this.heuristic(neighbor, end);
+          try {
+            neighbor.h = this.heuristic(neighbor, end);
+          } catch (error) {
+            console.log({neighbor, end})
+            console.log({error})
+          }
           neighbor.f = neighbor.g + neighbor.h;
           neighbor.f -= (parseInt(neighbor.speed * 500))
 
@@ -528,7 +534,11 @@ class Mapa {
         for (let z = 0; z <= this.grid[i][j].length; z++) {
           const tile = this.grid[i][j][z];
           if (tile && tile.type !== 'air') {
-            tile.position.set(tile.left, tile.top, (tile.z * tile.size))
+            let newZ = tile.z + tile.size;
+            if (tile.z > 0) {
+              newZ = tile.z * tile.size;
+            }
+            tile.position.set(tile.left, tile.top, newZ)
             scene.add( tile );
           }
         }
@@ -589,7 +599,7 @@ class Mapa {
     if (tile.z <= 0) {
       return false;
     }
-    this.grid[tile.x][tile.y][tile.z] = new Air(tile.x, tile.y, tile.z);
+    this.grid[tile.x][tile.y].slice(tile.z, 1);
     if (this.grid[tile.x][tile.y][tile.z - 1]) {
       this.grid[tile.x][tile.y][tile.z - 1].occupied = false;
     }
@@ -601,13 +611,10 @@ class Mapa {
 
     const tile = hit.object;
     
-    let newZ = 0.1;
+    let newZ = tile.z + tile.size;
     if (tile.z > 0) {
-      console.log("newZ")
-      newZ = (tile.z + hit.normal.z) * tile.size - 0.1;
+      newZ = (tile.z + hit.normal.z) * tile.size;
     }
-    console.log({newZ})
-    console.log({tile: tile})
 
     const x = tile.x + hit.normal.x
     const y = tile.y + hit.normal.y
