@@ -127,20 +127,16 @@ class Cube extends GridPoint {
     super(x, y, z)
     this.color = color;
     this.size = size;
-
+    this.opacity = 1;
+    this.material = new THREE.MeshBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: 1
+    })
     if (z > 0) {
-      this.material = [
-        new THREE.MeshBasicMaterial({color: color}),
-        new THREE.MeshBasicMaterial({color: color}),
-        new THREE.MeshBasicMaterial({color: color}),
-        new THREE.MeshBasicMaterial({color: color}),
-        new THREE.MeshBasicMaterial({color: color}),
-        new THREE.MeshBasicMaterial({color: color})
-      ];
       this.geometry = new THREE.BoxGeometry(this.size, this.size, this.size);
       this.position.set(this.x * this.size, this.y * this.size, this.z * this.size - .1)
     } else {
-      this.material = new THREE.MeshBasicMaterial({color: color})
       this.geometry = new THREE.PlaneGeometry(size, size)
       this.position.set(this.x * this.size, this.y * this.size, 0)
     }
@@ -160,13 +156,10 @@ class Cube extends GridPoint {
     if (!_color) {
       return false;
     }
-    if (this.z > 0) {
-      this.material.forEach((c, i) => {
-        this.material.at(i).color.set(_color)
-      })
-    } else {
-      this.material = new THREE.MeshBasicMaterial({color: color || this.getColor()})
-    }
+    this.material = new THREE.MeshBasicMaterial({
+      color: _color,
+      opacity: this.opacity
+    })
   }
 }
 
@@ -238,6 +231,20 @@ class Grass extends Cube {
   }
 }
 
+class Preview extends Cube {
+  constructor(x, y, z, size) {
+    super(x, y, z, "#3af4ff", size);
+    this.type = 'preview';
+    this.walkable = true;
+    this.opacity = 0.8;
+    this.material = new THREE.MeshBasicMaterial({
+      color: "#3af4ff",
+      transparent: true,
+      opacity: 0.3
+    })
+  }
+}
+
 class Prize extends Cube {
   constructor(x, y, z, size) {
     super(x, y, z, "#ce1fd7", size);
@@ -278,15 +285,7 @@ class Mapa {
       this.grid[x] = new Array(data[x].length);
       for (let y = 0; y < data[x].length; y++) {
         const tileData = data[x][y];
-        let entity = Path;
-        if (tileData.type === 'rock') {
-          entity = Rock;
-        } else if (tileData.type === 'water') {
-          entity = Water;
-        } else if (tileData.type === 'grass') {
-          entity = Grass;
-        }
-
+        let entity = this.getTileTypeFromString(tileData.type);
         this.grid[x][y] = new entity(
           tileData.x,
           tileData.y,
@@ -404,7 +403,7 @@ class Mapa {
   }
 
   findPath(start, end) {
-    if (!end || end === 'undefined' || !start || end === start) {
+    if (!end || end === undefined || end === null || !start || end === start) {
       return [];
     }
 
@@ -469,8 +468,11 @@ class Mapa {
       for (let i = 0; i < neighbors.length; i++) {
         let neighbor = neighbors[i];
 
-        if (!neighbor) {
-          console.log({current})
+        if (!neighbor || neighbor === undefined || end === undefined || end === null) {
+          console.log({current, neighbor, end})
+          openSet = [];
+          closedSet = [];
+          return [];
           continue;
         }
 
@@ -496,6 +498,7 @@ class Mapa {
             console.log({error})
             openSet = [];
             closedSet = [];
+            return [];
             continue;
           }
           neighbor.f = neighbor.g + neighbor.h;
@@ -528,6 +531,9 @@ class Mapa {
     for (let i = 0; i < this.cols; i++) {
       for (let j = 0; j < this.rows; j++) {
         for (let z = 0; z < this.grid[i][j].length; z++) {
+          if (this.grid[i][j][z] === undefined) {
+            continue;
+          }
           this.grid[i][j][z].f = 0;
           this.grid[i][j][z].g = 0;
           this.grid[i][j][z].h = 0;
@@ -568,14 +574,7 @@ class Mapa {
         const element = options.types[i];
         const amount = element.prob * 10;
 
-        let entity = Path;
-        if (element.type === 'rock') {
-          entity = Rock;
-        } else if (element.type === 'water') {
-          entity = Water;
-        } else if (element.type === 'grass') {
-          entity = Grass;
-        }
+        let entity = this.getTileTypeFromString(tileData.type)
 
         for (let x = 0; x < amount; x++) {
           types.push(entity)
@@ -611,16 +610,44 @@ class Mapa {
     if (this.grid[tile.x][tile.y][tile.z - 1]) {
       this.grid[tile.x][tile.y][tile.z - 1].occupied = false;
     }
-    this.scene.remove(tile);
-    this.grid[tile.x][tile.y] = this.grid[tile.x][tile.y].splice(tile.z, 1);
-
+    // this.grid[tile.x][tile.y] = this.grid[tile.x][tile.y][tile.z].splice(tile.z, 1);
+    delete this.grid[tile.x][tile.y][tile.z];
     this.updateNeighbors();
+    this.scene.remove(tile);
+
   }
 
   addTile(hit, newType) {
 
     const tile = hit.object;
     
+    let x = parseInt(tile.x + hit.normal.x)
+    let y = parseInt(tile.y + hit.normal.y)
+    let z = parseInt(tile.z + hit.normal.z)
+
+    if (this.previewTile) {
+      x = this.previewTile.x;
+      y = this.previewTile.y;
+      z = this.previewTile.z;
+    }
+
+    if (z >= this.maxZ) {
+      return false;
+    }
+    
+    let entity = this.getTileTypeFromString(newType)
+
+    const newTile = new entity(x, y, z, tile.size)
+    tile.occupied = true;
+    this.grid[x][y][z] = newTile;
+    this.updateNeighbors();
+
+    this.removePreview();
+    this.scene.add(newTile);
+  }
+
+  addPreview(hit, newType) {
+    const tile = hit.object;
     const x = tile.x + hit.normal.x
     const y = tile.y + hit.normal.y
     const z = tile.z + hit.normal.z
@@ -629,42 +656,20 @@ class Mapa {
       return false;
     }
     
-    // const tileTop = this.grid[x][y][z];
-    // if (tileTop && tileTop.type !== 'air') {
-    //   return false;
-    // }
+    this.previewTile = new Preview(x, y, z, tile.size)
+    this.scene.add(this.previewTile);
+  }
 
-    let entity = Path;
-    if (newType === 'grass') {
-      entity = Grass;
-    } else if (newType === 'rock') {
-      entity = Rock;
-    } else if (newType === 'water') {
-      entity = Water;
-    } else if (newType === 'prize') {
-      entity = Prize;
-    }
-
-    const newTile = new entity(x, y, z, tile.size)
-    tile.occupied = true;
-    this.grid[x][y][z] = newTile;
-    this.scene.add(newTile);
-
-    this.updateNeighbors();
+  removePreview() {
+    this.scene.remove(this.previewTile);
+    this.previewTile = null;
   }
 
   replaceTile(tile, newType) {
     if (tile.type === newType) {
       return false;
     }
-    let entity = Path;
-    if (newType === 'grass') {
-      entity = Grass;
-    } else if (newType === 'rock') {
-      entity = Rock;
-    } else if (newType === 'water') {
-      entity = Water;
-    }
+    let entity = this.getTileTypeFromString(tileData.type)
 
     const newTile = new entity(tile.x, tile.y, tile.z, tile.size)
     this.grid[tile.x][tile.y][tile.z] = newTile;
@@ -673,6 +678,22 @@ class Mapa {
     this.scene.add(newTile);
 
     this.updateNeighbors();
+  }
+
+  getTileTypeFromString(typeStr) {
+    let entity = Path;
+    if (typeStr === 'grass') {
+      entity = Grass;
+    } else if (typeStr === 'rock') {
+      entity = Rock;
+    } else if (typeStr === 'water') {
+      entity = Water;
+    } else if (typeStr === 'prize') {
+      entity = Prize;
+    } else if (typeStr === 'preview') {
+      entity = Preview;
+    }
+    return entity;
   }
 }
 

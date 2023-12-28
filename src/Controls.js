@@ -77,24 +77,39 @@ class Controls {
       if (hit === undefined) {
         const hoveredItem = this.hovered[key]
         if (hoveredItem.object.onPointerOver) hoveredItem.object.onPointerOut(hoveredItem)
+        this.parent.mapa.removePreview();
         delete this.hovered[key]
       }
     })
 
     if (this.intersects.length) {
-      if (!this.hovered[this.intersects[0].object.uuid]) {
-        this.hovered[this.intersects[0].object.uuid] = this.intersects[0]
-        if (this.intersects[0].object.onPointerOver) this.intersects[0].object.onPointerOver(this.intersects[0])
+      const hit = this.intersects[0]
+      if (!this.hovered[hit.object.uuid]) {
+        this.hovered[hit.object.uuid] = hit
+        if (hit.object.onPointerOver && hit.object.type !== 'preview') hit.object.onPointerOver(hit)
+        // Add tile preview
+        if (this.parent.toolbar.selectedTool && !this.parent.mapa.previewTile && hit.object.type !== 'preview') {
+          this.parent.mapa.addPreview(hit);
+        }
       }
+
+      // const self = this;
+      // this.intersects.forEach((hit) => {
+      //   if (hit.object.type === 'preview') {
+      //     self.parent.mapa.removeTile(hit.object)
+      //   }
+      // })
     }
 
-    const hit = this.intersects[0];
-    if (hit && !this.hovered[hit.object.uuid]) {
-      this.hovered[hit.object.uuid] = hit
-      if (hit.object.onPointerOver) hit.object.onPointerOver(hit)
-    }
+    // const hit = this.intersects[0];
+    // if (hit && !this.hovered[hit.object.uuid]) {
+    //   this.hovered[hit.object.uuid] = hit
+    //   if (hit.object.onPointerOver) hit.object.onPointerOver(hit)
+    //   console.log('onPointerOver')
+    // }
     
-    if (hit && hit.object.onPointerMove) hit.object.onPointerMove(hit)
+    // if (hit && hit.object.onPointerMove) hit.object.onPointerMove(hit)
+    // if (hit && hit.object) this.parent.mapa.removePreview(hit.object);
 
     if (this.dragging) {
       const x = this.dragStart ? (this.mouse.x - this.dragStart.x) * 3 : 0;
@@ -225,7 +240,6 @@ class Controls {
     this.parent.toolbar?.deselect();
     const hit = this.intersects[0]
     if (hit && hit.object.type !== 'cosita' && hit.object.type !== 'Mesh') {
-      console.log(hit.object)
       this.parent.mapa.removeTile(hit.object)
     }
 
@@ -237,7 +251,11 @@ class Controls {
     if (e.which === 1 && e.target.tagName === 'CANVAS') {
       const hit = this.intersects[0];
       if (hit) {
-        if (this.parent.toolbar.selectedTool && hit.object.type !== 'cosita' && hit.object.type !== 'Mesh') {
+        if (
+          this.parent.toolbar.selectedTool 
+          && hit.object.type !== 'cosita' 
+          && hit.object.type !== 'Mesh'
+        ) {
           // this.parent.mapa.replaceTile(hit.object, this.parent.toolbar.selectedTool.name)
           this.parent.mapa.addTile(hit, this.parent.toolbar.selectedTool.name)
           return false;

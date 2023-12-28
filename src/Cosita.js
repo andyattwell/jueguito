@@ -100,7 +100,7 @@ class Cosita extends THREE.Mesh {
     
     const timeout = parseInt(2000 + Math.random() * 3000);
     const timePassed = time - this.lastTime;
-    if (timePassed <= timeout) {
+    if (this.queuedAction || timePassed <= timeout) {
       return false;
     }
 
@@ -123,7 +123,7 @@ class Cosita extends THREE.Mesh {
         done.push(neighbor);
 
         if (!found && neighbor.type === 'prize') {
-          found = tile.neighbors[n]
+          return tile.neighbors[n]
         } else if (!found) {
           found = lookInNeighbors(tile.neighbors[n], depth + 1, done)
         }
@@ -131,7 +131,7 @@ class Cosita extends THREE.Mesh {
       return found;
     }
 
-    const prize = lookInNeighbors(this.current, 0);
+    let prize = lookInNeighbors(this.map.grid[this.current.x][this.current.y][this.current.z], 0);
     if (prize) {
       this.queuedAction = {
         action: 'grab',
@@ -140,11 +140,11 @@ class Cosita extends THREE.Mesh {
       this.moveTo(prize)
     } else {
 
-      const minX = this.current.x > 0 ? this.current.x - 5 : 0;
+      const minX = this.current.x > 5 ? this.current.x - 5 : 0;
       const maxX = this.current.x < this.map.cols - 1 ? this.current.x + 5 : this.map.cols - 1;
       const diffX = maxX - minX;
 
-      const minY = this.current.y > 0 ? this.current.y - 5 : 0;
+      const minY = this.current.y > 5 ? this.current.y - 5 : 0;
       const maxY = this.current.y < this.map.rows - 1 ? this.current.y + 5 : this.map.rows - 1;
       const diffY = maxY - minY;
 
@@ -167,8 +167,7 @@ class Cosita extends THREE.Mesh {
         randTile = this.map.grid[minX + randX][minY + randY][this.map.grid[minX + randX][minY + randY].length - 1];
       }
       
-      if (randTile) {
-        console.log({randTile})
+      if (randTile && randTile !== undefined) {
         this.moveTo(randTile)
       }
     }
@@ -293,7 +292,7 @@ class Cosita extends THREE.Mesh {
       if (next) {
         this.moveTo(next)
       } else {
-        this.performAction()
+        this.performAction(time)
       }
     }
   }
@@ -318,9 +317,9 @@ class Cosita extends THREE.Mesh {
 
     this.currentPath = this.map.findPath(this.current, endTile)
       .filter((tile) => tile !== self.current);
-    // if (this.currentPath.length === 0) {
-    //   this.currentPath = [this.current]
-    // }
+    if (this.currentPath.length === 0 && this.queuedAction) {
+      this.queuedAction = null;
+    }
 
     this.currentPath.map(tile => {
       tile.planned = true;
@@ -329,7 +328,7 @@ class Cosita extends THREE.Mesh {
     });
   }
 
-  performAction() {
+  performAction(time) {
     if (!this.queuedAction) {
       return false
     }
@@ -337,6 +336,8 @@ class Cosita extends THREE.Mesh {
       this.inventory.push(this.queuedAction.object.type)
       this.map.removeTile(this.queuedAction.object)
     }
+    this.queuedAction = null;
+    this.lastTime = time
   }
 
   blendColors(colorA, colorB, amount) {
