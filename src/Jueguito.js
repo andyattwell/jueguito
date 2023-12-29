@@ -121,6 +121,14 @@ class Jueguito {
     this.play();
   }
 
+  resize() {
+    this.height = window.innerHeight;
+    this.width = window.innerWidth;
+    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize( window.innerWidth, window.innerHeight );
+  }
+
   addLight() {
     const spotLight = new THREE.SpotLight( 0xffffff );
     spotLight.position.set( this.cositas[0].x, this.cositas[0].y, 10 );

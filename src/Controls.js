@@ -35,10 +35,7 @@ class Controls {
     });
 
     window.addEventListener('resize', () => {
-      self.parent.height = window.innerHeight;
-      self.parent.width = window.innerWidth;
-      self.parent.renderer.setSize( window.innerWidth, window.innerHeight );
-      // self.toolbar.y = window.innerHeight - 95;
+      self.parent.resize();
     })
 
     window.addEventListener('dblclick', (e) => {
