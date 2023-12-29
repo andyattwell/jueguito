@@ -24,13 +24,12 @@ class Cosita extends THREE.Mesh {
     
     this.geometry = new THREE.BoxGeometry(this.width, this.width, this.height);
 
-    this.x = spawn ? spawn.x : 0; // cell x
-    this.y = spawn ? spawn.y : 0; // cell y
-    this.z = this.map.grid[this.x][this.y].length - 1; // cell z
+    this.x = parseInt(spawn ? spawn.x : 0); // cell x
+    this.y = parseInt(spawn ? spawn.y : 0); // cell y
+    this.z = parseInt(spawn ? spawn.z : this.map.grid[this.x][this.y].length - 1); // cell z
 
-    // const position = this.currentTile(this.x, this.y, this.z);
     this.current = this.map.grid[this.x][this.y][this.z];
-    this.position.set(this.current.position.x, this.current.position.y, this.current.position.z + this.current.size)
+    this.position.set(this.current.position.x, this.current.position.y, this.current.position.z)
 
     this.lastTile = null;
 
@@ -71,7 +70,6 @@ class Cosita extends THREE.Mesh {
     }
   }
 
-
   getTilePosition(x, y, z) {
     if (x < 0) {
       x = 0
@@ -106,7 +104,7 @@ class Cosita extends THREE.Mesh {
 
     this.lastTime = time;
 
-    const lookInNeighbors = function (tile, depth, done = []) {
+    const lookInNeighbors = function (current, tile, depth, done = []) {
       let found = null;
 
       if(depth > 120) {
@@ -116,7 +114,14 @@ class Cosita extends THREE.Mesh {
       for (let n = 0; n < tile.neighbors.length; n++ ) {
         const neighbor = tile.neighbors[n];
 
-        if (!neighbor || done.includes(neighbor)) {
+        if (
+          !neighbor 
+          || done.includes(neighbor) 
+          || neighbor.x < current.x - 10
+          || neighbor.x > current.x + 10
+          || neighbor.y < current.y - 10
+          || neighbor.y > current.y + 10
+        ) {
           continue;
         }
 
@@ -125,13 +130,13 @@ class Cosita extends THREE.Mesh {
         if (!found && neighbor.type === 'prize') {
           return tile.neighbors[n]
         } else if (!found) {
-          found = lookInNeighbors(tile.neighbors[n], depth + 1, done)
+          found = lookInNeighbors(current, tile.neighbors[n], depth + 1, done)
         }
       }
       return found;
     }
 
-    let prize = lookInNeighbors(this.map.grid[this.current.x][this.current.y][this.current.z], 0);
+    let prize = lookInNeighbors(this.current, this.map.grid[this.current.x][this.current.y][this.current.z], 0);
     if (prize) {
       this.queuedAction = {
         action: 'grab',
@@ -140,41 +145,80 @@ class Cosita extends THREE.Mesh {
       this.moveTo(prize)
     } else {
 
-      const minX = this.current.x > 5 ? this.current.x - 5 : 0;
-      const maxX = this.current.x < this.map.cols - 1 ? this.current.x + 5 : this.map.cols - 1;
-      const diffX = maxX - minX;
-
-      const minY = this.current.y > 5 ? this.current.y - 5 : 0;
-      const maxY = this.current.y < this.map.rows - 1 ? this.current.y + 5 : this.map.rows - 1;
-      const diffY = maxY - minY;
-
-      let randX = parseInt(Math.random() * diffX);
-      if (minX + randX > this.map.cols - 1) {
-        randX = 0;
-      }
-      let randY = parseInt(Math.random() * diffY);
-      if (minY + randY > this.map.rows - 1) {
-        randY = 0;
-      }
-
-      let randTile = null
-      if (
-        this.map.grid[minX + randX] 
-        && this.map.grid[minX + randX][minY + randY]
-        && this.map.grid[minX + randX][minY + randY][this.map.grid[minX + randX][minY + randY].length - 1]
-      ) {
-
-        randTile = this.map.grid[minX + randX][minY + randY][this.map.grid[minX + randX][minY + randY].length - 1];
-      }
-      
-      if (randTile && randTile !== undefined) {
-        this.moveTo(randTile)
-      }
+      this.moveToRandomPisition()
     }
 
   }
 
-  update(camera, time) {
+  moveToRandomPisition(depth = 0) {
+
+    const radius = 5;
+
+    const minX = this.current.x > radius ? this.current.x - radius : 0;
+    const maxX = this.current.x < this.map.cols - radius ? this.current.x + radius : this.map.cols - 1;
+    const diffX = maxX - minX;
+
+    const minY = this.current.y > radius ? this.current.y - radius : 0;
+    const maxY = this.current.y < this.map.rows - radius ? this.current.y + radius : this.map.rows - 1;
+    const diffY = maxY - minY;
+
+    let randX = 7 + parseInt(Math.random() * 3);
+    let plusOrMinus = Math.random() < 0.5 ? -1 : 1;
+    randX *= plusOrMinus;
+    
+    let nextX = parseInt(this.current.x + randX);
+    
+    if (nextX < 0){
+      nextX = 0;
+    } if (nextX > this.map.cols - 1) {
+      nextX = this.map.cols - 1;
+    }
+
+    let randY = 7 + parseInt(Math.random() * 3);
+    plusOrMinus = Math.random() < 0.5 ? -1 : 1;
+    randY *= plusOrMinus;
+    
+    let nextY = parseInt(this.current.y + randY);
+    if (nextY < 0){
+      nextY = 0;
+    } else if (nextY > this.map.rows - 1) {
+      nextY = this.map.rows - 1;
+    }
+
+    let nextZ = this.map.grid[nextX][nextY].length - 1;
+
+    if (this.lastTile) {
+
+      let lastminX = this.lastTile.x - 5
+      let lastmaxX = this.lastTile.x + 5
+      let lastminY = this.lastTile.y - 5
+      let lastmaxY = this.lastTile.y + 5
+
+      if (nextX > lastminX && nextX < lastmaxX && nextY > lastminY && nextY < lastmaxY) {
+        if (depth < 5) {
+          return this.moveToRandomPisition(depth + 1)
+        } 
+        return false;
+      }
+    }
+
+    let randTile = null;
+    if (
+      this.map.grid[nextX] 
+      && this.map.grid[nextX][nextY]
+      && this.map.grid[nextX][nextY][nextZ]
+    ) {
+
+      randTile = this.map.grid[nextX][nextY][nextZ];
+      // Check if is in range of the last tile
+    }
+    
+    if (randTile && randTile !== undefined) {
+      this.moveTo(randTile)
+    }
+  }
+
+  update(time) {
 
     if (!this.currentPath || this.currentPath.length < 1) {
       this.lookForNearStuff(time)
@@ -188,6 +232,17 @@ class Cosita extends THREE.Mesh {
       return false;
     }
 
+    this.updatePositionRotation(targetCell, time)
+    
+    if (this.following) {
+      this.cameraFollow()
+    }
+
+    this.checkQueuedAction()
+
+  }
+
+  updatePositionRotation(targetCell, time) {
     let targetPosX = targetCell.position.x;
     let targetPosY = targetCell.position.y;
     let targetPosZ = targetCell.position.z + 0.03;
@@ -257,24 +312,7 @@ class Cosita extends THREE.Mesh {
     if (direction !== '') {
       this.rotation.setFromVector3(new THREE.Vector3( 0, 0, zRotation));
     }
-    
-    if (this.following) {
-      const oldObjectPosition = new THREE.Vector3();
-      camera.getWorldPosition(oldObjectPosition);
-      const newObjectPosition = new THREE.Vector3();
-      camera.getWorldPosition(newObjectPosition);
-      newObjectPosition.x = nextX
-      newObjectPosition.y = nextY - 2
-      newObjectPosition.z = this.position.z + 2
-      const delta = newObjectPosition.clone().sub(oldObjectPosition);
-      camera.position.add(delta);
-      camera.lookAt(this.position);
-    }
 
-    if (!speed) {
-      console.log({diffY, diffX, speed:targetCell})
-    }
-    
     if (diffY <= speed && diffX <= speed && diffZ <= speed) {
       this.currentPath.shift();
       
@@ -297,6 +335,19 @@ class Cosita extends THREE.Mesh {
     }
   }
 
+  cameraFollow() {
+    const oldObjectPosition = new THREE.Vector3();
+    camera.getWorldPosition(oldObjectPosition);
+    const newObjectPosition = new THREE.Vector3();
+    camera.getWorldPosition(newObjectPosition);
+    newObjectPosition.x = this.position.x
+    newObjectPosition.y = this.position.y - 2
+    newObjectPosition.z = this.position.z + 2
+    const delta = newObjectPosition.clone().sub(oldObjectPosition);
+    camera.position.add(delta);
+    camera.lookAt(this.position);
+  }
+
   moveTo(endTile) {
     const self = this;
 
@@ -317,15 +368,21 @@ class Cosita extends THREE.Mesh {
 
     this.currentPath = this.map.findPath(this.current, endTile)
       .filter((tile) => tile !== self.current);
-    if (this.currentPath.length === 0 && this.queuedAction) {
-      this.queuedAction = null;
-    }
 
     this.currentPath.map(tile => {
       tile.planned = true;
       tile.setColor();
       return tile;
     });
+  }
+
+  checkQueuedAction () {
+    if (this.queuedAction && this.queuedAction.object) {
+      if (!this.map.grid[this.queuedAction.object.x][this.queuedAction.object.y][this.queuedAction.object.z]) {
+        this.queuedAction = null;
+        this.moveTo(this.lastTile)
+      }
+    }
   }
 
   performAction(time) {

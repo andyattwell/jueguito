@@ -279,18 +279,54 @@ class Mapa {
     }    
   }
 
+  exportGrid () {
+    let data = []
+
+    for (let x = 0; x < this.cols; x++) {
+      let row = [];
+
+      for (let y = 0; y < this.rows; y++) {
+        let h = [];
+
+        for (let z = 0; z < this.grid[x][y].length; z++) {
+          const tile = this.grid[x][y][z];
+          if (tile === undefined) {
+            continue;
+          }
+          h.push({
+            x: tile.x,
+            y: tile.y,
+            z: tile.z,
+            type: tile.type,
+            size: tile.size
+          })
+        }
+        row.push(h)
+      }
+      data.push(row)
+    }
+
+    return data;
+  }
+
   import(data) {
     this.grid = new Array(data.length);
     for (let x = 0; x < data.length; x++) {
       this.grid[x] = new Array(data[x].length);
       for (let y = 0; y < data[x].length; y++) {
-        const tileData = data[x][y];
-        let entity = this.getTileTypeFromString(tileData.type);
-        this.grid[x][y] = new entity(
-          tileData.x,
-          tileData.y,
-          tileData.size
-        );
+        this.grid[x][y] = new Array(data[x][y].length);
+        for (let z = 0; z < data[x][y].length; z++) {
+          const tileData = data[x][y][z];
+          let entity = this.getTileTypeFromString(tileData.type);
+          this.grid[x][y][z] = new entity(
+            tileData.x,
+            tileData.y,
+            tileData.z,
+            tileData.size
+          );
+          this.scene.add( this.grid[x][y][z] );
+        }
+
       }
     }
     this.updateNeighbors();
@@ -381,25 +417,6 @@ class Mapa {
         }
       }
     }
-  }
-
-  exportGrid () {
-    let data = []
-    for (let x = 0; x < this.cols; x++) {
-      let row = [];
-      for (let y = 0; y < this.rows; y++) {
-        const tile = this.grid[x][y];
-        row.push({
-          x: tile.x,
-          y: tile.y,
-          type: tile.type,
-          id: tile.id,
-          size: tile.size
-        })
-      }
-      data.push(row)
-    }
-    return data;
   }
 
   findPath(start, end) {

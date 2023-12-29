@@ -11,34 +11,10 @@ class Menu {
         label: 'Juego',
         children: [
           {
-            label: 'Play',
-            id: 'play'
-          },
-          {
-            label: 'Pause',
-            id: 'pause'
-          },
-          {
-            label: 'Stop',
-            id: 'stop'
-          }
-        ]
-      },
-      {
-        label: 'Mapa',
-        children: [
-          {
-            label: 'Generar',
+            label: 'Nuevo',
             id: 'newGame',
             callback: () => {
               this.generateMap();
-            }
-          },
-          {
-            label: 'Guardar',
-            id: 'saveMap',
-            callback: () => {
-              this.saveMap();
             }
           },
           {
@@ -49,18 +25,20 @@ class Menu {
             }
           },
           {
-            label: 'Editar celdas',
-            id: 'editMap'
-          }
-        ],
-      },
-      {
-        label: 'Cosita',
-        children: [
+            label: 'Guardar',
+            id: 'saveMap',
+            callback: () => {
+              this.saveMap();
+            }
+          },
           {
-            label: 'Editar cosita',
-            id: 'editCosita'
-          }
+            label: 'Play',
+            id: 'play'
+          },
+          {
+            label: 'Pause',
+            id: 'pause'
+          },
         ]
       }
     ];
@@ -216,16 +194,16 @@ class Menu {
       <div class="modal-dialog" role="document">
         <div class="modal-content bg-dark text-white">
           <div class="modal-header">
-            <h5 class="modal-title">Modal title</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <h5 class="modal-title">Nuevo mapa</h5>
+            <button type="button" class="close close-modal" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
           <div class="modal-body">
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-primary" id="generate-submit">Save changes</button>
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" id="generate-submit">Generar</button>
+            <button type="button" class="btn btn-secondary close-modal" data-dismiss="modal">Cancelar</button>
           </div>
         </div>
       </div>
@@ -310,7 +288,6 @@ class Menu {
           prob: $('input[name="' + $(check).attr('name') + '_prob"]').val()
         })
       })
-      console.log('ACA')
       self.emit('action', {
         action: 'newGame', data: {
           options: { 
@@ -322,6 +299,10 @@ class Menu {
       $modal.hide();
       $modal.remove();
       return false;
+    })
+
+    $(".close-modal").on("click", function (e) {
+      $("#generate-modal").remove();
     })
 
   }
@@ -351,6 +332,7 @@ class Menu {
       return {
         x: c.position.x,
         y: c.position.y,
+        z: c.position.z,
       }
     });
     const data = {

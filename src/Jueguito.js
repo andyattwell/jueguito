@@ -142,8 +142,6 @@ class Jueguito {
     this.cositas = [];
 
     for (let index = 0; index < cositas.length; index++) {
-      // let spawn = this.mapa.pickSpawn();
-      // let spawn = { x: 10, y: 10, z: 0 };
       let cosita = new Cosita(this.mapa, cositas[index]);
       this.cositas.push(cosita);
     }
@@ -184,7 +182,7 @@ class Jueguito {
 
   updateCositas(time) {
     this.cositas.forEach((cosita) => {
-      cosita.update(this.camera, time);
+      cosita.update(time);
     })
   }
 
