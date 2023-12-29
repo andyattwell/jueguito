@@ -348,7 +348,6 @@ class Mapa {
     }
 
     let seed = parseFloat((Math.random() * .0999999999).toFixed(26));
-    console.log({seed: seed})
 
     for (let x = 0; x < this.cols; x++) {
       for (let y = 0; y < this.rows; y++) {
@@ -389,29 +388,33 @@ class Mapa {
 
   getNoiseMapTile(x, y, rand) {
     const noise = new ImprovedNoise()
+
     const negX = rand < 0.5 ? 1 : -1;
     const negY = rand > 0.5 ? 1 : -1;
-    const ns = noise.noise(x * rand * negX, y * rand * negY, 0)
-    const r = parseInt(ns * 10) + 10;
-    if (r > 11) {
+
+    const ns = noise.noise(x * rand, y * rand, 0)
+    const r = parseInt(ns * 10) + 4;
+    
+    if (r > 6) {
       return Rock;
-    } else if (r <= 11 && r > 10) {
-      return Path;
-    } else if (r <= 10 && r > 7) {
-      return Grass;
-    } else if (r <= 7 && r > 3) {
-      return Water;
-    } else {
-      const rock = parseInt(Math.random() * 9);
+    } else if (r <= 6 && r > 5) {
+      const rock = parseInt(Math.random() * 8);
       if (rock <= 0) {
         return Rock;
+      } 
+      return Path;
+    } else if (r <= 5 && r > 1) {
+      const path = parseInt(Math.random() * 4);
+      if (path <= 0) {
+        return Path;
       }
-      const grass = parseInt(Math.random() * 2);
-      if (grass > 0) {
-        return Grass
-      } else {
-        return Path
-      }
+      return Grass;
+    } else {
+      // const rock = parseInt(Math.random() * 9);
+      // if (rock <= 0) {
+      //   return Rock;
+      // }
+      return Water;
     }
   }
 

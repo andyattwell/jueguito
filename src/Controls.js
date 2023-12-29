@@ -88,7 +88,12 @@ class Controls {
         this.hovered[hit.object.uuid] = hit
         if (hit.object.onPointerOver && hit.object.type !== 'preview') hit.object.onPointerOver(hit)
         // Add tile preview
-        if (this.parent.toolbar.selectedTool && !this.parent.mapa.previewTile && hit.object.type !== 'preview') {
+        if (
+            this.parent.toolbar.selectedTool && 
+            this.parent.toolbar.selectedTool.name !== 'cosita' && 
+            !this.parent.mapa.previewTile && 
+            hit.object.type !== 'preview'
+          ) {
           this.parent.mapa.addPreview(hit);
         }
       }
@@ -237,12 +242,19 @@ class Controls {
       this.parent.target_selected = null;
     }
 
-    this.parent.toolbar?.deselect();
+    
     const hit = this.intersects[0]
     if (hit && hit.object.type !== 'cosita' && hit.object.type !== 'Mesh') {
       this.parent.mapa.removeTile(hit.object)
     }
 
+    if (
+      hit && hit.object.type === 'cosita'
+    ) {
+      this.parent.removeCosita(hit.object);
+    }
+
+    // this.parent.toolbar?.deselect();
     return false;
   }
 
@@ -256,8 +268,18 @@ class Controls {
           && hit.object.type !== 'cosita' 
           && hit.object.type !== 'Mesh'
         ) {
+          if (this.parent.toolbar.selectedTool.name !== 'cosita') {
+            this.parent.mapa.addTile(hit, this.parent.toolbar.selectedTool.name)
+          } else {
+            this.parent.addCositas([
+              {
+                x: hit.object.x,
+                y: hit.object.y,
+                z: 0
+              }
+            ])
+          }
           // this.parent.mapa.replaceTile(hit.object, this.parent.toolbar.selectedTool.name)
-          this.parent.mapa.addTile(hit, this.parent.toolbar.selectedTool.name)
           return false;
         }
 

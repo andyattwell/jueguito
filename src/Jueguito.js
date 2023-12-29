@@ -23,7 +23,7 @@ class Jueguito {
     this.camera = null
     this.scene = null
     this.renderer = null
-
+    this.time = 0;
   }
   
   start() {
@@ -59,6 +59,7 @@ class Jueguito {
 
   animate(time) {
     const self = this
+    this.time = time
     // if (this.playing) {
     //   this.requestId = requestAnimationFrame( () => {
     //     self.animate()
@@ -99,23 +100,22 @@ class Jueguito {
 
     this.toolbar = new Toolbar(this);
 
-    let cositas = [{
-      x: this.mapa.cols / 2, 
-      y: this.mapa.rows / 2, 
-      z:0
-    },
-    {
-      x: this.mapa.cols / 2 + 1, 
-      y: this.mapa.rows / 2, 
-      z:0
-    }];
+    // let cositas = [{
+    //   x: this.mapa.cols / 2, 
+    //   y: this.mapa.rows / 2, 
+    //   z:0
+    // },
+    // {
+    //   x: this.mapa.cols / 2 + 1, 
+    //   y: this.mapa.rows / 2, 
+    //   z:0
+    // }];
+    this.cositas = [];
+
     if (data?.cositas) {
       cositas = data.cositas;
+      this.addCositas(cositas);
     }
-    
-    this.addCositas(cositas);
-
-    // this.addLight();
     
     this.play();
   }
@@ -139,12 +139,17 @@ class Jueguito {
   }
 
   addCositas(cositas = []) {
-    this.cositas = [];
 
     for (let index = 0; index < cositas.length; index++) {
-      let cosita = new Cosita(this.mapa, cositas[index]);
+      let cosita = new Cosita(this.mapa, cositas[index], this.time);
       this.cositas.push(cosita);
     }
+  }
+
+  removeCosita(cosita) {
+    cosita.clearPath();
+    this.cositas = this.cositas.filter((c) => c !== cosita);
+    this.scene.remove(cosita);
   }
 
   renderScene() {

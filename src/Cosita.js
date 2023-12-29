@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 class Cosita extends THREE.Mesh {
-  constructor(map, spawn) {
+  constructor(map, spawn, time) {
     super()
 
     this.type = 'cosita';
@@ -11,7 +11,7 @@ class Cosita extends THREE.Mesh {
     this.selected = false;
     this.speed = .5;
     this.color = "#FFFFFF";
-    this.lastTime = 0;
+    this.lastTime = time;
     this.map = map;
     this.following = false;
     this.queuedAction = null;
@@ -33,7 +33,6 @@ class Cosita extends THREE.Mesh {
 
     this.lastTile = null;
 
-    this.model = null;
     const loader = new GLTFLoader();
     const self = this
     loader.load( '../models/bear/scene.gltf', function ( gltf ) {
@@ -358,13 +357,7 @@ class Cosita extends THREE.Mesh {
       return false;
     }
 
-    if (this.currentPath && this.currentPath.length >= 1) {
-      this.currentPath.map(tile => {
-        tile.planned = false;
-        tile.setColor();
-        return tile;
-      });
-    }
+    this.clearPath();
 
     this.currentPath = this.map.findPath(this.current, endTile)
       .filter((tile) => tile !== self.current);
@@ -374,6 +367,16 @@ class Cosita extends THREE.Mesh {
       tile.setColor();
       return tile;
     });
+  }
+
+  clearPath() {
+    if (this.currentPath && this.currentPath.length >= 1) {
+      this.currentPath.map(tile => {
+        tile.planned = false;
+        tile.setColor();
+        return tile;
+      });
+    }
   }
 
   checkQueuedAction () {

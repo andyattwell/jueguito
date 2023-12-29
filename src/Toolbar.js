@@ -33,6 +33,10 @@ class Toolbar {
       {
         name: 'prize',
         color: '#ce1fd7'
+      },
+      {
+        name: 'cosita',
+        color: '#fff'
       }
     ];
     this.selectedTool = null
@@ -53,6 +57,8 @@ class Toolbar {
     container.css('height', this.height);
     container.css('top', this.y);
     container.css('left', this.x);
+    container.css('width', this.buttons.length * 80);
+    container.css('height', 80);
 
     for (let i = 0; i < this.buttons.length; i++) {
       let btn = $('<div>');
