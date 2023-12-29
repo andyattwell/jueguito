@@ -431,7 +431,8 @@ class Mapa {
   }
 
   findPath(start, end) {
-    if (!end || end === undefined || end === null || !start || end === start) {
+
+    if (!end || end === undefined || end === null || !start || start === undefined || end === start) {
       return [];
     }
 
@@ -465,7 +466,7 @@ class Mapa {
 
       let current = openSet[lowestIndex];
 
-      if (current === end) {
+      if (current === end || end === undefined) {
         let temp = current;
         path.push(temp);
         while (temp.top_parent) {
@@ -498,9 +499,9 @@ class Mapa {
 
         if (!neighbor || neighbor === undefined || end === undefined || end === null) {
           console.log({current, neighbor, end})
-          openSet = [];
-          closedSet = [];
-          return [];
+          // openSet = [];
+          // closedSet = [];
+          // return [];
           continue;
         }
 
@@ -632,17 +633,15 @@ class Mapa {
   }
 
   removeTile(tile) {
-    if (tile.z <= 0) {
+    if (!tile || tile === undefined || tile.z <= 0) {
       return false;
     }
-    if (this.grid[tile.x][tile.y][tile.z - 1]) {
+    if (tile.z > 0 && this.grid[tile.x][tile.y][tile.z - 1]) {
       this.grid[tile.x][tile.y][tile.z - 1].occupied = false;
     }
-    // this.grid[tile.x][tile.y] = this.grid[tile.x][tile.y][tile.z].splice(tile.z, 1);
     delete this.grid[tile.x][tile.y][tile.z];
     this.updateNeighbors();
     this.scene.remove(tile);
-
   }
 
   addTile(hit, newType) {
@@ -654,15 +653,15 @@ class Mapa {
     let z = parseInt(tile.z + hit.normal.z)
 
     if (this.previewTile) {
-      x = this.previewTile.x;
-      y = this.previewTile.y;
-      z = this.previewTile.z;
+      x = parseInt(this.previewTile.x);
+      y = parseInt(this.previewTile.y);
+      z = parseInt(this.previewTile.z);
     }
 
-    if (z >= this.maxZ) {
+    if (x < 0 || x >= this.cols || y < 0 || y >= this.rows || z < 0 || z >= this.maxZ) {
       return false;
     }
-    
+
     let entity = this.getTileTypeFromString(newType)
 
     const newTile = new entity(x, y, z, tile.size)

@@ -32,7 +32,7 @@ class Cosita extends THREE.Mesh {
     this.position.set(this.current.position.x, this.current.position.y, this.current.position.z)
 
     this.lastTile = null;
-
+    this.lookForStuff = true;
     const loader = new GLTFLoader();
     const self = this
     loader.load( '../models/bear/scene.gltf', function ( gltf ) {
@@ -94,10 +94,12 @@ class Cosita extends THREE.Mesh {
   }
 
   lookForNearStuff(time) {
-    
+    if (this.queuedAction) {
+      return false;
+    }
     const timeout = parseInt(2000 + Math.random() * 3000);
     const timePassed = time - this.lastTime;
-    if (this.queuedAction || timePassed <= timeout) {
+    if (timePassed <= timeout) {
       return false;
     }
 
@@ -134,8 +136,10 @@ class Cosita extends THREE.Mesh {
       }
       return found;
     }
-
-    let prize = lookInNeighbors(this.current, this.map.grid[this.current.x][this.current.y][this.current.z], 0);
+    let prize = null;
+    if (this.lookForStuff) {
+      prize = lookInNeighbors(this.current, this.map.grid[this.current.x][this.current.y][this.current.z], 0);
+    }
     if (prize) {
       this.queuedAction = {
         action: 'grab',
@@ -143,7 +147,7 @@ class Cosita extends THREE.Mesh {
       }
       this.moveTo(prize)
     } else {
-
+      this.lookForStuff = true;
       this.moveToRandomPisition()
     }
 
@@ -223,21 +227,20 @@ class Cosita extends THREE.Mesh {
       this.lookForNearStuff(time)
       return false;
     }
-    this.lastTime = time;
 
     let targetCell = this.currentPath[0];
     
     if (!targetCell) {
       return false;
     }
+    
+    this.checkQueuedAction()
 
     this.updatePositionRotation(targetCell, time)
     
     if (this.following) {
       this.cameraFollow()
     }
-
-    this.checkQueuedAction()
 
   }
 
@@ -325,6 +328,8 @@ class Cosita extends THREE.Mesh {
       this.current.occupied = true;
       this.current.setColor();
 
+      this.lastTime = time;
+
       const next = this.currentPath[this.currentPath.length-1];
       if (next) {
         this.moveTo(next)
@@ -349,24 +354,29 @@ class Cosita extends THREE.Mesh {
 
   moveTo(endTile) {
     const self = this;
-
-    endTile = this.map.grid[endTile.x][endTile.y][0];
-
-    if (!endTile || this.current === endTile || endTile === 'undefined') {
-      this.currentPath = [];
-      return false;
-    }
-
+    
     this.clearPath();
 
     this.currentPath = this.map.findPath(this.current, endTile)
       .filter((tile) => tile !== self.current);
 
-    this.currentPath.map(tile => {
-      tile.planned = true;
-      tile.setColor();
-      return tile;
-    });
+    if (this.queuedAction && (!this.currentPath || this.currentPath.length === 0)) {
+      console.log('Not reachable', this.queuedAction)
+      this.queuedAction = null;
+      this.lookForStuff = false;
+    }
+
+    this.paintPath()
+  }
+
+  paintPath() {
+    if (this.currentPath && this.currentPath.length >= 1) {
+      this.currentPath.map(tile => {
+        tile.planned = true;
+        tile.setColor();
+        return tile;
+      });
+    }
   }
 
   clearPath() {
