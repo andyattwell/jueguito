@@ -71,6 +71,7 @@ class Jueguito {
     
     this.updateCositas(time);
     this.renderScene();
+    this.toolbar && this.toolbar.renderInfo();
 
   }
 

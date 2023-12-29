@@ -254,7 +254,7 @@ class Controls {
       this.parent.removeCosita(hit.object);
     }
 
-    // this.parent.toolbar?.deselect();
+    this.parent.toolbar?.deselect();
     return false;
   }
 
