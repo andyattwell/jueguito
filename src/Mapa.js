@@ -192,9 +192,10 @@ class Air extends Cube {
 
 class Rock extends Cube {
   constructor(x, y, z,size) {
-    super(x, y, z,"#685e70", size);
+    super(x, y, z, "#685e70", size);
     this.type = 'rock';
     this.walkable = false;
+    this.color = Math.random() < 0.5 ? "#554e5a" : "#685e70";
     this.setColor();
   }
 
@@ -341,20 +342,23 @@ class Mapa {
       }
     }
 
-    let noise;
+    let noise = new ImprovedNoise();
     if (options?.useNoise === true) {
       noise = new ImprovedNoise()
     }
 
+    let seed = parseFloat((Math.random() * .0999999999).toFixed(26));
+    console.log({seed: seed})
+
     for (let x = 0; x < this.cols; x++) {
       for (let y = 0; y < this.rows; y++) {
         // let type = this.getRandomTile(options);
-        let entity = this.getNoiseMapTile(x, y);
+        let entity = this.getNoiseMapTile(x * 2, y * 2, seed);
 
         let z = 0;
-        if (options?.useNoise === true) {
-          let ns = noise.noise(x * .2, y * .2, 0)
-          z = parseInt(ns * 10);
+        if (entity === Rock) {
+          let ns = noise.noise(x * 2 * seed, y * 2 * seed, 0)
+          z = parseInt(ns * 5);
         }
 
         for (let h = 0; h <= Math.abs(z); h++) {
@@ -383,16 +387,20 @@ class Mapa {
     this.updateNeighbors();
   }
 
-  getNoiseMapTile(x, y) {
+  getNoiseMapTile(x, y, rand) {
     const noise = new ImprovedNoise()
-    const ns = noise.noise(x * .2, y * .2, 0)
+    const negX = rand < 0.5 ? 1 : -1;
+    const negY = rand > 0.5 ? 1 : -1;
+    const ns = noise.noise(x * rand * negX, y * rand * negY, 0)
     const r = parseInt(ns * 10) + 10;
     if (r > 11) {
-      return Water;
-    } else if (r < 11 && r > 9) {
-      return Grass;
-    } else if (r < 9 && r > 6) {
+      return Rock;
+    } else if (r <= 11 && r > 10) {
       return Path;
+    } else if (r <= 10 && r > 7) {
+      return Grass;
+    } else if (r <= 7 && r > 3) {
+      return Water;
     } else {
       const rock = parseInt(Math.random() * 9);
       if (rock <= 0) {
