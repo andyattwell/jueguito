@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {ImprovedNoise} from './lib/ImprovedNoise.js';
-
+import NoiseGenerator from './NoiseGenerator.js';
 class GridPoint extends THREE.Mesh {
   constructor(x, y, z) {
     super()
@@ -196,6 +196,7 @@ class Rock extends Cube {
     this.type = 'rock';
     this.walkable = false;
     this.color = Math.random() < 0.5 ? "#554e5a" : "#685e70";
+    this.height = 0.5
     this.setColor();
   }
 
@@ -208,6 +209,7 @@ class Water extends Cube {
     // this.walkable = false;
     this.walkable = true;
     this.speed = .01
+    this.height = 0.1
     this.setColor();
   }
 }
@@ -218,6 +220,7 @@ class Path extends Cube {
     this.type = 'path';
     this.walkable = true;
     this.speed = .05
+    this.height = 0.3
     this.setColor();
   }
 }
@@ -228,6 +231,7 @@ class Grass extends Cube {
     this.type = 'grass';
     this.walkable = true;
     this.speed = .04
+    this.height = 0.2
     this.setColor();
   }
 }
@@ -257,7 +261,8 @@ class Prize extends Cube {
 
 class Mapa {
   
-  constructor(scene, data = null, options = null) {
+  noiseGenerator = new NoiseGenerator()
+  constructor(scene, data = null, options = {}) {
     this.cols = data.length ? data.length : 48;
     this.rows = data.length ? data[0].length : 48;
     this.maxZ = 12;
@@ -333,35 +338,50 @@ class Mapa {
     this.updateNeighbors();
   }
 
-  generate(options = null) {
+  generate(options = {}) {
+    // Generate noise
+    let mapWidth = options.mapWidth ? parseInt(options.mapWidth) : this.cols;
+    let mapHeight = options.mapHeight ? parseInt(options.mapHeight) : this.rows;
+    let mapSeed = options.mapSeed ? parseFloat(options.mapSeed) : Math.random();
+    let mapNoiseScale = options.mapNoiseScale ? parseFloat(options.mapNoiseScale) : .15;
+    let mapNoiseOctaves = options.mapNoiseOctaves ? parseInt(options.mapNoiseOctaves) : 3;
+    let mapNoisePersistance = options.mapNoisePersistance ? parseFloat(options.mapNoisePersistance) : .9;
+    let mapNoiseLacunarity = options.mapNoiseLacunarity ? parseFloat(options.mapNoiseLacunarity) : .1355;
+    let mapNoiseOffset = options.offset ? options.offset : {
+      x: 0,
+      y: 0
+    };
+
+    mapNoiseOffset.x = parseInt(mapNoiseOffset.x)
+    mapNoiseOffset.y = parseInt(mapNoiseOffset.y)
+
     //making a 2D array
-    for (let i = 0; i < this.cols; i++) {
-      this.grid[i] = new Array(this.rows);
-      for (let x = 0; x < this.rows; x++) {
+    for (let i = 0; i < mapWidth; i++) {
+      this.grid[i] = new Array(mapWidth);
+      for (let x = 0; x < mapHeight; x++) {
         this.grid[i][x] = new Array();
       }
     }
 
-    let noise = new ImprovedNoise();
-    if (options?.useNoise === true) {
-      noise = new ImprovedNoise()
-    }
+    const noiseMap = this.noiseGenerator.generateNoiseMap(
+      mapWidth,
+      mapHeight,
+      mapSeed,
+      mapNoiseScale, 
+      mapNoiseOctaves, 
+      mapNoisePersistance, 
+      mapNoiseLacunarity, 
+      mapNoiseOffset
+    );
 
-    let seed = parseFloat((Math.random() * .0999999999).toFixed(26));
+    for (let x = 0; x < mapWidth; x++) {
+      for (let y = 0; y < mapHeight; y++) {
 
-    for (let x = 0; x < this.cols; x++) {
-      for (let y = 0; y < this.rows; y++) {
-        // let type = this.getRandomTile(options);
-        let entity = this.getNoiseMapTile(x * 2, y * 2, seed);
+        let currentHeight = noiseMap[x][y];
 
-        let z = 0;
-        if (entity === Rock) {
-          let ns = noise.noise(x * 2 * seed, y * 2 * seed, 0)
-          z = parseInt(ns * 5);
-        }
-
-        for (let h = 0; h <= Math.abs(z); h++) {
-          this.grid[x][y][h] = new entity(
+        for (let h = 0; h <= currentHeight * 10; h++) {
+          let Tile = this.getTileFromNoise(currentHeight);
+          this.grid[x][y][h] = new Tile(
             x,
             y,
             h,
@@ -370,20 +390,33 @@ class Mapa {
           this.grid[x][y][h].occupied = true
           this.scene.add( this.grid[x][y][h] );
         }
-        this.grid[x][y][Math.abs(z)].occupied = false;
-        // for (let h = Math.abs(z) + 1; h < this.maxZ; h++) {
-        //   this.grid[x][y][h] = new Air(
-        //     x,
-        //     y,
-        //     h,
-        //     this.tileSize
-        //   );
-        // }
-        
+
+        this.grid[x][y][this.grid[x][y].length - 1].occupied = false;
       }
     }
-  
+
     this.updateNeighbors();
+
+  }
+  getTileFromNoise(noiseVal) {
+    
+    if (noiseVal > .5) {
+      return Rock;
+    } else if (noiseVal <= .5 && noiseVal > .4) {
+      const rock = parseInt(Math.random() * 8);
+      if (rock <= 0) {
+        return Rock;
+      }
+      return Path;
+    } else if (noiseVal <= .4 && noiseVal > .2) {
+      const path = parseInt(Math.random() * 4);
+      if (path <= 0) {
+        return Path;
+      }
+      return Grass;
+    } else {
+      return Water;
+    }
   }
 
   getNoiseMapTile(x, y, rand) {

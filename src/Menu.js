@@ -188,7 +188,7 @@ class Menu {
     })
   }
 
-  generateMap() {
+  createModal() {
     const $modal = $('<div class="modal" tabindex="-1" role="dialog" id="generate-modal"></div>');
     $modal.html(`
       <div class="modal-dialog" role="document">
@@ -213,66 +213,110 @@ class Menu {
 
     const $form = $('<form id="generate-form">')
 
-    const tyleTypes = [
-      {
-        name: 'path',
-        prob: .5
-      },
-      {
-        name: 'grass',
-        prob: .5
-      },
-      {
-        name: 'water',
-        prob: .25
-      },
-      {
-        name: 'rock',
-        prob: .25
-      }
-    ]
-    $form.append('<h4 class="mb-3">Tile probabilities</h4>');
-    let $formGroup;
-    let $label;
-    for (let i = 0; i < tyleTypes.length; i++) {
-      const tile = tyleTypes[i];
-      $formGroup = $('<div class="form-group row mb-3">');
-      
-      let $check = $('<input type="checkbox" name="'+tile.name+'" class="form-check-input type-check" checked="true"/>');
-      $label = $('<label for="'+tile.name+'" class="form-label ms-3">'+tile.name+'</label>')
-      let col2 = $('<div class="col-sm-3">');
-      col2.append($check);
-      col2.append($label);
-      $formGroup.append(col2)
+    // Cols
+    $form.append(
+      $('<div class="form-group row mb-3">').append(
+        $('<div class="col-sm-3">').append(
+          $('<label for="cols" class="form-label ms-3">Rows</label>')
+          ),
+          $('<div class="col-sm-9">').append(
+          $('<input type="number" name="cols" id="cols" value="40" class="form-control"/>')
+        )
+      )
+    )
 
-      const $probInput = $('<input type="number" name="'+tile.name+'_prob" class="form-control-plaintext bg-white text-black" id="path-prob" max="1" min="0.1" step="0.1" value="'+tile.prob+'">')
-      // $probInput.hide();
-      const col10 = $('<div class="col-sm-9">');
-      col10.append($probInput);
-      $formGroup.append(col10);
-      $form.append($formGroup);
+    // Rows
+    $form.append(
+      $('<div class="form-group row mb-3">').append(
+        $('<div class="col-sm-3">').append(
+          $('<label for="rows" class="form-label ms-3">Cols</label>')
+          ),
+          $('<div class="col-sm-9">').append(
+          $('<input type="number" name="rows" id="rows" value="40" class="form-control"/>')
+        )
+      )
+    )
 
-      $check.on('click', function () {
-        if ($(this).is(':checked')) {
-          $probInput.show();
-        } else{
-          $probInput.hide();
-        }
-      })
-    }
+    // mapNoiseScale
+    $form.append(
+      $('<div class="form-group row mb-3">').append(
+        $('<div class="col-sm-3">').append(
+          $('<label for="mapNoiseScale" class="form-label ms-3">Scale</label>')
+          ),
+          $('<div class="col-sm-9">').append(
+          $('<input type="number" value="0.150" step="0.001" min="0.001" max="1" name="mapNoiseScale" id="mapNoiseScale" class="form-control"/>')
+        )
+      )
+    )
 
-    $formGroup = $('<div class="form-group row mb-3">');
-    let col1 = $('<div class="col-sm-1">');
-    let $check = $('<input type="checkbox" name="use_noise" id="use_noise" class="form-check-input"/>');
-    col1.append($check);
+    // Octaves
+    $form.append(
+      $('<div class="form-group row mb-3">').append(
+        $('<div class="col-sm-3">').append(
+          $('<label for="mapNoiseOctaves" class="form-label ms-3">Octaves</label>')
+          ),
+          $('<div class="col-sm-9">').append(
+          $('<input type="number" min="1" max="6" value="3" name="mapNoiseOctaves" id="mapNoiseOctaves" class="form-control"/>')
+        )
+      )
+    )
+
+    // Persistance
+    $form.append(
+      $('<div class="form-group row mb-3">').append(
+        $('<div class="col-sm-3">').append(
+          $('<label for="mapNoisePersistance" class="form-label ms-3">Persistance</label>')
+          ),
+          $('<div class="col-sm-9">').append(
+          $('<input type="number" min="0.001" step="0.001" max="1" value=".9" name="mapNoisePersistance" id="mapNoisePersistance" class="form-control"/>')
+        )
+      )
+    )
+
+    // Lacunarity
+    $form.append(
+      $('<div class="form-group row mb-3">').append(
+        $('<div class="col-sm-3">').append(
+          $('<label for="mapNoiseLacunarity" class="form-label ms-3">Lacunarity</label>')
+          ),
+          $('<div class="col-sm-9">').append(
+          $('<input type="number" value="0.1355" min="0.0001" max="1" step="0.0001" name="mapNoiseLacunarity" id="mapNoiseLacunarity" class="form-control"/>')
+        )
+      )
+    )
     
-    $label = $('<label for="use_noise" class="form-label ms-3">Use Noise</label>')
-    let col11 = $('<div class="col-sm-11">');
-    col11.append($label);
+    // Offset
+    $form.append(
+      $('<div class="form-group row mb-3">').append(
+        
+        $('<div class="col-sm-3">').append(
+          $('<label for="offsetX" class="form-label ms-3">Offset x, y</label>')
+        ),
 
-    $formGroup.append(col1)
-    $formGroup.append(col11)
-    $form.append($formGroup)
+        $('<div class="col-sm-9">').append(
+          $('<div class="form-group row">').append(
+            $('<div class="col-sm-6">').append(
+              $('<input type="number" value="0" name="offset[x]" id="offsetX" class="form-control"/>')
+            ),
+            $('<div class="col-sm-6">').append(
+              $('<input type="number" value="0" name="offset[y]" id="offsetY" class="form-control"/>')
+            )
+          )
+        )
+      )
+    )
+
+    // Seed
+    $form.append(
+      $('<div class="form-group row mb-3">').append(
+        $('<div class="col-sm-3">').append(
+          $('<label for="mapSeed" class="form-label ms-3">Seed</label>')
+          ),
+          $('<div class="col-sm-9">').append(
+          $('<input type="text" name="mapSeed" id="mapSeed" class="form-control"/>')
+        )
+      )
+    )
 
     $modal.find('.modal-body').append($form)
     $("#generate-modal").show();
@@ -280,30 +324,47 @@ class Menu {
     const self = this
     $("#generate-submit").on('click', function (e) {
       e.preventDefault();
-      // const vals = $("#generate-form").serializeArray();
-      let typesSelected = [];
-      $(".type-check:checked").each((index, check) => {
-        typesSelected.push({
-          type: $(check).attr('name'),
-          prob: $('input[name="' + $(check).attr('name') + '_prob"]').val()
-        })
-      })
-      self.emit('action', {
-        action: 'newGame', data: {
-          options: { 
-            types: typesSelected,
-            useNoise: $("#use_noise").is(':checked')
-          }        
+      const vals = $("#generate-form").serializeArray();
+      let options = {
+        offset: {}
+      };
+      vals.forEach((input) => {
+        if (input.name === 'offset[x]') {
+          options.offset.x = input.value
+        } else if (input.name === 'offset[y]') {
+          options.offset.y = input.value
+        } else {
+          options[input.name] = input.value
         }
       })
+      // let typesSelected = [];
+      // $(".type-check:checked").each((index, check) => {
+      //   typesSelected.push({
+      //     type: $(check).attr('name'),
+      //     prob: $('input[name="' + $(check).attr('name') + '_prob"]').val()
+      //   })
+      // })
+      self.emit('action', {
+        action: 'newGame', data: {
+          options        
+        }
+      })
+      console.log({options})
       $modal.hide();
-      $modal.remove();
       return false;
     })
 
     $(".close-modal").on("click", function (e) {
-      $("#generate-modal").remove();
+      $("#generate-modal").hide();
     })
+  }
+  generateMap() {
+    
+    if ($("#generate-modal").length === 0) {
+      this.createModal();
+    } else {
+      $("#generate-modal").show()
+    }
 
   }
 
