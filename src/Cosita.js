@@ -6,8 +6,9 @@ class Cosita extends THREE.Mesh {
     super()
 
     this.type = 'cosita';
-    this.width = 0.2;
-    this.height = .6;
+    this.width = 0.1;
+    this.height = .3;
+    this.scaleObj = .03;
     this.selected = false;
     this.speed = .5;
     this.color = "#FFFFFF";
@@ -38,9 +39,9 @@ class Cosita extends THREE.Mesh {
     loader.load( '../models/bear/scene.gltf', function ( gltf ) {
 
       let obj = gltf.scene.children[0]
-      obj.scale.x = obj.scale.x * .05 
-      obj.scale.y = obj.scale.y * .05
-      obj.scale.z = obj.scale.z * .05
+      obj.scale.x = obj.scale.x * self.scaleObj
+      obj.scale.y = obj.scale.y * self.scaleObj
+      obj.scale.z = obj.scale.z * self.scaleObj
 
       obj.rotation.x = self.rotation.x
       obj.rotation.y = self.rotation.y

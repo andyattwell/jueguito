@@ -137,7 +137,7 @@ class Toolbar {
     $("#tileWalkable").attr('checked', this.inspecting.walkable);
     // this.inspecting.walkable ? 'checked' : ''
     $("#tileOccupied").attr('checked',this.inspecting.occupied);
-    $("#tileNeighbors").text(this.inspecting.neighbors.length);
+    $("#tileNeighbors").text(this.inspecting.neighbors ? this.inspecting.neighbors.length : 0);
     // const $info = $(".toolbar-info");
     // $info.html("");
 
