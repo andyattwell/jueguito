@@ -217,10 +217,10 @@ class Menu {
     $form.append(
       $('<div class="form-group row mb-3">').append(
         $('<div class="col-sm-3">').append(
-          $('<label for="cols" class="form-label ms-3">Rows</label>')
+          $('<label for="mapHeight" class="form-label ms-3">Rows</label>')
           ),
           $('<div class="col-sm-9">').append(
-          $('<input type="number" name="cols" id="cols" value="40" class="form-control"/>')
+          $('<input type="number" name="mapHeight" id="mapHeight" value="40" class="form-control"/>')
         )
       )
     )
@@ -229,10 +229,10 @@ class Menu {
     $form.append(
       $('<div class="form-group row mb-3">').append(
         $('<div class="col-sm-3">').append(
-          $('<label for="rows" class="form-label ms-3">Cols</label>')
+          $('<label for="mapWidth" class="form-label ms-3">Cols</label>')
           ),
           $('<div class="col-sm-9">').append(
-          $('<input type="number" name="rows" id="rows" value="40" class="form-control"/>')
+          $('<input type="number" name="mapWidth" id="mapWidth" value="40" class="form-control"/>')
         )
       )
     )
@@ -306,6 +306,24 @@ class Menu {
       )
     )
 
+    // Flat
+    $form.append(
+      $('<div class="form-group row">').append(
+        $('<div class="col-sm-3">').append(
+          $('<label for="mapFlat" class="form-label ms-3">Flat</label>'),
+        ),
+        $('<div class="col-sm-1">').append(
+          $('<input type="checkbox" name="mapFlat" id="mapFlat" class="form-check-input ms-1"/>'),
+        ),
+        $('<div class="col-sm-3">').append(
+          $('<label for="mapAltitude" class="form-label ms-3">Height</label>'),
+        ),
+        $('<div class="col-sm-3">').append(
+          $('<input type="number" name="mapAltitude" id="mapAltitude" min="0" max="1" value="1" class="form-control"/>'),
+        )
+      )
+    )
+
     // Seed
     $form.append(
       $('<div class="form-group row mb-3">').append(
@@ -333,17 +351,17 @@ class Menu {
           options.offset.x = input.value
         } else if (input.name === 'offset[y]') {
           options.offset.y = input.value
+        } else if (input.name === 'mapFlat') {
+          options.mapFlat = input.value === 'on' ? true : false
         } else {
           options[input.name] = input.value
         }
       })
-      // let typesSelected = [];
-      // $(".type-check:checked").each((index, check) => {
-      //   typesSelected.push({
-      //     type: $(check).attr('name'),
-      //     prob: $('input[name="' + $(check).attr('name') + '_prob"]').val()
-      //   })
-      // })
+
+      if (!options.mapFlat) {
+        options.mapAltitude = false;
+      }
+
       self.emit('action', {
         action: 'newGame', data: {
           options        

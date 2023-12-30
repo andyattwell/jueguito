@@ -80,20 +80,6 @@ class Toolbar {
     }
 
     $("#app").append(container);
-
-    let $info = $('<div>');
-    $info.addClass('row');
-    $info.addClass('toolbar-info');
-    $info.css('background-color', "#000");
-    $info.css('width', 300);
-    $info.css('height', 80);
-    $info.css('position', 'absolute');
-    $info.css('top', this.y);
-    $info.css('right', 0);
-    console.log($info)
-
-    $("#app").append($info)
-
   }
 
   renderInfo () {
@@ -103,30 +89,58 @@ class Toolbar {
     }
     this.inspecting = obj;
     console.log({obj})
-    const $info = $(".toolbar-info");
-    $info.html("");
-    const $div1 = $('<div class="col-6">');
-    $div1.append('<p class="mb-0">Type: ' + this.inspecting.type + '</p>');
-    $div1.append('<p class="mb-0">X: ' + this.inspecting.x + ' Y: ' + this.inspecting.y + '</p>');
-    $div1.append('<p class="mb-0">Walkable: <input disabled type="checkbox" ' + (this.inspecting.walkable ? 'checked' : '') + '></p>');
-
-    $info.append($div1);
     
-    const $div2 = $('<div class="col-6">');
-    const $color = $('<span>');
-    $color.css('width', 15)
-    $color.css('height', 15)
-    $color.css('display', 'inline-block');
-    $color.css('background-color', this.inspecting.color);
-    $color.css('margin-right', 10);
-    const $colorText = $('<p class="mb-0">')
-    $colorText.append($color);
-    $colorText.append('<small>' + this.inspecting.color + '</small>');
-    $div2.append($colorText);
+    let $info = $(".toolbar-info");
+    if ($info.length === 0) {
 
-    $div2.append('<p class="mb-0">Size: ' + this.inspecting.size + '</p>');
+      $info = $('<div>');
+      $info.addClass('row');
+      $info.addClass('toolbar-info');
+      $info.css('background-color', "#000");
+      $info.css('width', 300);
+      $info.css('height', 160);
+      $info.css('position', 'absolute');
+      $info.css('bottom', 0);
+      $info.css('right', 0);
+      $("#app").append($info);
 
-    $info.append($div2);
+      const $colorBox = $('<span id="tileColor">');
+      $colorBox.css('width', 15)
+      $colorBox.css('height', 15)
+      $colorBox.css('display', 'inline-block');
+      $colorBox.css('background-color', this.inspecting.color);
+      $colorBox.css('margin-right', 10);
+
+      $info.append(
+        $('<div class="col-6">').append(
+          $('<p class="mb-0" id="tileType">Type: ' + this.inspecting.type + '</p>'),
+          $('<p class="mb-0">X: <span id="tileX">' + this.inspecting.x + '</span> - Y: <span id="tileY">' + this.inspecting.y + '</span></p>'),
+          $('<p class="mb-0">Neighbors: <span id="tileNeighbors"></span></p>'),
+          $('<p class="mb-0">Walkable: <input id="tileWalkable" disabled type="checkbox" ' + (this.inspecting.walkable ? 'checked' : '') + '></p>'),
+          $('<p class="mb-0">Occupied: <input id="tileOccupied" disabled type="checkbox" ' + (this.inspecting.occupied ? 'checked' : '') + '></p>')
+        ),
+        $('<div class="col-6">').append(
+          $('<p class="mb-0">').append(
+            $colorBox,
+            $('<small>' + this.inspecting.color + '</small>')
+          ),
+          $('<p class="mb-0">Size: ' + this.inspecting.size + '</p>'),
+        )
+      );
+    }
+
+    $("#tileColor").css('background-color', this.inspecting.color);
+    $("#tileColor").next('small').text(this.inspecting.color);
+    $("#tileType").text(this.inspecting.type);
+    $("#tileX").text(this.inspecting.x);
+    $("#tileY").text(this.inspecting.y);
+    $("#tileWalkable").attr('checked', this.inspecting.walkable);
+    // this.inspecting.walkable ? 'checked' : ''
+    $("#tileOccupied").attr('checked',this.inspecting.occupied);
+    $("#tileNeighbors").text(this.inspecting.neighbors.length);
+    // const $info = $(".toolbar-info");
+    // $info.html("");
+
   }
 
   deselect() {

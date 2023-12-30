@@ -90,7 +90,7 @@ class Jueguito {
     // this.scene.add( axesHelper );
 
     let grid = data?.grid ? data.grid : [];
-    const options = data?.options;
+    const options = data?.options || {};
     this.mapa = new Mapa(self.scene, grid, options);
 
     this.camera.position.y = -3

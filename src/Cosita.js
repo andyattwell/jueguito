@@ -29,7 +29,7 @@ class Cosita extends THREE.Mesh {
     this.z = parseInt(spawn ? spawn.z : this.map.grid[this.x][this.y].length - 1); // cell z
 
     this.current = this.map.grid[this.x][this.y][this.z];
-    this.position.set(this.current.position.x, this.current.position.y, this.current.position.z)
+    this.position.set(this.current.position.x, this.current.position.y, this.current.position.z + this.current.size )
 
     this.lastTile = null;
     this.lookForStuff = true;
@@ -246,10 +246,10 @@ class Cosita extends THREE.Mesh {
 
   updatePositionRotation(targetCell, time) {
     let targetPosX = targetCell.position.x;
-    let targetPosY = targetCell.position.y;
+    let targetPosY = targetCell.position.y - targetCell.size / 2;
     let targetPosZ = targetCell.position.z + 0.03;
-    if (targetCell.position.z > 0) {
-      targetPosZ = targetCell.position.z + 0.1;
+    if (targetCell.z > 0) {
+      targetPosZ = targetCell.position.z + targetCell.size
     }
 
     let diffX = parseFloat(Math.abs(this.position.x - targetPosX).toFixed(2));
@@ -272,7 +272,9 @@ class Cosita extends THREE.Mesh {
         nextX -= speed;
         direction = 'left';
       }
-    } else if (diffY > speed) {
+    } 
+    
+    if (diffY > speed) {
       if (targetPosY > this.position.y) {
         nextY += speed;
         direction = 'back';

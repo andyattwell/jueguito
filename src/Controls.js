@@ -272,7 +272,7 @@ class Controls {
               {
                 x: hit.object.x,
                 y: hit.object.y,
-                z: 0
+                z: hit.object.z
               }
             ])
           }
