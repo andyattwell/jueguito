@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 
 class GridPoint extends THREE.Mesh {
-  constructor(x, y, z) {
+  constructor(x, z, y, gridIndex) {
     super()
 
+    this.gridIndex = gridIndex
     this.x = x; // x location of the grid point
     this.y = y; // y location of the grid point
     this.z = z;
@@ -29,30 +30,30 @@ class GridPoint extends THREE.Mesh {
   // update neighbors array for a given grid point
   updateNeighbors = function (grid, cols, rows) {
     let i = this.x;
-    let j = this.y;
+    let j = this.z;
 
-    const minZ = this.z >= 1 ? this.z - 1 : 0;
-    const maxZ = this.z + 1;
+    const minY = this.y >= 1 ? this.y - 1 : 0;
+    const maxY = this.y + 1;
 
     this.neighbors = [];
 
     // the floor (z 0) is a plane with no height
 
-    for (let z = minZ; z <= maxZ; z++) {
+    for (let y = minY; y <= maxY; y++) {
       // left
-      if (i < cols - 1 && grid[i + 1][j][z]) {
+      if (i < cols - 1 && grid[i + 1][j][y]) {
         // console.log({left: grid[i + 1][j][z]})
-        this.neighbors.push(grid[i + 1][j][z]);
+        this.neighbors.push(grid[i + 1][j][y]);
       }
 
       // right
-      if (i > 0 && grid[i - 1][j][z]) {
-        this.neighbors.push(grid[i - 1][j][z]);
+      if (i > 0 && grid[i - 1][j][y]) {
+        this.neighbors.push(grid[i - 1][j][y]);
       }
 
       // front
-      if (j < rows - 1 && grid[i][j + 1][z]) {
-        this.neighbors.push(grid[i][j + 1][z]);
+      if (j < rows - 1 && grid[i][j + 1][y]) {
+        this.neighbors.push(grid[i][j + 1][y]);
         // front left
         // if (i < cols - 1 && grid[i + 1][j + 1][z]) {
         //   this.neighbors.push(grid[i + 1][j + 1][z]);
@@ -65,8 +66,8 @@ class GridPoint extends THREE.Mesh {
       }
 
       // back
-      if (j > 0 && grid[i][j - 1][z]) {
-        this.neighbors.push(grid[i][j - 1][z]);
+      if (j > 0 && grid[i][j - 1][y]) {
+        this.neighbors.push(grid[i][j - 1][y]);
         
         // back left
         // if (i < cols - 1 && grid[i + 1][j - 1][z]) {
@@ -85,7 +86,7 @@ class GridPoint extends THREE.Mesh {
     if (!this.color) {
       return null;
     }
-    let typeColor = this.color;
+    let typeColor = this.typeColor;
     let specialColor = false;
 
     if (this.selected === true) {
@@ -138,8 +139,9 @@ class GridPoint extends THREE.Mesh {
 }
 
 class Cube extends GridPoint {
-  constructor(x, y, z, color, size) {
-    super(x, y, z)
+  constructor(x, z, y, color, size, gridIndex) {
+    super(x, z, y, gridIndex)
+    this.typeColor = color;
     this.color = color;
     this.size = size;
     this.opacity = 1;
@@ -148,22 +150,12 @@ class Cube extends GridPoint {
       transparent: true,
       opacity: 1
     })
-    if (z > 0) {
-      this.geometry = new THREE.BoxGeometry(this.size, this.size, this.size);
-      this.position.set(this.x * this.size, this.y * this.size, this.z * this.size - .1)
-    } else {
-      this.geometry = new THREE.PlaneGeometry(size, size)
-      this.position.set(this.x * this.size, this.y * this.size, 0)
-    }
-    // let newZ = tile.z + tile.size;
-    // if (tile.z > 0) {
-    //   newZ = (tile.z + hit.normal.z) * tile.size + tile.size;
-    // }
-    // newTile.position.set(x * tile.size, y * tile.size, tile.z);
+    this.resetGeometry();
+  }
 
-    
-      // this.material = new THREE.MeshStandardMaterial(cubeMaterials);
-    
+  resetGeometry() {
+    this.geometry = new THREE.BoxGeometry(this.size, this.size, this.size);
+    this.position.set(this.x * this.size, this.y * this.size - .1, this.z * this.size)
   }
 
   setColor (color) {
@@ -171,6 +163,7 @@ class Cube extends GridPoint {
     if (!_color) {
       return false;
     }
+    this.color = _color;
     this.material = new THREE.MeshBasicMaterial({
       color: _color,
       opacity: this.opacity
@@ -179,8 +172,8 @@ class Cube extends GridPoint {
 }
 
 class Plane extends GridPoint {
-  constructor(x, y, z,color, size) {
-    super(x, y, z)
+  constructor(x, z, y, color, size, gridIndex) {
+    super(x, z, y, gridIndex)
     this.color = color;
     this.material = new THREE.MeshBasicMaterial({color: color})
     this.geometry = new THREE.PlaneGeometry(size, size)
@@ -194,20 +187,18 @@ class Plane extends GridPoint {
 }
 
 class Air extends Cube {
-  constructor(x, y, z,size) {
-    super(x, y, z, null, size);
+  constructor(x, z, y, size, gridIndex) {
+    super(x, z, y, null, size, gridIndex)
     this.type = 'air';
     this.walkable = true;
-    // this.material = null;
     this.visible = false;
-    // this.setColor();
   }
 
 }
 
 class Rock extends Cube {
-  constructor(x, y, z,size) {
-    super(x, y, z, "#685e70", size);
+  constructor(x, z, y, size, gridIndex) {
+    super(x, z, y, "#685e70", size, gridIndex)
     this.type = 'rock';
     this.walkable = false;
     this.color = Math.random() < 0.5 ? "#554e5a" : "#685e70";
@@ -217,8 +208,8 @@ class Rock extends Cube {
 }
 
 class Water extends Cube {
-  constructor(x, y, z,size) {
-    super(x, y, z,"#2093d5", size);
+  constructor(x, z, y, size, gridIndex) {
+    super(x, z, y, "#2093d5", size, gridIndex);
     this.type = 'water';
     // this.walkable = false;
     this.walkable = true;
@@ -229,8 +220,8 @@ class Water extends Cube {
 }
 
 class Path extends Cube {
-  constructor(x, y, z,size) {
-    super(x, y, z,"#aa9f2b", size);
+  constructor(x, z, y, size, gridIndex) {
+    super(x, z, y,"#aa9f2b", size, gridIndex);
     this.type = 'path';
     this.walkable = true;
     this.speed = .05
@@ -240,8 +231,8 @@ class Path extends Cube {
 }
 
 class Grass extends Cube {
-  constructor(x, y, z, size) {
-    super(x, y, z, "#51d343", size);
+  constructor(x, z, y, size, gridIndex) {
+    super(x, z, y, "#51d343", size, gridIndex);
     this.type = 'grass';
     this.walkable = true;
     this.speed = .04
@@ -251,8 +242,8 @@ class Grass extends Cube {
 }
 
 class Preview extends Cube {
-  constructor(x, y, z, size) {
-    super(x, y, z, "#3af4ff", size);
+  constructor(x, z, y, size) {
+    super(x, z, y, "#3af4ff", size);
     this.type = 'preview';
     this.walkable = true;
     this.opacity = 0.8;
@@ -265,8 +256,8 @@ class Preview extends Cube {
 }
 
 class Prize extends Cube {
-  constructor(x, y, z, size) {
-    super(x, y, z, "#ce1fd7", size);
+  constructor(x, z, y, size) {
+    super(x, z, y, "#ce1fd7", size);
     this.type = 'prize';
     this.walkable = false;
     this.setColor();

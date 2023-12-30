@@ -1,6 +1,8 @@
 import {ImprovedNoise} from './lib/ImprovedNoise.js';
 import NoiseGenerator from './NoiseGenerator.js';
 import { Rock, Water, Path, Grass, Preview, Prize } from './Tile.js'
+import * as THREE from 'three';
+import {Cube} from './Tile.js'
 
 class Mapa {
   
@@ -110,21 +112,21 @@ class Mapa {
     mapNoiseOffset.y = parseInt(mapNoiseOffset.y)
 
     //making a 2D array
-    for (let i = 0; i < mapWidth; i++) {
-      this.grid[i] = new Array(mapWidth);
-      for (let x = 0; x < mapHeight; x++) {
-        this.grid[i][x] = new Array();
-      }
-    }
+    // for (let i = 0; i < mapWidth; i++) {
+    //   this.grid[i] = new Array(mapWidth);
+    //   for (let x = 0; x < mapHeight; x++) {
+    //     this.grid[i][x] = new Array();
+    //   }
+    // }
 
     let noiseMap = new Array(mapWidth);
     if (mapFlat) {
-      for (let x = 0; x < mapWidth; x++) {
-        noiseMap[x] = new Array(mapHeight)
-        for (let y = 0; y < mapHeight; y++) {
-          noiseMap[x][y] = mapAltitude;
-        }
-      }
+      // for (let x = 0; x < mapWidth; x++) {
+      //   noiseMap[x] = new Array(mapHeight)
+      //   for (let y = 0; y < mapHeight; y++) {
+      //     noiseMap[x][y] = mapAltitude;
+      //   }
+      // }
     } else {
       noiseMap = this.noiseGenerator.generateNoiseMap(
         mapWidth,
@@ -138,14 +140,12 @@ class Mapa {
       );
     }
 
+    this.totalCubes = 0;
     for (let x = 0; x < mapWidth; x++) {
-      for (let y = 0; y < mapHeight; y++) {
-
-        let currentHeight = noiseMap[x][y];
-
-        // if (mapAltitude) {
-        //   currentHeight += mapAltitude
-        // }
+      this.grid[x] = new Array(mapWidth);
+      for (let z = 0; z < mapHeight; z++) {
+        this.grid[x][z] = new Array();
+        let currentHeight = !mapFlat ? noiseMap[x][z] : mapAltitude;
 
         for (let h = 0; h <= currentHeight * 10; h++) {
           if (mapAltitude && h >= mapAltitude * 10) {
@@ -156,26 +156,83 @@ class Mapa {
             tileHeight = .3;
           }
 
-          let Tile = this.getTileFromNoise(tileHeight);
+          let tile = this.getTileFromNoise(tileHeight);
 
-          this.grid[x][y][h] = new Tile(
+          this.grid[x][z][h] = new tile(
             x,
-            y,
+            z,
             h,
-            this.tileSize
+            this.tileSize,
+            this.totalCubes
           );
-          this.grid[x][y][h].occupied = true
-          this.scene.add( this.grid[x][y][h] );
+          this.grid[x][z][h].occupied = true
+          // this.scene.add( this.grid[x][y][h] );
+          this.totalCubes++;
         }
         // top tile
-        if (this.grid[x][y][this.grid[x][y].length - 1]) {
-          this.grid[x][y][this.grid[x][y].length - 1].occupied = false;
+        if (this.grid[x][z][this.grid[x][z].length - 1]) {
+          this.grid[x][z][this.grid[x][z].length - 1].occupied = false;
         }
       }
     }
 
     this.updateNeighbors();
+    // const geometry = new THREE.BoxGeometry(.2, .2, .2);
+    this.updateInstancedMesh();
+    
+  }
 
+  updateInstancedMesh() {
+    const tile = new Cube(0,0,0, "#fff", .2);
+    const mesh = new THREE.InstancedMesh(tile.geometry, tile.material, this.totalCubes);
+    console.log({totalCubes: this.totalCubes})
+    this.scene.add(mesh);
+    
+    let current = 0;
+    for (let x = 0; x < this.grid.length; x++) {
+      for (let z = 0; z < this.grid[x].length; z++) {
+        for (let y = 0; y < this.grid[x][z].length; y++) {
+          const dummyTile = this.grid[x][z][y];
+          dummyTile.resetGeometry();
+          // dummyTile.position.x = dummyTile.x * dummyTile.size
+          // dummyTile.position.z = dummyTile.z * dummyTile.size
+          // dummyTile.position.y = dummyTile.y * dummyTile.size
+          // dummyTile.material = dummyTile.z * dummyTile.size
+
+          dummyTile.updateMatrix();
+          mesh.setMatrixAt(current, dummyTile.matrix)
+          mesh.setColorAt(current, new THREE.Color(dummyTile.color))
+          mesh.obj
+          current++;
+        }
+      }
+    }
+  }
+
+  selectTile(instanceId) {
+    let tile = null;
+    // let currentIndex = 0;
+    for (let x = 0; x < this.grid.length; x++) {
+      for (let z = 0; z < this.grid[x].length; z++) {
+        for (let y = 0; y < this.grid[x][z].length; y++) {
+          if (this.grid[x][z][y].gridIndex === instanceId) {
+            this.grid[x][z][y].selected = true;
+          } else {
+            this.grid[x][z][y].selected = false;
+          }
+          this.grid[x][z][y].setColor();
+          // currentIndex++;
+        }
+      }
+    }
+
+    if (tile) {
+      console.log('updateTile', tile)
+      tile.selected = true;
+      tile.setColor();
+    }
+    
+    this.updateInstancedMesh();
   }
 
   getTileFromNoise(noiseVal) {

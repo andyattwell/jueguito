@@ -48,7 +48,7 @@ class Controls {
     })
 
     window.addEventListener('mouseup', (e) => {
-      if (e.which === 2) {
+      if (!this.parent.orbitControls && e.which === 2) {
         this.dragging = false;
         this.dragStart = null;
         return false;
@@ -113,7 +113,7 @@ class Controls {
     // if (hit && hit.object.onPointerMove) hit.object.onPointerMove(hit)
     // if (hit && hit.object) this.parent.mapa.removePreview(hit.object);
 
-    if (this.dragging) {
+    if (this.dragging && !this.parent.orbitControls) {
       const x = this.dragStart ? (this.mouse.x - this.dragStart.x) * 3 : 0;
       const y = this.dragStart ? (this.mouse.y - this.dragStart.y) * 2 : 0;
       
@@ -167,8 +167,8 @@ class Controls {
       this.parent.newGame();
       return false;
     }
-    
-    if (this.parent.camera) {
+
+    if (this.parent.camera && !this.parent.orbitControls) {
       const oldObjectPosition = new THREE.Vector3();
       this.parent.camera.getWorldPosition(oldObjectPosition);
       
@@ -260,6 +260,14 @@ class Controls {
     if (e.which === 1 && e.target.tagName === 'CANVAS') {
       const hit = this.intersects[0];
       if (hit) {
+        
+        console.log({hit: hit.instanceId, mesh: this.parent.scene.children[0]})
+        if (hit.object.type === 'Mesh') {
+          this.parent.mapa.selectTile(hit.instanceId);
+        }
+
+
+
         if (
           this.parent.toolbar.selectedTool 
           && hit.object.type !== 'cosita' 
@@ -312,12 +320,14 @@ class Controls {
   
       }
     } else if (e.which === 2) {
-      this.dragging = true;
+      if (!this.parent.orbitControls) {
+        this.dragging = true;
+      }
     }
   }
 
   zoomHandler(e) {
-    if (e.target.tagName === 'CANVAS') {
+    if (e.target.tagName === 'CANVAS' && (this.parent.camera && !this.parent.orbitControls)) {
       if (e.deltaY < 0) {
         if (this.parent.camera.position.z > 1) {
           this.parent.camera.position.z -= 1

@@ -5,6 +5,7 @@ import Menu from "./Menu.js";
 import Controls from "./Controls.js"
 import Toolbar from "./Toolbar.js";
 // import Inspector from "./Inspector.js";
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 class Jueguito {
   constructor() {
@@ -25,6 +26,7 @@ class Jueguito {
     this.scene = null
     this.renderer = null
     this.time = 0;
+    this.orbitControls = null;
 
   }
   
@@ -33,12 +35,19 @@ class Jueguito {
     this.camera = new THREE.PerspectiveCamera( 45, this.width / this.height, 0.01, 1000 );
     this.camera.position.z = 5
     this.scene = new THREE.Scene();
-
     this.renderer = new THREE.WebGLRenderer( { antialias: true } );
+
+
     this.renderer.setSize( this.width, this.height );
     this.renderer.setClearColor({ color: "#000000" })
     document.querySelector('#app').appendChild( this.renderer.domElement );
 
+    this.orbitControls = new OrbitControls( this.camera, this.renderer.domElement );
+
+    //controls.update() must be called after any manual changes to the camera's transform
+    // camera.position.set( 0, 20, 100 );
+    // this.orbitControls.update();
+    
     // ambient
     // this.scene.add( new THREE.AmbientLight( '#FFFFFF' ) );
     // light
@@ -97,11 +106,11 @@ class Jueguito {
 
     this.mapa = new Mapa(self.scene, data?.grid, this.settings);
 
-    this.camera.position.y = -3
+    this.camera.position.y = 2
     this.camera.position.x = this.mapa.cols / 2 * this.mapa.tileSize
-    this.camera.position.z = 8
+    this.camera.position.z = 3
 
-    this.camera.lookAt(this.mapa.cols / 2 * this.mapa.tileSize, this.mapa.rows / 2 * this.mapa.tileSize, 0);
+    this.camera.lookAt(0, 0, 0);
 
     this.toolbar = new Toolbar(this);
 
