@@ -5,7 +5,7 @@ import { Rock, Water, Path, Grass, Preview, Prize } from './Tile.js'
 class Mapa {
   
   noiseGenerator = new NoiseGenerator()
-  constructor(scene, data = null, options = {}) {
+  constructor(scene, data = [], options = {}) {
 
     this.cols = options.mapWidth ? parseInt(options.mapWidth) : 40;
     this.rows = options.mapHeight ? parseInt(options.mapHeight) : 40;
@@ -85,24 +85,25 @@ class Mapa {
 
   generate(options = {}) {
     // Generate noise
+    console.log({options})
     let mapFlat = options.mapFlat ? options.mapFlat : false;
-    let mapAltitude = 0;
-    if (options.mapAltitude && options.mapAltitude > 1) {
-      mapAltitude = (parseInt(options.mapAltitude) - 1 )* .1;
+    let mapAltitude = options.mapAltitude ? parseInt(options.mapAltitude) : null;
+    if (mapAltitude && mapAltitude > 0) {
+      mapAltitude = mapAltitude * .1;
+    } else if (mapAltitude && mapAltitude < 0) {
+      mapAltitude = 0.1
     }
-    
-    console.log({mapAltitude})
 
     let mapWidth = options.mapWidth ? parseInt(options.mapWidth) : this.cols;
     let mapHeight = options.mapHeight ? parseInt(options.mapHeight) : this.rows;
-    let mapSeed = options.mapSeed ? parseFloat(options.mapSeed) : Math.random();
-    let mapNoiseScale = options.mapNoiseScale ? parseFloat(options.mapNoiseScale) : .15;
+    this.mapSeed = options.mapSeed ? parseFloat(options.mapSeed) : Math.random();
+    let mapNoiseScale = options.mapNoiseScale ? parseFloat(options.mapNoiseScale) : this.mapSeed * .3;
     let mapNoiseOctaves = options.mapNoiseOctaves ? parseInt(options.mapNoiseOctaves) : 3;
-    let mapNoisePersistance = options.mapNoisePersistance ? parseFloat(options.mapNoisePersistance) : .9;
-    let mapNoiseLacunarity = options.mapNoiseLacunarity ? parseFloat(options.mapNoiseLacunarity) : .1355;
+    let mapNoisePersistance = options.mapNoisePersistance ? parseFloat(options.mapNoisePersistance) : this.mapSeed;
+    let mapNoiseLacunarity = options.mapNoiseLacunarity ? parseFloat(options.mapNoiseLacunarity) : this.mapSeed;
     let mapNoiseOffset = options.offset ? options.offset : {
-      x: 0,
-      y: 0
+      x:  this.mapSeed * 1000,
+      y:  this.mapSeed * 1000
     };
 
     mapNoiseOffset.x = parseInt(mapNoiseOffset.x)
@@ -128,7 +129,7 @@ class Mapa {
       noiseMap = this.noiseGenerator.generateNoiseMap(
         mapWidth,
         mapHeight,
-        mapSeed,
+        this.mapSeed,
         mapNoiseScale, 
         mapNoiseOctaves, 
         mapNoisePersistance, 
@@ -141,8 +142,15 @@ class Mapa {
       for (let y = 0; y < mapHeight; y++) {
 
         let currentHeight = noiseMap[x][y];
-        
+
+        // if (mapAltitude) {
+        //   currentHeight += mapAltitude
+        // }
+
         for (let h = 0; h <= currentHeight * 10; h++) {
+          if (mapAltitude && h >= mapAltitude * 10) {
+            continue;
+          }
           let tileHeight = currentHeight;
           if (mapFlat) {
             tileHeight = .3;
@@ -159,8 +167,10 @@ class Mapa {
           this.grid[x][y][h].occupied = true
           this.scene.add( this.grid[x][y][h] );
         }
-
-        this.grid[x][y][this.grid[x][y].length - 1].occupied = false;
+        // top tile
+        if (this.grid[x][y][this.grid[x][y].length - 1]) {
+          this.grid[x][y][this.grid[x][y].length - 1].occupied = false;
+        }
       }
     }
 
@@ -169,21 +179,13 @@ class Mapa {
   }
 
   getTileFromNoise(noiseVal) {
-    
-    if (noiseVal > .5) {
+
+    if (noiseVal > .6) {
       return Rock;
-    } else if (noiseVal <= .5 && noiseVal > .4) {
-      const rock = parseInt(Math.random() * 8);
-      if (rock <= 0) {
-        return Rock;
-      }
-      return Path;
+    } else if (noiseVal <= .6 && noiseVal > .4) {
+      return parseInt(this.mapSeed * 8) <= 0 ? Rock : Path;
     } else if (noiseVal <= .4 && noiseVal > .2) {
-      const path = parseInt(Math.random() * 4);
-      if (path <= 0) {
-        return Path;
-      }
-      return Grass;
+      return parseInt(this.mapSeed * 4) <= 0 ? Path : Grass;
     } else {
       return Water;
     }

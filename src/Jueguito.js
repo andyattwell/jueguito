@@ -8,6 +8,7 @@ import Toolbar from "./Toolbar.js";
 
 class Jueguito {
   constructor() {
+    this.settings = this.getSettingsFromStorage();
     this.mapa = null;
     this.cositas = [];
     this.menu = new Menu(this);
@@ -24,6 +25,7 @@ class Jueguito {
     this.scene = null
     this.renderer = null
     this.time = 0;
+
   }
   
   start() {
@@ -77,11 +79,15 @@ class Jueguito {
 
   newGame(data = null) {
     const self = this;
-    if (this.mapa) {
-      let r = confirm('The current map will be lost.')
-      if (!r) {
-        return false;
-      }
+    // if (this.mapa) {
+    //   let r = confirm('The current map will be lost.')
+    //   if (!r) {
+    //     return false;
+    //   }
+    // }
+
+    if (data?.options) {
+      this.settings = this.saveSettings(data.options);
     }
     
     this.scene.clear();
@@ -89,9 +95,7 @@ class Jueguito {
     // const axesHelper = new THREE.AxesHelper( 5 );
     // this.scene.add( axesHelper );
 
-    let grid = data?.grid ? data.grid : [];
-    const options = data?.options || {};
-    this.mapa = new Mapa(self.scene, grid, options);
+    this.mapa = new Mapa(self.scene, data?.grid, this.settings);
 
     this.camera.position.y = -3
     this.camera.position.x = this.mapa.cols / 2 * this.mapa.tileSize
@@ -198,6 +202,58 @@ class Jueguito {
     this.cositas.forEach((cosita) => {
       cosita.update(time);
     })
+  }
+
+  saveSettings(options) {
+    if (window.localStorage) {
+      if (options.mapSeedStr) {
+        options.mapSeed = this.getSeedFromString(options.mapSeedStr)
+      }
+      localStorage.setItem('mapSettings', JSON.stringify(options));
+    }
+    return options;
+  }
+
+  getSettingsFromStorage() {
+    let settings = {}
+    if (window.localStorage) {
+      const temp = localStorage.getItem('mapSettings');
+      if (temp && temp !== '') {
+        settings = JSON.parse(temp);
+        settings.mapSeed = this.getSeedFromString(settings.mapSeedStr)
+      }
+    }
+    return settings;
+  }
+
+  getSeedFromString(seedStr) {
+    let seedFloat = '0.';
+    let count = 0;
+    let minCount = 16;
+    if (seedStr) {
+      for (let c = 0; c < seedStr.length; c++) {
+        const char = seedStr.charAt(c);
+        seedFloat += '' + char.charCodeAt(0) * 16
+        const b = seedStr.charAt(parseInt(seedStr.length - c));
+        if (b) {
+          seedFloat += ''+ b.charCodeAt(0) * 16
+        }
+        count++;
+      }
+
+      if (count < minCount) {
+        for (let x = 0; x < minCount - count; x++) {
+          const char = seedStr.charAt(parseInt(seedFloat * x));
+          seedFloat += '' + char.charCodeAt(0) * 16
+          const b = seedStr.charAt(parseInt(seedStr.length - 1 - x));
+          if (b) {
+            seedFloat += ''+ b.charCodeAt(0) * 16
+          }
+        }
+      }
+      return parseFloat(seedFloat);
+    }
+    return null;
   }
 
 }

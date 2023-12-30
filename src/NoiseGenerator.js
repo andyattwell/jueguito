@@ -17,7 +17,6 @@ class NoiseGenerator {
 		let noiseMap = new Array(mapHeight);
 		const prng = this.random(seed);
 		const octaveOffsets = new Array(octaves);
-    console.log({mapWidth, mapHeight, seed, scale, octaves, persistance, lacunarity, offset})
 		for (let i = 0; i < octaves; i++) {
 			let offsetX = prng() + offset.x;
 			let offsetY = prng() + offset.y;
