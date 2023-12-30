@@ -92,7 +92,7 @@ class Jueguito {
     let grid = data?.grid ? data.grid : [];
     const options = data?.options;
     this.mapa = new Mapa(self.scene, grid, options);
-
+    
     this.camera.position.y = -3
     this.camera.position.x = this.mapa.cols / 2 * this.mapa.tileSize
     this.camera.position.z = 8

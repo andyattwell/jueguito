@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import {ImprovedNoise} from './lib/ImprovedNoise.js';
+import MeshGenerator from './MeshGenerator'
+import NoiseGenerator from './NoiseGenerator';
 
 class GridPoint extends THREE.Mesh {
   constructor(x, y, z) {
@@ -256,6 +258,9 @@ class Prize extends Cube {
 }
 
 class Mapa {
+
+  noiseGenerator = new NoiseGenerator()
+  meshGenerator = new MeshGenerator();
   
   constructor(scene, data = null, options = null) {
     this.cols = data.length ? data.length : 48;
@@ -273,11 +278,69 @@ class Mapa {
 
     this.scene = scene;
 
+    this.mapWidth = 48;
+    this.mapHeight = 48;
+    this.noiseScale = 0.5;
+    this.octaves = 3;
+    this.persistance = 0.00254;
+    this.lacunarity = 0.000359;
+    this.seed = 312.555;
+    this.offset = {
+      x: 0,
+      y: 0
+    };
+    this.regions = [
+      {
+        name: 'path',
+        color: '#aa9f2b',
+        height: 0.4
+      },
+      {
+        name: 'grass',
+        color: '#51d343',
+        height: 1
+      },
+      {
+        name: 'rock',
+        color: '#685e70',
+        height: 2
+      },
+      {
+        name: 'water',
+        color: '#2093d5',
+        height: 3
+      },
+    ];
+
+    
     if (data.length) {
       this.import(data);
     } else {
       this.generate(options);
-    }    
+    }
+  }
+
+  generate() {
+    const mapWidth = 48;
+    const mapHeight = 48;
+    const noiseMap = this.noiseGenerator.generateNoiseMap(mapWidth, mapHeight, this.seed, this.noiseScale, this.octaves, this.persistance, this.lacunarity, this.offset);
+
+    const colourMap = new Array(mapWidth * mapHeight);
+		for (let y = 0; y < mapHeight - 1; y++) {
+			for (let x = 0; x < mapWidth - 1; x++) {
+				const currentHeight = noiseMap[y][x];
+				for (let i = 0; i < this.regions.length; i++) {
+					if (currentHeight <= this.regions[i].height) {
+						colourMap[y * mapWidth + x] = this.regions[i].color;
+            // this.scene.add( this.grid[x][y][h] );
+						break;
+					}
+				}
+			}
+		}
+
+    const mesh = this.meshGenerator.generateTerrainMesh(noiseMap);
+    this.scene.add(mesh.createMesh());
   }
 
   exportGrid () {
@@ -333,7 +396,7 @@ class Mapa {
     this.updateNeighbors();
   }
 
-  generate(options = null) {
+  generate_old(options = null) {
     //making a 2D array
     for (let i = 0; i < this.cols; i++) {
       this.grid[i] = new Array(this.rows);
@@ -367,10 +430,10 @@ class Mapa {
             h,
             this.tileSize
           );
-          this.grid[x][y][h].occupied = true
+          // this.grid[x][y][h].occupied = true
           this.scene.add( this.grid[x][y][h] );
         }
-        this.grid[x][y][Math.abs(z)].occupied = false;
+        // this.grid[x][y][Math.abs(z)].occupied = false;
         // for (let h = Math.abs(z) + 1; h < this.maxZ; h++) {
         //   this.grid[x][y][h] = new Air(
         //     x,
