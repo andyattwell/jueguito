@@ -47,7 +47,7 @@ class Jueguito {
     //controls.update() must be called after any manual changes to the camera's transform
     // camera.position.set( 0, 20, 100 );
     // this.orbitControls.update();
-    
+
     // ambient
     // this.scene.add( new THREE.AmbientLight( '#FFFFFF' ) );
     // light
@@ -263,6 +263,32 @@ class Jueguito {
       return parseFloat(seedFloat);
     }
     return null;
+  }
+
+  selectTile(instanceId) {
+    // let currentIndex = 0;
+    let tile = null;
+
+    for (let x = 0; x < this.mapa.grid.length; x++) {
+      for (let z = 0; z < this.mapa.grid[x].length; z++) {
+        for (let y = 0; y < this.mapa.grid[x][z].length; y++) {
+          if (!this.mapa.grid[x][z][y]) {
+            continue;
+          }
+          this.mapa.grid[x][z][y].selected = false;
+          this.mapa.grid[x][z][y].setColor();
+          if (this.mapa.grid[x][z][y].gridIndex === instanceId) {
+            tile = this.mapa.grid[x][z][y]
+            this.mapa.grid[x][z][y].selected = true;
+            this.mapa.grid[x][z][y].setColor();
+            break;
+          }
+        }
+      }
+    }
+
+    this.target_selected = tile;
+    this.mapa.updateInstancedMesh();
   }
 
 }

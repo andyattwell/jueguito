@@ -196,12 +196,22 @@ class Air extends Cube {
 
 }
 
+class Snow extends Cube {
+  constructor(x, z, y, size, gridIndex) {
+    super(x, z, y, "#FFFFFF", size, gridIndex)
+    this.type = 'snow';
+    this.walkable = true;
+    this.height = 0.5
+    this.setColor();
+  }
+}
+
 class Rock extends Cube {
   constructor(x, z, y, size, gridIndex) {
     super(x, z, y, "#685e70", size, gridIndex)
     this.type = 'rock';
     this.walkable = false;
-    this.color = Math.random() < 0.5 ? "#554e5a" : "#685e70";
+    this.typeColor = Math.random() < 0.5 ? "#554e5a" : "#685e70";
     this.height = 0.5
     this.setColor();
   }
@@ -265,5 +275,5 @@ class Prize extends Cube {
 }
 
 export {
-  GridPoint, Cube, Plane, Air, Rock, Water, Path, Grass, Preview, Prize
+  GridPoint, Cube, Plane, Air, Rock, Water, Path, Grass, Preview, Prize, Snow
 }

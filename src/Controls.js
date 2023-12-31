@@ -260,13 +260,10 @@ class Controls {
     if (e.which === 1 && e.target.tagName === 'CANVAS') {
       const hit = this.intersects[0];
       if (hit) {
-        
-        console.log({hit: hit.instanceId, mesh: this.parent.scene.children[0]})
         if (hit.object.type === 'Mesh') {
-          this.parent.mapa.selectTile(hit.instanceId);
+          this.parent.selectTile(hit.instanceId);
+          return false;
         }
-
-
 
         if (
           this.parent.toolbar.selectedTool 
@@ -312,7 +309,9 @@ class Controls {
           if (hit.object.type === 'cosita') {
             this.parent.cosita_selected = hit.object;
           } else {
-            this.parent.target_selected = hit.object;
+            
+            
+            // this.parent.target_selected = hit.object;
           }
         }
 

@@ -88,7 +88,6 @@ class Toolbar {
       return false;
     }
     this.inspecting = obj;
-    console.log({obj})
     
     let $info = $(".toolbar-info");
     if ($info.length === 0) {
