@@ -113,7 +113,7 @@ class Toolbar {
       $info.append(
         $('<div class="col-6">').append(
           $('<p class="mb-0" id="tileType">Type: ' + this.inspecting.type + '</p>'),
-          $('<p class="mb-0">X: <span id="tileX">' + this.inspecting.x + '</span> - Y: <span id="tileY">' + this.inspecting.y + '</span></p>'),
+          $('<p class="mb-0">X: <span id="tileX">' + this.inspecting.x + '</span> - Z: <span id="tileZ">' + this.inspecting.z + '</span> - Y: <span id="tileY">' + this.inspecting.y + '</span></p>'),
           $('<p class="mb-0">Neighbors: <span id="tileNeighbors"></span></p>'),
           $('<p class="mb-0">Walkable: <input id="tileWalkable" disabled type="checkbox" ' + (this.inspecting.walkable ? 'checked' : '') + '></p>'),
           $('<p class="mb-0">Occupied: <input id="tileOccupied" disabled type="checkbox" ' + (this.inspecting.occupied ? 'checked' : '') + '></p>')
@@ -133,6 +133,7 @@ class Toolbar {
     $("#tileType").text(this.inspecting.type);
     $("#tileX").text(this.inspecting.x);
     $("#tileY").text(this.inspecting.y);
+    $("#tileZ").text(this.inspecting.z);
     $("#tileWalkable").attr('checked', this.inspecting.walkable);
     // this.inspecting.walkable ? 'checked' : ''
     $("#tileOccupied").attr('checked',this.inspecting.occupied);

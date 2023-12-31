@@ -241,8 +241,8 @@ class Controls {
 
     
     const hit = this.intersects[0]
-    if (hit && hit.object.type !== 'cosita' && hit.object.type !== 'Mesh') {
-      this.parent.mapa.removeTile(hit.object)
+    if (hit && hit.object.type !== 'cosita') {
+      this.parent.mapa.removeTile(hit.instanceId)
     }
 
     if (
@@ -260,15 +260,11 @@ class Controls {
     if (e.which === 1 && e.target.tagName === 'CANVAS') {
       const hit = this.intersects[0];
       if (hit) {
-        if (hit.object.type === 'Mesh') {
-          this.parent.selectTile(hit.instanceId);
-          return false;
-        }
+        
 
         if (
           this.parent.toolbar.selectedTool 
-          && hit.object.type !== 'cosita' 
-          && hit.object.type !== 'Mesh'
+          && hit.object.type !== 'cosita'
         ) {
           if (this.parent.toolbar.selectedTool.name !== 'cosita') {
             this.parent.mapa.addTile(hit, this.parent.toolbar.selectedTool.name)
@@ -309,8 +305,8 @@ class Controls {
           if (hit.object.type === 'cosita') {
             this.parent.cosita_selected = hit.object;
           } else {
-            
-            
+            this.parent.selectTile(hit.instanceId);
+            return false;
             // this.parent.target_selected = hit.object;
           }
         }

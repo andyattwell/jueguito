@@ -1,6 +1,6 @@
 import {ImprovedNoise} from './lib/ImprovedNoise.js';
 import NoiseGenerator from './NoiseGenerator.js';
-import { Rock, Water, Path, Grass, Preview, Prize, Snow } from './Tile.js'
+import { Rock, Water, Path, Grass, Preview, Prize, Snow, GridPoint } from './Tile.js'
 import * as THREE from 'three';
 import {Cube} from './Tile.js'
 
@@ -14,11 +14,12 @@ class Mapa {
 
     this.maxZ = 12;
     this.grid = [];
+    this.tiles = [];
     
     this.closedSet = [];
     this.openSet = [];
     
-    this.tileSize = 2;
+    this.tileSize = 4;
     
     this.offsetX = 0;
     this.offsetY = 0;
@@ -139,10 +140,12 @@ class Mapa {
       );
     }
 
-    this.totalCubes = 0;
+    let count = 0;
     for (let x = 0; x < mapWidth; x++) {
       this.grid[x] = new Array(mapWidth);
+
       for (let z = 0; z < mapHeight; z++) {
+        
         this.grid[x][z] = new Array();
         let currentHeight = !mapFlat ? parseInt(noiseMap[x][z] * 10 - 1) : mapAltitude;
         currentHeight = currentHeight < 0 ? 0 : currentHeight;
@@ -159,24 +162,29 @@ class Mapa {
           let tile = this.getTileFromNoise(x, z, h, tileHeight);
 
           if (tile) {
-            this.grid[x][z][h] = new tile(
+            this.grid[x][z][h] = new GridPoint(
               x,
               z,
               h,
               this.tileSize,
-              this.totalCubes
+              count
             );
-            this.grid[x][z][h].occupied = true
-          } 
-          // this.scene.add( this.grid[x][y][h] );
-          this.totalCubes++;
-        }
-        // top tile
-        if (this.grid[x][z][this.grid[x][z].length - 1]) {
-          this.grid[x][z][this.grid[x][z].length - 1].occupied = false;
+            this.tiles[count] = new tile(
+              x,
+              z,
+              h,
+              this.tileSize,
+              count
+            );
+
+            count++;
+          }
+
         }
       }
     }
+
+    this.totalCubes = count;
 
     this.updateNeighbors();
     // const geometry = new THREE.BoxGeometry(.2, .2, .2);
@@ -185,26 +193,30 @@ class Mapa {
   }
 
   updateInstancedMesh() {
+    let mesh = this.scene.getObjectByName('meshmap');
+    if (mesh) {
+      mesh.dispose();
+      this.scene.remove(mesh)
+    }
     const tile = new Cube(0,0,0, "#fff", this.tileSize);
-    const mesh = new THREE.InstancedMesh(tile.geometry, tile.material, this.totalCubes);
+    mesh = new THREE.InstancedMesh(tile.geometry, tile.material, this.tiles.length);
+    mesh.name = 'meshmap';
     this.scene.add(mesh);
+    mesh.updateMatrix();
     
     let current = 0;
-    for (let x = 0; x < this.grid.length; x++) {
-      for (let z = 0; z < this.grid[x].length; z++) {
-        for (let y = 0; y < this.grid[x][z].length; y++) {
-          const dummyTile = this.grid[x][z][y];
-          if (dummyTile) {
-            dummyTile.resetGeometry();
-            dummyTile.updateMatrix();
-            mesh.setMatrixAt(current, dummyTile.matrix)
-            mesh.setColorAt(current, new THREE.Color(dummyTile.color))
-            mesh.obj
-          }
-          current++;
-        }
+    for (let x = 0; x < this.tiles.length; x++) {
+      const dummyTile = this.tiles[x];
+      if (dummyTile) {
+        dummyTile.resetGeometry();
+        dummyTile.updateMatrix();
+        mesh.setMatrixAt(current, dummyTile.matrix)
+        mesh.setColorAt(current, new THREE.Color(dummyTile.color))
       }
+      current++;
     }
+    mesh.updateMatrix();
+
   }
 
   getTileFromNoise(x, z, h, noiseVal) {
@@ -482,46 +494,51 @@ class Mapa {
     return spawn || this.grid[0][0];
   }
 
-  removeTile(tile) {
-    if (!tile || tile === undefined || tile.z <= 0) {
+  removeTile(instanceId) {
+    const tile = this.tiles[instanceId];
+    if (!tile) {
       return false;
     }
-    if (tile.z > 0 && this.grid[tile.x][tile.y][tile.z - 1]) {
-      this.grid[tile.x][tile.y][tile.z - 1].occupied = false;
-    }
-    // delete this.grid[tile.x][tile.y][tile.z];
-    // this.grid[tile.x][tile.y].splice(tile.z, 1)
+    tile.select();
+    // if (tile.z > 0 && this.grid[tile.x][tile.y][tile.z - 1]) {
+    //   this.grid[tile.x][tile.y][tile.z - 1].occupied = false;
+    // }
+    delete this.grid[tile.x][tile.y][tile.z];
     this.updateNeighbors();
-    this.scene.remove(tile);
+
+    // this.tiles.splice(instanceId, 1);
+    delete this.tiles[instanceId];
+    this.updateInstancedMesh();
   }
 
   addTile(hit, newType) {
 
-    const tile = hit.object;
+    const tile = this.tiles[hit.instanceId];
     
     let x = parseInt(tile.x + hit.normal.x)
     let y = parseInt(tile.y + hit.normal.y)
     let z = parseInt(tile.z + hit.normal.z)
 
-    if (this.previewTile) {
-      x = parseInt(this.previewTile.x);
-      y = parseInt(this.previewTile.y);
-      z = parseInt(this.previewTile.z);
-    }
+    // if (this.previewTile) {
+    //   x = parseInt(this.previewTile.x);
+    //   y = parseInt(this.previewTile.y);
+    //   z = parseInt(this.previewTile.z);
+    // }
 
-    if (x < 0 || x >= this.cols || y < 0 || y >= this.rows || z < 0 || z >= this.maxZ) {
+    if (x < 0 || x >= this.cols || z < 0 || z >= this.rows || y < 0 || y >= this.maxZ) {
       return false;
     }
 
     let entity = this.getTileTypeFromString(newType)
 
-    const newTile = new entity(x, y, z, tile.size)
+    const newTile = new entity(x, z, y, tile.size)
     tile.occupied = true;
-    this.grid[x][y][z] = newTile;
+    this.grid[x][z][y] = new GridPoint(x, z, y);
+    this.tiles.push(newTile)
     this.updateNeighbors();
-
-    this.removePreview();
-    this.scene.add(newTile);
+    // this.removePreview();
+    // this.scene.add(newTile);
+    this.updateInstancedMesh();
   }
 
   addPreview(hit, newType) {

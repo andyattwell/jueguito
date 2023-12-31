@@ -1,9 +1,8 @@
 import * as THREE from 'three';
 
-class GridPoint extends THREE.Mesh {
+class GridPoint {
   constructor(x, z, y, gridIndex) {
-    super()
-
+    
     this.gridIndex = gridIndex
     this.x = x; // x location of the grid point
     this.y = y; // y location of the grid point
@@ -13,18 +12,6 @@ class GridPoint extends THREE.Mesh {
     this.h = 0; // heuristic estimated cost function from current grid point to the goal
     this.neighbors = []; // neighbors of the current grid point
     this.top_parent = undefined; // immediate source of the current grid point
-
-    this.size = .2; // size in pixels
-    this.left = x * .2; // x position in pixels
-    this.top = y * .2; // y position in pixels
-    this.walkable = true;
-    this.occupied = false; // is the current tile ocupied?
-    this.selected = false; // is the current tile selected?
-    this.color = "#000000"; // tile color based on the type
-    this.hover = false;
-
-    // this.name = "tile-" + (this.z * 100 * this.x * this.y)
-
   }
 
   // update neighbors array for a given grid point
@@ -81,7 +68,66 @@ class GridPoint extends THREE.Mesh {
       }
     }
   };
+}
 
+class Cube extends THREE.Mesh  {
+  constructor(x, z, y, color, size) {
+    super()
+    this.x = x;
+    this.z = z;
+    this.y = y;
+    this.typeColor = color;
+    this.color = color;
+    this.size = size;
+    this.opacity = 1;
+    this.material = new THREE.MeshBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: 1
+    })
+    
+    this.left = x * this.size; // x position in pixels
+    this.top = y * this.size; // y position in pixels
+    this.walkable = true;
+    this.occupied = false; // is the current tile ocupied?
+    this.selected = false; // is the current tile selected?
+    this.hover = false;
+    
+    this.resetGeometry();
+  }
+
+  onClick() {
+    this.selected = true;
+    this.setColor()
+  }
+
+  select() {
+    this.selected = true;
+    this.setColor()
+  }
+
+  deselect() {
+    this.selected = false;
+    this.setColor()
+  }
+
+  onResize(width, height, aspect) {}
+
+  onPointerOver(e) {
+    this.hover = true;
+    this.setColor();
+  }
+
+  onPointerOut(e) {
+    this.hover = false;
+    this.setColor();
+  }
+
+  resetGeometry() {
+    this.geometry = new THREE.BoxGeometry(this.size, this.size, this.size);
+    this.position.set(this.x * this.size, this.y * this.size - .1, this.z * this.size)
+  }
+  
   getColor () {
     if (!this.color) {
       return null;
@@ -114,49 +160,6 @@ class GridPoint extends THREE.Mesh {
     const b = Math.round(bA + (bB - bA) * amount).toString(16).padStart(2, '0');
     return '#' + r + g + b;
   }
-  
-  onClick() {
-    this.selected = true;
-    this.setColor()
-  }
-
-  deselect() {
-    this.selected = false;
-    this.setColor()
-  }
-
-  onResize(width, height, aspect) {}
-
-  onPointerOver(e) {
-    this.hover = true;
-    this.setColor();
-  }
-
-  onPointerOut(e) {
-    this.hover = false;
-    this.setColor();
-  }
-}
-
-class Cube extends GridPoint {
-  constructor(x, z, y, color, size, gridIndex) {
-    super(x, z, y, gridIndex)
-    this.typeColor = color;
-    this.color = color;
-    this.size = size;
-    this.opacity = 1;
-    this.material = new THREE.MeshBasicMaterial({
-      color: color,
-      transparent: true,
-      opacity: 1
-    })
-    this.resetGeometry();
-  }
-
-  resetGeometry() {
-    this.geometry = new THREE.BoxGeometry(this.size, this.size, this.size);
-    this.position.set(this.x * this.size, this.y * this.size - .1, this.z * this.size)
-  }
 
   setColor (color) {
     let _color = color || this.getColor();
@@ -171,7 +174,7 @@ class Cube extends GridPoint {
   }
 }
 
-class Plane extends GridPoint {
+class Plane extends THREE.Mesh  {
   constructor(x, z, y, color, size, gridIndex) {
     super(x, z, y, gridIndex)
     this.color = color;
