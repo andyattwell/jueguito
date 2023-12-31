@@ -201,7 +201,6 @@ class Snow extends Cube {
     super(x, z, y, "#FFFFFF", size, gridIndex)
     this.type = 'snow';
     this.walkable = true;
-    this.height = 0.5
     this.setColor();
   }
 }
@@ -212,7 +211,6 @@ class Rock extends Cube {
     this.type = 'rock';
     this.walkable = false;
     this.typeColor = Math.random() < 0.5 ? "#554e5a" : "#685e70";
-    this.height = 0.5
     this.setColor();
   }
 }
@@ -224,7 +222,6 @@ class Water extends Cube {
     // this.walkable = false;
     this.walkable = true;
     this.speed = .01
-    this.height = 0.1
     this.setColor();
   }
 }
@@ -235,7 +232,6 @@ class Path extends Cube {
     this.type = 'path';
     this.walkable = true;
     this.speed = .05
-    this.height = 0.3
     this.setColor();
   }
 }
@@ -246,7 +242,6 @@ class Grass extends Cube {
     this.type = 'grass';
     this.walkable = true;
     this.speed = .04
-    this.height = 0.2
     this.setColor();
   }
 }

@@ -32,8 +32,13 @@ class Jueguito {
   
   start() {
 
-    this.camera = new THREE.PerspectiveCamera( 45, this.width / this.height, 0.01, 1000 );
-    this.camera.position.z = 5
+    // this.camera = new THREE.PerspectiveCamera( 45, this.width / this.height, 0.01, 1000 );
+    this.camera = new THREE.OrthographicCamera( this.width / - 2, this.width / 2, this.height / 2, this.height / - 2, 1, 1000 )
+    // this.camera.position.z = 0
+    // this.camera.position.x = 0
+    // this.camera.zoom = 100
+    this.camera.position.set(2, 2, 2);
+    this.camera.lookAt(0, 0, 0);
     this.scene = new THREE.Scene();
     this.renderer = new THREE.WebGLRenderer( { antialias: true } );
 
@@ -106,12 +111,13 @@ class Jueguito {
 
     this.mapa = new Mapa(self.scene, data?.grid, this.settings);
 
-    this.camera.position.y = 2
-    this.camera.position.x = this.mapa.cols / 2 * this.mapa.tileSize
-    this.camera.position.z = 3
-
-    this.camera.lookAt(0, 0, 0);
-
+    this.camera.position.y = 100
+    this.camera.position.x = this.width / 2 - this.width / 4
+    this.camera.position.z = this.width / 2 - this.width / 4
+    this.camera.zoom = 6
+    
+    // this.camera.lookAt(100,500,500);
+    this.orbitControls.update();
     this.toolbar = new Toolbar(this);
 
     // let cositas = [{

@@ -18,7 +18,7 @@ class Mapa {
     this.closedSet = [];
     this.openSet = [];
     
-    this.tileSize = 0.2;
+    this.tileSize = 2;
     
     this.offsetX = 0;
     this.offsetY = 0;
@@ -185,7 +185,7 @@ class Mapa {
   }
 
   updateInstancedMesh() {
-    const tile = new Cube(0,0,0, "#fff", .2);
+    const tile = new Cube(0,0,0, "#fff", this.tileSize);
     const mesh = new THREE.InstancedMesh(tile.geometry, tile.material, this.totalCubes);
     this.scene.add(mesh);
     
