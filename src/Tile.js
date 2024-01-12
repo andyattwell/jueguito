@@ -39,6 +39,7 @@ class GridPoint {
       }
 
       // front
+      // console.log(i, j, y, grid[i])
       if (j < rows - 1 && grid[i][j + 1][y]) {
         this.neighbors.push(grid[i][j + 1][y]);
         // front left
@@ -71,8 +72,9 @@ class GridPoint {
 }
 
 class Cube extends THREE.Mesh  {
-  constructor(x, z, y, color, size) {
+  constructor(map, x, z, y, color, size) {
     super()
+    this.map = map;
     this.x = x;
     this.z = z;
     this.y = y;
@@ -114,13 +116,15 @@ class Cube extends THREE.Mesh  {
   onResize(width, height, aspect) {}
 
   onPointerOver(e) {
-    this.hover = true;
-    this.setColor();
+    // this.hover = true;
+    // this.setColor();
+    // this.map.updateInstancedMesh();
   }
 
   onPointerOut(e) {
-    this.hover = false;
-    this.setColor();
+    // this.hover = false;
+    // this.setColor();
+    // this.map.updateInstancedMesh();
   }
 
   resetGeometry() {
@@ -190,8 +194,8 @@ class Plane extends THREE.Mesh  {
 }
 
 class Air extends Cube {
-  constructor(x, z, y, size, gridIndex) {
-    super(x, z, y, null, size, gridIndex)
+  constructor(map, x, z, y, size, gridIndex) {
+    super(map, x, z, y, null, size, gridIndex)
     this.type = 'air';
     this.walkable = true;
     this.visible = false;
@@ -200,8 +204,8 @@ class Air extends Cube {
 }
 
 class Snow extends Cube {
-  constructor(x, z, y, size, gridIndex) {
-    super(x, z, y, "#FFFFFF", size, gridIndex)
+  constructor(map, x, z, y, size, gridIndex) {
+    super(map, x, z, y, "#FFFFFF", size, gridIndex)
     this.type = 'snow';
     this.walkable = true;
     this.setColor();
@@ -209,8 +213,8 @@ class Snow extends Cube {
 }
 
 class Rock extends Cube {
-  constructor(x, z, y, size, gridIndex) {
-    super(x, z, y, "#685e70", size, gridIndex)
+  constructor(map, x, z, y, size, gridIndex) {
+    super(map, x, z, y, "#685e70", size, gridIndex)
     this.type = 'rock';
     this.walkable = false;
     this.typeColor = Math.random() < 0.5 ? "#554e5a" : "#685e70";
@@ -219,8 +223,8 @@ class Rock extends Cube {
 }
 
 class Water extends Cube {
-  constructor(x, z, y, size, gridIndex) {
-    super(x, z, y, "#2093d5", size, gridIndex);
+  constructor(map, x, z, y, size, gridIndex) {
+    super(map, x, z, y, "#2093d5", size, gridIndex);
     this.type = 'water';
     // this.walkable = false;
     this.walkable = true;
@@ -230,8 +234,8 @@ class Water extends Cube {
 }
 
 class Path extends Cube {
-  constructor(x, z, y, size, gridIndex) {
-    super(x, z, y,"#aa9f2b", size, gridIndex);
+  constructor(map, x, z, y, size, gridIndex) {
+    super(map, x, z, y,"#aa9f2b", size, gridIndex);
     this.type = 'path';
     this.walkable = true;
     this.speed = .05
@@ -240,8 +244,8 @@ class Path extends Cube {
 }
 
 class Grass extends Cube {
-  constructor(x, z, y, size, gridIndex) {
-    super(x, z, y, "#51d343", size, gridIndex);
+  constructor(map, x, z, y, size, gridIndex) {
+    super(map, x, z, y, "#51d343", size, gridIndex);
     this.type = 'grass';
     this.walkable = true;
     this.speed = .04
@@ -250,8 +254,8 @@ class Grass extends Cube {
 }
 
 class Preview extends Cube {
-  constructor(x, z, y, size) {
-    super(x, z, y, "#3af4ff", size);
+  constructor(map, x, z, y, size) {
+    super(map, x, z, y, "#3af4ff", size);
     this.type = 'preview';
     this.walkable = true;
     this.opacity = 0.8;
@@ -264,8 +268,8 @@ class Preview extends Cube {
 }
 
 class Prize extends Cube {
-  constructor(x, z, y, size) {
-    super(x, z, y, "#ce1fd7", size);
+  constructor(map, x, z, y, size) {
+    super(map, x, z, y, "#ce1fd7", size);
     this.type = 'prize';
     this.walkable = false;
     this.setColor();

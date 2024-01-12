@@ -73,8 +73,10 @@ class Controls {
       const hit = this.intersects.find((hit) => hit.object.uuid === key)
       if (hit === undefined) {
         const hoveredItem = this.hovered[key]
-        if (hoveredItem.object.onPointerOver) hoveredItem.object.onPointerOut(hoveredItem)
-        this.parent.mapa.removePreview();
+        if (this.parent.mapa.tiles[hoveredItem.instanceId] && this.parent.mapa.tiles[hoveredItem.instanceId].onPointerOver) {
+          this.parent.mapa.tiles[hoveredItem.instanceId].onPointerOut()
+        }
+        //this.parent.mapa.removePreview();
         delete this.hovered[key]
       }
     })
@@ -83,7 +85,9 @@ class Controls {
       const hit = this.intersects[0]
       if (!this.hovered[hit.object.uuid]) {
         this.hovered[hit.object.uuid] = hit
-        if (hit.object.onPointerOver && hit.object.type !== 'preview') hit.object.onPointerOver(hit)
+        if (this.parent.mapa.tiles[hit.instanceId] && hit.object.type !== 'preview') {
+          this.parent.mapa.tiles[hit.instanceId].onPointerOver()
+        }
         // Add tile preview
         if (
             this.parent.toolbar.selectedTool && 
@@ -91,8 +95,8 @@ class Controls {
             !this.parent.mapa.previewTile && 
             hit.object.type !== 'preview'
           ) {
-          this.parent.mapa.addPreview(hit);
-        }
+          }
+          // this.parent.mapa.addPreview(hit);
       }
 
       // const self = this;

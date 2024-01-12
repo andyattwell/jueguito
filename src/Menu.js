@@ -213,7 +213,7 @@ class Menu {
 
     const $form = $('<form id="generate-form">')
 
-    let mapHeight = this.parent.settings.mapHeight || 40;
+    let mapDepth = this.parent.settings.mapDepth || 40;
     let mapWidth = this.parent.settings.mapWidth || 40;
     let mapNoiseScale = this.parent.settings.mapNoiseScale || 0.250;
     let mapNoiseOctaves = this.parent.settings.mapNoiseOctaves || 3;
@@ -229,10 +229,10 @@ class Menu {
     $form.append(
       $('<div class="form-group row mb-3">').append(
         $('<div class="col-sm-3">').append(
-          $('<label for="mapHeight" class="form-label ms-3">Rows</label>')
+          $('<label for="mapDepth" class="form-label ms-3">Rows</label>')
           ),
           $('<div class="col-sm-9">').append(
-          $('<input type="number" name="mapHeight" id="mapHeight" value="'+mapHeight+'" class="form-control"/>')
+          $('<input type="number" name="mapDepth" id="mapDepth" value="'+mapDepth+'" class="form-control"/>')
         )
       )
     )

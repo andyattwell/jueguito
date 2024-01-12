@@ -10,7 +10,8 @@ class Mapa {
   constructor(scene, data = [], options = {}) {
 
     this.cols = options.mapWidth ? parseInt(options.mapWidth) : 40;
-    this.rows = options.mapHeight ? parseInt(options.mapHeight) : 40;
+    this.rows = options.mapDepth ? parseInt(options.mapDepth) : 40;
+    this.height = options.mapHeight ? parseInt(options.mapHeight) : 40;
 
     this.maxZ = 12;
     this.grid = [];
@@ -25,6 +26,8 @@ class Mapa {
     this.offsetY = 0;
 
     this.scene = scene;
+
+    this.generateGrid();
 
     if (data.length) {
       this.import(data);
@@ -86,100 +89,56 @@ class Mapa {
     this.updateNeighbors();
   }
 
-  generate(options = {}) {
-    // Generate noise
-    let mapFlat = options.mapFlat ? options.mapFlat : false;
-    let mapAltitude = options.mapAltitude ? parseInt(options.mapAltitude) : null;
-    if (mapAltitude && mapAltitude > 0) {
-      mapAltitude = mapAltitude * .1;
-    } else if (mapAltitude && mapAltitude < 0) {
-      mapAltitude = 0.1
+  generateGrid() {
+    let count = 0;
+    for (let x = 0; x < this.cols; x++) {
+      this.grid[x] = new Array(this.rows);
+      for (let z = 0; z < this.rows; z++) {
+        this.grid[x][z] = new Array(this.height);
+        for (let y = 0; y < this.height; y++) {
+          this.grid[x][z][y] = new GridPoint(
+            x,
+            z,
+            y,
+            count
+          );
+          count++;
+        }
+      }
     }
+  }
 
-    let mapWidth = options.mapWidth ? parseInt(options.mapWidth) : this.cols;
-    let mapHeight = options.mapHeight ? parseInt(options.mapHeight) : this.rows;
-    this.mapSeed = options.mapSeed ? parseFloat(options.mapSeed) : Math.random();
-    let mapNoiseScale = options.mapNoiseScale ? parseFloat(options.mapNoiseScale) : this.mapSeed * .3;
-    let mapNoiseOctaves = options.mapNoiseOctaves ? parseInt(options.mapNoiseOctaves) : 3;
-    let mapNoisePersistance = options.mapNoisePersistance ? parseFloat(options.mapNoisePersistance) : this.mapSeed;
-    let mapNoiseLacunarity = options.mapNoiseLacunarity ? parseFloat(options.mapNoiseLacunarity) : this.mapSeed;
-    let mapNoiseOffset = options.offset ? options.offset : {
-      x:  this.mapSeed * 1000,
-      y:  this.mapSeed * 1000
-    };
-
-    mapNoiseOffset.x = parseInt(mapNoiseOffset.x)
-    mapNoiseOffset.y = parseInt(mapNoiseOffset.y)
-
-    //making a 2D array
-    // for (let i = 0; i < mapWidth; i++) {
-    //   this.grid[i] = new Array(mapWidth);
-    //   for (let x = 0; x < mapHeight; x++) {
-    //     this.grid[i][x] = new Array();
-    //   }
-    // }
-
-    let noiseMap = new Array(mapWidth);
-    if (mapFlat) {
-      // for (let x = 0; x < mapWidth; x++) {
-      //   noiseMap[x] = new Array(mapHeight)
-      //   for (let y = 0; y < mapHeight; y++) {
-      //     noiseMap[x][y] = mapAltitude;
-      //   }
-      // }
-    } else {
-      noiseMap = this.noiseGenerator.generateNoiseMap(
-        mapWidth,
-        mapHeight,
-        this.mapSeed,
-        mapNoiseScale, 
-        mapNoiseOctaves, 
-        mapNoisePersistance, 
-        mapNoiseLacunarity, 
-        mapNoiseOffset
-      );
+  generate(options = {}) {
+    this.generateGrid(options);
+    let noiseMap;
+    if (!options.mapFlat) {
+      noiseMap = this.noiseGenerator.generateNoiseMap(options);
     }
 
     let count = 0;
-    for (let x = 0; x < mapWidth; x++) {
-      this.grid[x] = new Array(mapWidth);
-
-      for (let z = 0; z < mapHeight; z++) {
-        
-        this.grid[x][z] = new Array();
-        let currentHeight = !mapFlat ? parseInt(noiseMap[x][z] * 10 - 1) : mapAltitude;
+    for (let x = 0; x < this.cols; x++) {
+      for (let z = 0; z < this.rows; z++) {
+        let currentHeight = !options.mapFlat ? parseInt(noiseMap[x][z] * 15) : options.mapAltitude;
         currentHeight = currentHeight < 0 ? 0 : currentHeight;
 
         for (let h = 0; h <= currentHeight; h++) {
-          if (mapAltitude && h >= mapAltitude * 10) {
+          if (options.mapAltitude && h >= options.mapAltitude * 10) {
             continue;
           }
-          let tileHeight = currentHeight;
-          if (mapFlat) {
-            tileHeight = 3;
-          }
 
-          let tile = this.getTileFromNoise(x, z, h, tileHeight);
+          let tile = this.getTileFromNoise(x, z, h, currentHeight);
 
           if (tile) {
-            this.grid[x][z][h] = new GridPoint(
-              x,
-              z,
-              h,
-              this.tileSize,
-              count
-            );
             this.tiles[count] = new tile(
+              this,
               x,
               z,
               h,
               this.tileSize,
               count
             );
-
             count++;
           }
-
         }
       }
     }
@@ -193,13 +152,13 @@ class Mapa {
   }
 
   updateInstancedMesh() {
-    let mesh = this.scene.getObjectByName('meshmap');
-    if (mesh) {
-      mesh.dispose();
-      this.scene.remove(mesh)
+
+    if (this.scene.getObjectByName('meshmap')) {
+      this.scene.getObjectByName('meshmap').dispose();
+      this.scene.remove(this.scene.getObjectByName('meshmap'))
     }
-    const tile = new Cube(0,0,0, "#fff", this.tileSize);
-    mesh = new THREE.InstancedMesh(tile.geometry, tile.material, this.tiles.length);
+    const tile = new Cube(this, 0, 0, 0, "#fff", this.tileSize);
+    const mesh = new THREE.InstancedMesh(tile.geometry, tile.material, this.tiles.length);
     mesh.name = 'meshmap';
     this.scene.add(mesh);
     mesh.updateMatrix();
@@ -219,8 +178,12 @@ class Mapa {
 
   }
 
-  getTileFromNoise(x, z, h, noiseVal) {
+  getTileFromNoise(x, z, h, noiseVal, flat) {
 
+    if (flat) {
+      noiseVal = 3;
+    }
+    
     if (noiseVal !== h) {
       if (
         (x === 0) ||
@@ -236,12 +199,16 @@ class Mapa {
     }
 
     noiseVal = parseInt(noiseVal)
-    if (noiseVal > 5) {
+    noiseVal = h;
+    console.log(noiseVal)
+    if (noiseVal >= 12) {
       return Snow;
-    } else if (noiseVal <= 5 && noiseVal >= 3) {
+    } else if (noiseVal <= 11 && noiseVal >= 7) {
       return parseInt(Math.random() * 8) <= 0 ? Path : Rock;
-    } else if (noiseVal <= 3 && noiseVal >= 1) {
-      return parseInt(Math.random() * 8) <= 0 ? Path : Grass;
+    } else if (noiseVal <= 6 && noiseVal >= 4) {
+      return Grass;
+    } else if (noiseVal <= 6 && noiseVal >= 4) {
+      return parseInt(Math.random() * 8) <= 0 ? Grass : Path;
     } else {
       return Water;
     }
@@ -499,10 +466,7 @@ class Mapa {
     if (!tile) {
       return false;
     }
-    tile.select();
-    // if (tile.z > 0 && this.grid[tile.x][tile.y][tile.z - 1]) {
-    //   this.grid[tile.x][tile.y][tile.z - 1].occupied = false;
-    // }
+
     delete this.grid[tile.x][tile.y][tile.z];
     this.updateNeighbors();
 
@@ -523,6 +487,7 @@ class Mapa {
     //   x = parseInt(this.previewTile.x);
     //   y = parseInt(this.previewTile.y);
     //   z = parseInt(this.previewTile.z);
+    //   this.removePreview();
     // }
 
     if (x < 0 || x >= this.cols || z < 0 || z >= this.rows || y < 0 || y >= this.maxZ) {
@@ -531,33 +496,42 @@ class Mapa {
 
     let entity = this.getTileTypeFromString(newType)
 
-    const newTile = new entity(x, z, y, tile.size)
-    tile.occupied = true;
+    const newTile = new entity(x, z, y, tile.size);
     this.grid[x][z][y] = new GridPoint(x, z, y);
-    this.tiles.push(newTile)
+    console.log('add', newTile)
+    this.tiles.push(newTile);
     this.updateNeighbors();
-    // this.removePreview();
-    // this.scene.add(newTile);
     this.updateInstancedMesh();
   }
 
   addPreview(hit, newType) {
-    const tile = hit.object;
-    const x = tile.x + hit.normal.x
-    const y = tile.y + hit.normal.y
-    const z = tile.z + hit.normal.z
+    console.log('addPreview')
+    const tile = this.tiles[hit.instanceId];
+    
+    let x = parseInt(tile.x + hit.normal.x)
+    let y = parseInt(tile.y + hit.normal.y)
+    let z = parseInt(tile.z + hit.normal.z)
 
-    if (z >= this.maxZ) {
+    if (x < 0 || x >= this.cols || z < 0 || z >= this.rows || y < 0 || y >= this.maxZ) {
       return false;
     }
     
-    this.previewTile = new Preview(x, y, z, tile.size)
-    this.scene.add(this.previewTile);
+    const prev = new Preview(x, z, y, tile.size)
+    this.tiles.push(prev);
+    this.previewTile = prev;
+    // this.previewTile.instanceId = hit.instanceId;
+    this.updateInstancedMesh();
   }
 
   removePreview() {
-    this.scene.remove(this.previewTile);
+    if (!this.previewTile) {
+      return false;
+    }
+    console.log('remove', this.previewTile)
+    delete this.tiles[this.previewTile.instanceId];
     this.previewTile = null;
+    this.updateInstancedMesh();
+
   }
 
   replaceTile(tile, newType) {
