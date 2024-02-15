@@ -213,18 +213,24 @@ class Menu {
 
     const $form = $('<form id="generate-form">')
 
-    let mapDepth = this.parent.settings.mapDepth || 40;
-    let mapWidth = this.parent.settings.mapWidth || 40;
-    let mapNoiseScale = this.parent.settings.mapNoiseScale || 0.250;
-    let mapNoiseOctaves = this.parent.settings.mapNoiseOctaves || 3;
-    let mapNoisePersistance = this.parent.settings.mapNoisePersistance || 0.755;
-    let mapNoiseLacunarity = this.parent.settings.mapNoiseLacunarity || 0.130;
-    let offsetX = this.parent.settings.offset.x || 0;
-    let offsetY = this.parent.settings.offset.y || 0;
-    let mapFlat = this.parent.settings.mapFlat || false;
-    let mapAltitude = this.parent.settings.mapAltitude || 6;
-    let mapSeedStr = this.parent.settings.mapSeedStr || Math.random();
-    
+    console.log(this.parent)
+    let settings = {
+      mapHeight: 40,
+      mapWidth: 40,
+      mapNoiseScale: 0.250,
+      mapNoiseOctaves: 3,
+      mapNoisePersistance: 0.755,
+      mapNoiseLacunarity: 0.130,
+      offset: {
+        x: 0,
+        y: 0
+      },
+      mapFlat: false,
+      mapAltitude: 6,
+      mapSeedStr: Math.random(),
+      ...this.parent.settings
+    }
+
     // Cols
     $form.append(
       $('<div class="form-group row mb-3">').append(
@@ -232,7 +238,7 @@ class Menu {
           $('<label for="mapDepth" class="form-label ms-3">Rows</label>')
           ),
           $('<div class="col-sm-9">').append(
-          $('<input type="number" name="mapDepth" id="mapDepth" value="'+mapDepth+'" class="form-control"/>')
+          $('<input type="number" name="mapHeight" id="mapHeight" value="'+settings.mapHeight+'" class="form-control"/>')
         )
       )
     )
@@ -244,7 +250,7 @@ class Menu {
           $('<label for="mapWidth" class="form-label ms-3">Cols</label>')
           ),
           $('<div class="col-sm-9">').append(
-          $('<input type="number" name="mapWidth" id="mapWidth" value="'+mapWidth+'" class="form-control"/>')
+          $('<input type="number" name="mapWidth" id="mapWidth" value="'+settings.mapWidth+'" class="form-control"/>')
         )
       )
     )
@@ -256,7 +262,7 @@ class Menu {
           $('<label for="mapNoiseScale" class="form-label ms-3">Scale</label>')
           ),
           $('<div class="col-sm-9">').append(
-          $('<input type="number" value="'+mapNoiseScale+'" step="0.001" min="0.001" max="1" name="mapNoiseScale" id="mapNoiseScale" class="form-control"/>')
+          $('<input type="number" value="'+settings.mapNoiseScale+'" step="0.001" min="0.001" max="1" name="mapNoiseScale" id="mapNoiseScale" class="form-control"/>')
         )
       )
     )
@@ -268,7 +274,7 @@ class Menu {
           $('<label for="mapNoiseOctaves" class="form-label ms-3">Octaves</label>')
           ),
           $('<div class="col-sm-9">').append(
-          $('<input type="number" min="1" max="6" value="'+mapNoiseOctaves+'" name="mapNoiseOctaves" id="mapNoiseOctaves" class="form-control"/>')
+          $('<input type="number" min="1" max="6" value="'+settings.mapNoiseOctaves+'" name="mapNoiseOctaves" id="mapNoiseOctaves" class="form-control"/>')
         )
       )
     )
@@ -280,7 +286,7 @@ class Menu {
           $('<label for="mapNoisePersistance" class="form-label ms-3">Persistance</label>')
           ),
           $('<div class="col-sm-9">').append(
-          $('<input type="number" min="0.001" step="0.001" max="1" value="'+mapNoisePersistance+'" name="mapNoisePersistance" id="mapNoisePersistance" class="form-control"/>')
+          $('<input type="number" min="0.001" step="0.001" max="1" value="'+settings.mapNoisePersistance+'" name="mapNoisePersistance" id="mapNoisePersistance" class="form-control"/>')
         )
       )
     )
@@ -292,7 +298,7 @@ class Menu {
           $('<label for="mapNoiseLacunarity" class="form-label ms-3">Lacunarity</label>')
           ),
           $('<div class="col-sm-9">').append(
-          $('<input type="number" value="'+mapNoiseLacunarity+'" min="0.0001" max="1" step="0.0001" name="mapNoiseLacunarity" id="mapNoiseLacunarity" class="form-control"/>')
+          $('<input type="number" value="'+settings.mapNoiseLacunarity+'" min="0.0001" max="1" step="0.0001" name="mapNoiseLacunarity" id="mapNoiseLacunarity" class="form-control"/>')
         )
       )
     )
@@ -308,10 +314,10 @@ class Menu {
         $('<div class="col-sm-9">').append(
           $('<div class="form-group row">').append(
             $('<div class="col-sm-6">').append(
-              $('<input type="number" value="'+offsetX+'" name="offset[x]" id="offsetX" class="form-control"/>')
+              $('<input type="number" value="'+settings.offset.x+'" name="offset[x]" id="offsetX" class="form-control"/>')
             ),
             $('<div class="col-sm-6">').append(
-              $('<input type="number" value="'+offsetY+'" name="offset[y]" id="offsetY" class="form-control"/>')
+              $('<input type="number" value="'+settings.offset.y+'" name="offset[y]" id="offsetY" class="form-control"/>')
             )
           )
         )
@@ -325,13 +331,13 @@ class Menu {
           $('<label for="mapFlat" class="form-label ms-3">Flat</label>'),
         ),
         $('<div class="col-sm-1">').append(
-          $('<input type="checkbox" name="mapFlat" id="mapFlat" ' + mapFlat ? 'checked' : '' + ' class="form-check-input ms-1"/>'),
+          $('<input type="checkbox" name="mapFlat" id="mapFlat" ' + settings.mapFlat ? 'checked' : '' + ' class="form-check-input ms-1"/>'),
         ),
         $('<div class="col-sm-3">').append(
           $('<label for="mapAltitude" class="form-label ms-3">Height</label>'),
         ),
         $('<div class="col-sm-3">').append(
-          $('<input type="number" name="mapAltitude" id="mapAltitude" min="0" max="8" value="'+mapAltitude+'" class="form-control"/>'),
+          $('<input type="number" name="mapAltitude" id="mapAltitude" min="0" max="8" value="'+settings.mapAltitude+'" class="form-control"/>'),
         )
       )
     )
@@ -343,7 +349,7 @@ class Menu {
           $('<label for="mapSeedStr" class="form-label ms-3">Seed</label>')
           ),
           $('<div class="col-sm-9">').append(
-          $('<input type="text" name="mapSeedStr" id="mapSeedStr" value="'+mapSeedStr+'" class="form-control"/>')
+          $('<input type="text" name="mapSeedStr" id="mapSeedStr" value="'+settings.mapSeedStr+'" class="form-control"/>')
         )
       )
     )
