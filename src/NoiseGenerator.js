@@ -21,8 +21,8 @@ class NoiseGenerator {
       mapAltitude = 0.1
     }
 
-    let mapWidth = options.mapWidth ? parseInt(options.mapWidth) : this.cols;
-    let mapDepth = options.mapDepth ? parseInt(options.mapDepth) : this.rows;
+    let mapWidth = options.mapWidth;
+    let mapDepth = options.mapHeight;
     // this.mapSeed = options.mapSeed ? parseFloat(options.mapSeed) : Math.random();
     let seed = options.mapSeed ? parseFloat(options.mapSeed) : Math.random();
     let scale = options.mapNoiseScale ? parseFloat(options.mapNoiseScale) : this.mapSeed * .3;
@@ -86,7 +86,7 @@ class NoiseGenerator {
 				noiseMap[x][y] = noiseHeight;
 			}
 		}
-
+		
 		for (let x = 0; x < mapWidth; x++) {
 			for (let y = 0; y < mapDepth; y++) {
 				noiseMap[x][y] = THREE.MathUtils.inverseLerp(minNoiseHeight, maxNoiseHeight, noiseMap[x][y]);
