@@ -46,12 +46,12 @@ class Jueguito {
   generateMap(data = null) {
     const self = this;
 
-    if (this.mapa) {
-      let r = confirm('The current map will be lost.')
-      if (!r) {
-        return false;
-      }
-    }
+    // if (this.mapa) {
+    //   let r = confirm('The current map will be lost.')
+    //   if (!r) {
+    //     return false;
+    //   }
+    // }
 
     $('canvas').remove();
     this.ctx = null;
@@ -75,6 +75,8 @@ class Jueguito {
       cositas = data.cositas;
     } else {
       cositas.push({x:1, y:1})
+      cositas.push({x:2, y:2})
+      cositas.push({x:3, y:3})
     }
 
     self.addCositas(cositas);

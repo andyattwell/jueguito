@@ -131,20 +131,20 @@ class Cosita {
 
     let nextX = this.x;
     let nextY = this.y;
-
+    const speed = (targetCell.speed || 0.1) * this.speed
     if (diffX >= 1) {
       if (targetPosX > this.x) {
-        nextX += this.speed; 
+        nextX += speed; 
       } else if (targetPosX < this.x) {
-        nextX -= this.speed; 
+        nextX -= speed; 
       }
     }
 
     if (diffY >= 1) {
       if (targetPosY > this.y) {
-        nextY += this.speed;
+        nextY += speed;
       } else if (targetPosY < this.y) {
-        nextY -= this.speed;
+        nextY -= speed;
       }
     }
 

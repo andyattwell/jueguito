@@ -92,6 +92,7 @@ class Water extends Tile {
     this.type = 'water';
     this.walkable = true;
     this.color = "#2093d5";
+    this.speed = .1
   }
 }
 
@@ -101,6 +102,7 @@ class Path extends Tile {
     this.type = 'path';
     this.walkable = true;
     this.color = "#aa9f2b";
+    this.speed = 1
   }
 }
 
@@ -110,6 +112,7 @@ class Snow extends Tile {
     this.type = 'grass';
     this.walkable = true;
     this.color = "#ffffff";
+    this.speed = .2
   }
 }
 
@@ -119,6 +122,7 @@ class Grass extends Tile {
     this.type = 'grass';
     this.walkable = true;
     this.color = "#51d343";
+    this.speed = .5
   }
 }
 
@@ -232,11 +236,13 @@ class Mapa {
     // noiseVal = h;
     if (noiseVal >= 12) {
       return Snow;
-    } else if (noiseVal <= 11 && noiseVal >= 7) {
-      return parseInt(Math.random() * 8) <= 0 ? Path : Rock;
+    } else if (noiseVal <= 11 && noiseVal >= 9) {
+      return parseInt(Math.random() * 2) <= 0 ? Path : Rock;
+    } else if (noiseVal <= 9 && noiseVal >= 7) {
+      return parseInt(Math.random() * 8) <= 0 ? Rock : Path;
     } else if (noiseVal <= 6 && noiseVal >= 4) {
       return Grass;
-    } else if (noiseVal <= 4 && noiseVal >= 1) {
+    } else if (noiseVal <= 4 && noiseVal >= 2) {
       return parseInt(Math.random() * 8) <= 0 ? Grass : Path;
     } else {
       return Water;
@@ -349,7 +355,7 @@ class Mapa {
           neighbor.g = possibleG;
           neighbor.h = this.heuristic(neighbor, end);
           neighbor.f = neighbor.g + neighbor.h;
-
+          neighbor.f -= (parseInt(neighbor.speed * 500))
           neighbor.f += neighbor.walkable !== true ? 10000 : 0;
           neighbor.f += neighbor.occupied ? 10000 : 0;
 
