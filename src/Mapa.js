@@ -1,4 +1,6 @@
 import $ from 'jquery';
+import NoiseGenerator from './NoiseGenerator.js';
+const noiseGenerator = new NoiseGenerator()
 
 //constructor function to create all the grid points as objects containind the data for the points
 class GridPoint {
@@ -88,7 +90,7 @@ class Water extends Tile {
   constructor(x, y, id, size) {
     super(x, y, id, size);
     this.type = 'water';
-    this.walkable = false;
+    this.walkable = true;
     this.color = "#2093d5";
   }
 }
@@ -99,6 +101,15 @@ class Path extends Tile {
     this.type = 'path';
     this.walkable = true;
     this.color = "#aa9f2b";
+  }
+}
+
+class Snow extends Tile {
+  constructor(x, y, id, size) {
+    super(x, y, id, size);
+    this.type = 'grass';
+    this.walkable = true;
+    this.color = "#ffffff";
   }
 }
 
@@ -187,18 +198,23 @@ class Mapa {
     for (let i = 0; i < this.cols; i++) {
       this.grid[i] = new Array(this.rows);
     }
-
+    const options = {
+      mapAltitude: 100,
+      mapWidth: this.cols,
+      mapHeight: this.rows,
+      mapNoiseScale: 0.3,
+      mapNoisePersistance: 4000,
+      mapNoiseLacunarity: .4234
+    }
+    let noiseMap = noiseGenerator.generateNoiseMap(options);
+    console.log(noiseMap)
     for (let x = 0; x < this.cols; x++) {
       for (let y = 0; y < this.rows; y++) {
-        let type = this.getRandomTile();
-        let entity = Path;
-        if (type === 'rock') {
-          entity = Rock;
-        } else if (type === 'water') {
-          entity = Water;
-        } else if (type === 'grass') {
-          entity = Grass;
-        }
+        
+        let currentHeight = parseInt(noiseMap[x][y] * 15);
+        
+        // let entity = this.getRandomTile();
+        let entity = this.getTileFromNoise(currentHeight);
         this.grid[x][y] = new entity(
           x,
           y, 
@@ -209,6 +225,22 @@ class Mapa {
     }
   
     this.updateNeighbors();
+  }
+
+  getTileFromNoise(noiseVal) {
+    noiseVal = parseInt(noiseVal)
+    // noiseVal = h;
+    if (noiseVal >= 12) {
+      return Snow;
+    } else if (noiseVal <= 11 && noiseVal >= 7) {
+      return parseInt(Math.random() * 8) <= 0 ? Path : Rock;
+    } else if (noiseVal <= 6 && noiseVal >= 4) {
+      return Grass;
+    } else if (noiseVal <= 4 && noiseVal >= 1) {
+      return parseInt(Math.random() * 8) <= 0 ? Grass : Path;
+    } else {
+      return Water;
+    }
   }
 
   updateNeighbors() {
@@ -250,15 +282,15 @@ class Mapa {
       return [];
     }
 
-    if (end.walkable !== true || end.occupied === true) {
-      let newEnd = null
-      for (let index = 0; index < end.neighbors.length; index++) {
-        if (!newEnd && end.neighbors[index].walkable === true && end.neighbors[index].occupied === false){
-          newEnd = end.neighbors[index];
-        }
-      }
-      end = newEnd;
-    }
+    // if (end.walkable !== true || end.occupied === true) {
+    //   let newEnd = null
+    //   for (let index = 0; index < end.neighbors.length; index++) {
+    //     if (!newEnd && end.neighbors[index].walkable === true && end.neighbors[index].occupied === false){
+    //       newEnd = end.neighbors[index];
+    //     }
+    //   }
+    //   end = newEnd;
+    // }
     
     while (openSet.length > 0) {
       //assumption lowest index is the first one to begin with
@@ -449,7 +481,16 @@ class Mapa {
     //   'path', 
     // ];
     const randomNumber = parseInt(Math.random() * types.length);
-    return types[randomNumber];
+
+    let entity = Path;
+    if (types[randomNumber] === 'rock') {
+      entity = Rock;
+    } else if (types[randomNumber] === 'water') {
+      entity = Water;
+    } else if (types[randomNumber] === 'grass') {
+      entity = Grass;
+    }
+    return entity;
   }
 
   tileClickHandler($tileDiv, x, y) {
