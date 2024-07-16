@@ -6,6 +6,7 @@ import Controls from "./Controls.js"
 import Toolbar from "./Toolbar.js";
 // import Inspector from "./Inspector.js";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { Plane } from './Tile.js';
 
 class Jueguito {
   constructor() {
@@ -28,6 +29,8 @@ class Jueguito {
     this.time = 0;
     this.orbitControls = null;
 
+    this.pathOverlay = new THREE.Object3D()
+    this.selectOverlay = new THREE.Object3D();
   }
   
   start() {
@@ -76,6 +79,7 @@ class Jueguito {
     // }
     this.renderScene();
     this.updateCositas(time);
+    this.renderer.updateProjectionMatrix
     this.toolbar && this.toolbar.renderInfo();
     
     requestAnimationFrame( (time) => {
@@ -103,6 +107,12 @@ class Jueguito {
 
     this.mapa = new Mapa(self.scene, data?.grid, this.settings);
 
+    this.pathOverlay = new THREE.Object3D();
+    this.scene.add(this.pathOverlay);
+    this.selectOverlay = new THREE.Object3D();
+    this.scene.add(this.selectOverlay);
+
+    this.resize();
     this.camera.position.y = 650
     this.camera.position.x = this.width / 2 - this.width / 4
     this.camera.position.z = this.width / 2 - this.width / 4
@@ -114,6 +124,7 @@ class Jueguito {
     }
     this.toolbar = new Toolbar(this);
 
+    this.cositas = []
     // data.cositas = [{
     //   x: 10,
     //   y: 10
@@ -132,6 +143,7 @@ class Jueguito {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize( window.innerWidth, window.innerHeight );
+    this.renderer.setPixelRatio(window.devicePixelRatio);
   }
 
   addLight() {
@@ -148,7 +160,7 @@ class Jueguito {
 
   addCositas(cositas = []) {
     for (let index = 0; index < cositas.length; index++) {
-      let cosita = new Cosita(this.mapa, cositas[index], this.time);
+      let cosita = new Cosita(this, this.mapa, cositas[index], this.time);
       this.cositas.push(cosita);
       this.scene.add(cosita);
     }
@@ -194,8 +206,14 @@ class Jueguito {
   }
 
   updateCositas(time) {
+    this.pathOverlay.clear()
+
     this.cositas.forEach((cosita) => {
       cosita.update(time);
+
+      if (cosita.currentPath) {
+        this.paintPath(cosita.currentPath)
+      }
     })
   }
 
@@ -251,24 +269,26 @@ class Jueguito {
     return null;
   }
 
+  paintPath(pathArray) {
+    if (pathArray && pathArray.length >= 1) {
+      pathArray.forEach((gridPoint, i) => {
+        const plane = new Plane(gridPoint.x, gridPoint.y, gridPoint.z, "#FFFFF", gridPoint.tile.size, i)
+        this.pathOverlay.add(plane)
+      });
+    }
+  }
+
   selectTile(instanceId) {
-
+    this.selectOverlay.clear();
     const tile = this.mapa.tiles[instanceId];
-
-    console.log({gridPoint: this.mapa.grid[tile.x][tile.z][tile.y]})
-    
-    if (this.target_selected) {
-      this.target_selected.deselect();
+    if (!tile) {
+      console.log('Tile not found', instanceId)
+      return;
     }
-
-    if (tile) {
-      tile.select();
-    }
-
+    const gridPoint = this.mapa.grid[tile.x][tile.z][tile.y];
+    const plane = new Plane(gridPoint.x, gridPoint.y, gridPoint.z, "#FFFFF", tile.size, 0)
+    this.selectOverlay.add(plane);
     this.target_selected = tile;
-    this.mapa.updateInstancedMesh();
-    
-    this.scene.remove()
   }
 
 }

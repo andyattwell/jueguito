@@ -58,6 +58,10 @@ class Controls {
     window.addEventListener("pointermove", (e) => {
       self.mouseMoveHandler(e)
     });
+
+    window.addEventListener("resize", (e) => {
+      this.parent.resize();
+    });
   }
 
   mouseMoveHandler(e) {
@@ -96,7 +100,7 @@ class Controls {
             hit.object.type !== 'preview'
           ) {
           }
-          this.parent.mapa.addPreview(hit);
+          // this.parent.mapa.addPreview(hit);
       }
 
       // const self = this;
@@ -230,7 +234,7 @@ class Controls {
   rightClickHandler(e) {
     e.preventDefault();
     const hit = this.intersects[0]
-    if (this.parent.cosita_selected) {
+    if (hit && this.parent.cosita_selected) {
       // this.parent.cosita_selected.deselect()
       // this.parent.cosita_selected.following = false;
       // this.parent.cosita_selected = null;

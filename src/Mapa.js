@@ -26,6 +26,8 @@ class Mapa {
     this.offsetY = 0;
 
     this.scene = scene;
+    this.mesh = new THREE.Object3D()
+    this.scene.add(this.mesh)
 
     this.generateGrid();
 
@@ -81,7 +83,7 @@ class Mapa {
             tileData.z,
             tileData.size
           );
-          this.scene.add( this.grid[x][y][z] );
+          this.mesh.add( this.grid[x][y][z] );
         }
 
       }
@@ -140,11 +142,9 @@ class Mapa {
               this.tileSize,
               count
             );
-            // console.log(h, this.grid[x][z])
             this.grid[x][z][h] = new GridPoint(x, z, h, count)
             this.grid[x][z][h].tile = newTile
             this.tiles[count] = newTile;
-            // this.grid[x][z][h].tile = this.tiles[count];
             count++;
           }
         }
@@ -168,7 +168,7 @@ class Mapa {
     const tile = new Cube(this, 0, 0, 0, "#fff", this.tileSize);
     const mesh = new THREE.InstancedMesh(tile.geometry, tile.material, this.tiles.length);
     mesh.name = 'meshmap';
-    this.scene.add(mesh);
+    this.mesh.add(mesh);
     
     let current = 0;
     for (let x = 0; x < this.tiles.length; x++) {
@@ -259,6 +259,10 @@ class Mapa {
     }
   }
 
+  getRandomNumber(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
   findPath(start, end) {
 
     if (!end || !start) {
@@ -316,7 +320,11 @@ class Mapa {
       let neighbors = current.neighbors;
 
       for (let i = 0; i < neighbors.length; i++) {
+        // let randIndex = this.getRandomNumber(0, neighbors.length - 1)
         let neighbor = neighbors[i];
+        if (!neighbor) {
+          console.log('NOT FOUND', randIndex, neighbors)
+        }
         const topGridPoint = this.grid[neighbor.x][neighbor.y][neighbor.z + 1];
         if (
           !neighbor ||
@@ -338,10 +346,7 @@ class Mapa {
           neighbor.g = possibleG;
           try {
             neighbor.h = this.heuristic(neighbor, end);
-
           } catch (error) {
-            console.log({neighbor, end})
-            console.log({error})
             openSet = [];
             closedSet = [];
             return [];
@@ -380,10 +385,10 @@ class Mapa {
 
   heuristic(position0, position1) {
     let d1 = Math.abs(position1.x - position0.x);
-    let d2 = Math.abs(position1.y - position0.y);
+    // let d2 = Math.abs(position1.y - position0.y);
     let d3 = Math.abs(position1.z - position0.z);
     
-    return d1 + d2 + d3;
+    return d1 + d3;
   }
 
   clearAll() {
@@ -413,7 +418,7 @@ class Mapa {
             //   newZ = tile.z * tile.size;
             // }
             // tile.position.set(tile.left, tile.top, newZ)
-            this.scene.add( tile );
+            this.mesh.add( tile );
           }
         }
       }
@@ -545,8 +550,8 @@ class Mapa {
     const newTile = new entity(tile.x, tile.y, tile.z, tile.size)
     this.grid[tile.x][tile.y][tile.z] = newTile;
 
-    this.scene.remove(tile);
-    this.scene.add(newTile);
+    this.mesh.remove(tile);
+    this.mesh.add(newTile);
 
     this.updateNeighbors();
   }

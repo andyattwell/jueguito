@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 class Cosita extends THREE.Mesh {
-  constructor(map, spawn, time) {
+  constructor(game, map, spawn, time) {
     super()
-
+    this.game = game;
     this.type = 'cosita';
     this.width = 4;
     this.height = 4;
@@ -237,15 +237,13 @@ class Cosita extends THREE.Mesh {
       return false;
     }
 
-    let targetCell = this.currentPath[0];
-    
-    if (!targetCell) {
-      return false;
-    }
-    
     this.checkQueuedAction()
 
-    this.updatePositionRotation(targetCell, time)
+    if (!this.currentPath || !this.currentPath.length) {
+      return false;
+    }    
+    
+    this.updatePositionRotation(this.currentPath[0], time)
 
   }
 
@@ -353,24 +351,21 @@ class Cosita extends THREE.Mesh {
     this.currentPath = this.map.findPath(this.current, endTile)
       .filter((tile) => tile !== self.current);
     
+    console.log('currentPath', this.currentPath)
     if (this.queuedAction && (!this.currentPath || this.currentPath.length === 0)) {
       console.log('Not reachable', this.queuedAction)
       this.queuedAction = null;
       this.lookForStuff = false;
     }
 
-    this.paintPath()
+    // this.paintPath()
   }
 
-  paintPath() {
-    if (this.currentPath && this.currentPath.length >= 1) {
-      this.currentPath.map(gridPoint => {
-        gridPoint.tile.planned = true;
-        gridPoint.tile.setColor();
-        return gridPoint;
-      });
-    }
-  }
+  // paintPath() {
+  //   if (this.currentPath && this.currentPath.length >= 1) {
+  //     this.game.paintPath(this.currentPath)
+  //   }
+  // }
 
   clearPath() {
     if (this.currentPath && this.currentPath.length >= 1) {

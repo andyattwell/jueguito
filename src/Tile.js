@@ -21,55 +21,28 @@ class GridPoint {
     let y = this.y;
     let z = this.z;
 
-    // const minY = this.y >= 1 ? this.y - 1 : 0;
-    // const maxY = this.y + 1;
-
     this.neighbors = [];
 
-    // the floor (z 0) is a plane with no height
+    // left
+    if (x < cols - 1 && grid[x + 1][z][y]) {
+      // console.log({left: grid[i + 1][j][z]})
+      this.neighbors.push(grid[x + 1][z][y]);
+    }
 
-    // for (let y = minY; y <= maxY; y++) {
-      // left
-      if (x < cols - 1 && grid[x + 1][y][z]) {
-        // console.log({left: grid[i + 1][j][z]})
-        this.neighbors.push(grid[x + 1][y][z]);
-      }
+    // right
+    if (x > 0 && grid[x - 1][z][y]) {
+      this.neighbors.push(grid[x - 1][z][y]);
+    }
 
-      // right
-      if (x > 0 && grid[x - 1][y][z]) {
-        this.neighbors.push(grid[x - 1][y][z]);
-      }
+    // front
+    if (y < rows - 1 && grid[x][z + 1] && grid[x][z + 1][y]) {
+      this.neighbors.push(grid[x][z + 1][y]);
+    }
 
-      // front
-      // console.log(i, j, y, grid[i])
-      if (z < rows - 1 && grid[x][z + 1][y]) {
-        this.neighbors.push(grid[x][z + 1][y]);
-        // front left
-        // if (i < cols - 1 && grid[i + 1][j + 1][z]) {
-        //   this.neighbors.push(grid[i + 1][j + 1][z]);
-        // }
-
-        // // front right
-        // if (i > 0 && grid[i - 1][j + 1][z]) {
-        //   this.neighbors.push(grid[i - 1][j + 1][z]);
-        // }
-      }
-
-      // back
-      if (z > 0 && grid[x][z - 1][y]) {
-        this.neighbors.push(grid[x][z - 1][y]);
-        
-        // back left
-        // if (i < cols - 1 && grid[i + 1][j - 1][z]) {
-        //   this.neighbors.push(grid[i + 1][j - 1][z]);
-        // }
-
-        // // back right
-        // if (i > 0 && grid[i - 1][j - 1][z]) {
-        //   this.neighbors.push(grid[i - 1][j - 1][z]);
-        // }
-      }
-    // }
+    // back
+    if (y > 0 && grid[x][z - 1] && grid[x][z - 1][y]) {
+      this.neighbors.push(grid[x][z - 1][y]);
+    }
   };
 }
 
@@ -181,17 +154,18 @@ class Cube extends THREE.Mesh  {
 }
 
 class Plane extends THREE.Mesh  {
-  constructor(x, z, y, color, size, gridIndex) {
-    super(x, z, y, gridIndex)
+  constructor(x, y, z, color, size, gridIndex) {
+    super()
     this.color = color;
     this.material = new THREE.MeshBasicMaterial({color: color})
     this.geometry = new THREE.PlaneGeometry(size, size)
-    this.position.set(this.left, this.top, 0)
+    this.position.set(x * size, ((y + 1) * size) - size / 2, z * size)
+    this.rotation.x = -Math.PI / 2;
     this.speed = .03
   }
 
   setColor (color) {
-    this.material = new THREE.MeshBasicMaterial({color: color || this.getColor()})
+    this.material = new THREE.MeshBasicMaterial({ color: color })
   }
 }
 
