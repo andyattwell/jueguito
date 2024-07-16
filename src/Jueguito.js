@@ -32,33 +32,26 @@ class Jueguito {
   
   start() {
 
-    // this.camera = new THREE.PerspectiveCamera( 45, this.width / this.height, 0.01, 1000 );
     this.camera = new THREE.OrthographicCamera( this.width / - 2, this.width / 2, this.height / 2, this.height / - 2, 1, 1000 )
-    // this.camera.position.z = 0
-    // this.camera.position.x = 0
-    // this.camera.zoom = 100
     this.camera.position.set(2, 2, 2);
     this.camera.lookAt(0, 0, 0);
+    this.camera.zoom = 5
+    this.camera.far = 2000
+    this.camera.near = 1
+
     this.scene = new THREE.Scene();
     this.renderer = new THREE.WebGLRenderer( { antialias: true } );
-
 
     this.renderer.setSize( this.width, this.height );
     this.renderer.setClearColor({ color: "#000000" })
     document.querySelector('#app').appendChild( this.renderer.domElement );
 
     this.orbitControls = new OrbitControls( this.camera, this.renderer.domElement );
-
-    //controls.update() must be called after any manual changes to the camera's transform
-    // camera.position.set( 0, 20, 100 );
-    // this.orbitControls.update();
-
-    // ambient
-    // this.scene.add( new THREE.AmbientLight( '#FFFFFF' ) );
-    // light
-    // var light = new THREE.DirectionalLight( '#FFFFFF', 1 );
-    // light.position.set( 1,1,3);
-    // this.scene.add( light );
+    this.orbitControls.maxZoom = 20
+    this.orbitControls.minZoom = 5
+    this.orbitControls.zoomToCursor = true
+    this.orbitControls.zoomSpeed = 1
+    
 
     this.menu.addEventListener('action', (data) => {
       if(typeof this[data.action] === 'function'){
@@ -81,14 +74,13 @@ class Jueguito {
     //     self.animate()
     //   } );
     // }
+    this.renderScene();
+    this.updateCositas(time);
+    this.toolbar && this.toolbar.renderInfo();
+    
     requestAnimationFrame( (time) => {
       self.animate(time)
     } );
-    
-    this.updateCositas(time);
-    this.renderScene();
-    this.toolbar && this.toolbar.renderInfo();
-
   }
 
   newGame(data = null) {
@@ -111,30 +103,24 @@ class Jueguito {
 
     this.mapa = new Mapa(self.scene, data?.grid, this.settings);
 
-    this.camera.position.y = 100
+    this.camera.position.y = 650
     this.camera.position.x = this.width / 2 - this.width / 4
     this.camera.position.z = this.width / 2 - this.width / 4
-    this.camera.zoom = 6
-    
+    this.camera.lookAt(this.mapa.rows / 2, 0, this.mapa.cols / 2)
+    this.orbitControls.target = new THREE.Vector3(this.mapa.rows / 2, 0, this.mapa.cols / 2)
     // this.camera.lookAt(100,500,500);
-    this.orbitControls.update();
+    if (this.orbitControls) {
+      this.orbitControls.update();
+    }
     this.toolbar = new Toolbar(this);
 
-    // let cositas = [{
-    //   x: this.mapa.cols / 2, 
-    //   y: this.mapa.rows / 2, 
-    //   z:0
-    // },
-    // {
-    //   x: this.mapa.cols / 2 + 1, 
-    //   y: this.mapa.rows / 2, 
-    //   z:0
+    // data.cositas = [{
+    //   x: 10,
+    //   y: 10
     // }];
-    this.cositas = [];
 
     if (data?.cositas) {
-      cositas = data.cositas;
-      this.addCositas(cositas);
+      this.addCositas(data.cositas);
     }
     
     this.play();
@@ -151,26 +137,20 @@ class Jueguito {
   addLight() {
     const spotLight = new THREE.SpotLight( 0xffffff );
     spotLight.position.set( this.cositas[0].x, this.cositas[0].y, 10 );
-    // spotLight.map = new THREE.TextureLoader().load( url );
-
     spotLight.castShadow = true;
-
     spotLight.shadow.mapSize.width = 1024;
     spotLight.shadow.mapSize.height = 1024;
-
     spotLight.shadow.camera.near = 500;
     spotLight.shadow.camera.far = 4000;
     spotLight.shadow.camera.fov = 30;
-
     this.scene.add( spotLight );
-
   }
 
   addCositas(cositas = []) {
-
     for (let index = 0; index < cositas.length; index++) {
       let cosita = new Cosita(this.mapa, cositas[index], this.time);
       this.cositas.push(cosita);
+      this.scene.add(cosita);
     }
   }
 
@@ -274,6 +254,8 @@ class Jueguito {
   selectTile(instanceId) {
 
     const tile = this.mapa.tiles[instanceId];
+
+    console.log({gridPoint: this.mapa.grid[tile.x][tile.z][tile.y]})
     
     if (this.target_selected) {
       this.target_selected.deselect();

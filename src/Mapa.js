@@ -9,9 +9,9 @@ class Mapa {
   noiseGenerator = new NoiseGenerator()
   constructor(scene, data = [], options = {}) {
 
-    this.cols = options.mapWidth ? parseInt(options.mapWidth) : 40;
-    this.rows = options.mapDepth ? parseInt(options.mapDepth) : 40;
-    this.height = options.mapHeight ? parseInt(options.mapHeight) : 40;
+    this.cols = options.mapWidth ? parseInt(options.mapWidth) : 100;
+    this.rows = options.mapHeight ? parseInt(options.mapHeight) : 100;
+    this.height = options.mapAltitude ? parseInt(options.mapAltitude) : 10;
 
     this.maxZ = 12;
     this.grid = [];
@@ -110,26 +110,29 @@ class Mapa {
 
   generate(options = {}) {
     this.generateGrid(options);
-    let noiseMap;
-    if (!options.mapFlat) {
-      noiseMap = this.noiseGenerator.generateNoiseMap(options);
-    }
+    let noiseMap = this.noiseGenerator.generateNoiseMap(options);
 
     let count = 0;
     for (let x = 0; x < this.cols; x++) {
       for (let z = 0; z < this.rows; z++) {
-        let currentHeight = !options.mapFlat ? parseInt(noiseMap[x][z] * 15) : options.mapAltitude;
+
+        let currentHeight = parseInt(noiseMap[x][z] * 15);
         currentHeight = currentHeight < 0 ? 0 : currentHeight;
 
-        for (let h = 0; h <= currentHeight; h++) {
-          if (options.mapAltitude && h >= options.mapAltitude * 10) {
-            continue;
-          }
+        let maxHeight = currentHeight;
+        if (options.mapFlat) {
+          maxHeight = 1;
+        }
 
-          let tile = this.getTileFromNoise(x, z, h, currentHeight);
+        for (let h = 0; h <= maxHeight; h++) {
+          // if (options.mapAltitude && h >= options.mapAltitude * 10) {
+          //   continue;
+          // }
+
+          let tile = this.getTileFromNoise(currentHeight);
 
           if (tile) {
-            this.tiles[count] = new tile(
+            const newTile = new tile(
               this,
               x,
               z,
@@ -137,6 +140,11 @@ class Mapa {
               this.tileSize,
               count
             );
+            // console.log(h, this.grid[x][z])
+            this.grid[x][z][h] = new GridPoint(x, z, h, count)
+            this.grid[x][z][h].tile = newTile
+            this.tiles[count] = newTile;
+            // this.grid[x][z][h].tile = this.tiles[count];
             count++;
           }
         }
@@ -152,16 +160,15 @@ class Mapa {
   }
 
   updateInstancedMesh() {
-
     if (this.scene.getObjectByName('meshmap')) {
       this.scene.getObjectByName('meshmap').dispose();
       this.scene.remove(this.scene.getObjectByName('meshmap'))
     }
+
     const tile = new Cube(this, 0, 0, 0, "#fff", this.tileSize);
     const mesh = new THREE.InstancedMesh(tile.geometry, tile.material, this.tiles.length);
     mesh.name = 'meshmap';
     this.scene.add(mesh);
-    mesh.updateMatrix();
     
     let current = 0;
     for (let x = 0; x < this.tiles.length; x++) {
@@ -175,39 +182,36 @@ class Mapa {
       current++;
     }
     mesh.updateMatrix();
-
   }
+  
 
-  getTileFromNoise(x, z, h, noiseVal, flat) {
+  getTileFromNoise(noiseVal) {
 
-    if (flat) {
-      noiseVal = 3;
-    }
+    // if (flat) {
+    //   noiseVal = 3;
+    // }
     
-    if (noiseVal !== h) {
-      if (
-        (x === 0) ||
-        (x === this.cols) ||
-        (z === 0) ||
-        (z === this.rows) ||
-        h === 0
-      ) {
-        return Rock
-      } else {
-        this.grid[x][z][h] = null
-      }
-    }
+    // if (noiseVal !== h) {
+    //   if (
+    //     (x == 0) ||
+    //     (x >= this.cols - 1) ||
+    //     (z == 0) ||
+    //     (z >= this.rows - 1) ||
+    //     h === 0
+    //   ) {
+    //     return Rock
+    //   }
+    // }
 
     noiseVal = parseInt(noiseVal)
-    noiseVal = h;
-    console.log(noiseVal)
+    // noiseVal = h;
     if (noiseVal >= 12) {
       return Snow;
     } else if (noiseVal <= 11 && noiseVal >= 7) {
       return parseInt(Math.random() * 8) <= 0 ? Path : Rock;
     } else if (noiseVal <= 6 && noiseVal >= 4) {
       return Grass;
-    } else if (noiseVal <= 6 && noiseVal >= 4) {
+    } else if (noiseVal <= 4 && noiseVal >= 1) {
       return parseInt(Math.random() * 8) <= 0 ? Grass : Path;
     } else {
       return Water;
@@ -217,21 +221,18 @@ class Mapa {
   getNoiseMapTile(x, y, rand) {
     const noise = new ImprovedNoise()
 
-    const negX = rand < 0.5 ? 1 : -1;
-    const negY = rand > 0.5 ? 1 : -1;
-
     const ns = noise.noise(x * rand, y * rand, 0)
     const r = parseInt(ns * 10) + 4;
     
     if (r > 6) {
       return Rock;
-    } else if (r <= 6 && r > 5) {
+    } else if (r <= 6 && r > 3) {
       const rock = parseInt(Math.random() * 8);
       if (rock <= 0) {
         return Rock;
       } 
       return Path;
-    } else if (r <= 5 && r > 1) {
+    } else if (r <= 3 && r > 1) {
       const path = parseInt(Math.random() * 4);
       if (path <= 0) {
         return Path;
@@ -260,7 +261,7 @@ class Mapa {
 
   findPath(start, end) {
 
-    if (!end || end === undefined || end === null || !start || start === undefined || end === start) {
+    if (!end || !start) {
       return [];
     }
 
@@ -273,16 +274,7 @@ class Mapa {
     //   return [];
     // }
 
-    if ((end.walkable !== true || end.occupied === true) && end.neighbors) {
-      let newEnd = null
-      for (let index = 0; index < end.neighbors.length; index++) {
-        if (!newEnd && end.neighbors[index].walkable === true && end.neighbors[index].occupied === false){
-          newEnd = end.neighbors[index];
-          break;
-        }
-      }
-      end = newEnd;
-    }
+    end = this.findAvailableTile(end);
     
     while (openSet.length > 0) {
       //assumption lowest index is the first one to begin with
@@ -311,9 +303,9 @@ class Mapa {
       }
 
       if (
-        current.walkable === true && 
-        current.type !== 'air' && 
-        current.occupied !== true
+        current.tile.walkable === true && 
+        current.tile.type !== 'air' && 
+        current.tile.occupied !== true
       ) {
         closedSet.push(current);
       }
@@ -325,21 +317,16 @@ class Mapa {
 
       for (let i = 0; i < neighbors.length; i++) {
         let neighbor = neighbors[i];
-
-        if (!neighbor || neighbor === undefined || end === undefined || end === null) {
-          console.log({current, neighbor, end})
-          // openSet = [];
-          // closedSet = [];
-          // return [];
-          continue;
-        }
-
+        const topGridPoint = this.grid[neighbor.x][neighbor.y][neighbor.z + 1];
         if (
+          !neighbor ||
+          topGridPoint && topGridPoint.tile ||
           neighbor === start || 
           closedSet.includes(neighbor) ||
-          neighbor.walkable !== true || 
-          neighbor.occupied === true || 
-          neighbor.type === 'air'
+          !neighbor.tile ||
+          neighbor.tile.walkable !== true || 
+          neighbor.tile.occupied === true || 
+          neighbor.tile.type === 'air'
         ) {
           continue;
         }
@@ -351,13 +338,13 @@ class Mapa {
           neighbor.g = possibleG;
           try {
             neighbor.h = this.heuristic(neighbor, end);
+
           } catch (error) {
             console.log({neighbor, end})
             console.log({error})
             openSet = [];
             closedSet = [];
             return [];
-            continue;
           }
           neighbor.f = neighbor.g + neighbor.h;
           neighbor.f -= (parseInt(neighbor.speed * 500))
@@ -375,6 +362,20 @@ class Mapa {
     //no solution by default
     return [];
   
+  }
+
+  findAvailableTile(end) {
+    if ((end.tile.walkable !== true || end.tile.occupied === true) && end.tile.neighbors) {
+      let newEnd = null
+      for (let index = 0; index < end.neighbors.length; index++) {
+        if (!newEnd && end.neighbors[index].tile.walkable === true && end.neighbors[index].tile.occupied === false){
+          newEnd = end.neighbors[index];
+          break;
+        }
+      }
+      end = newEnd;
+    }
+    return end;
   }
 
   heuristic(position0, position1) {
@@ -479,9 +480,10 @@ class Mapa {
 
     const tile = this.tiles[hit.instanceId];
     
-    let x = parseInt(tile.x + hit.normal.x)
-    let y = parseInt(tile.y + hit.normal.y)
-    let z = parseInt(tile.z + hit.normal.z)
+    let x = parseInt(tile.x) + parseInt(hit.normal.x)
+    let y = parseInt(tile.y) + parseInt(hit.normal.y)
+    let z = parseInt(tile.z) + parseInt(hit.normal.z)
+
 
     // if (this.previewTile) {
     //   x = parseInt(this.previewTile.x);
@@ -496,17 +498,18 @@ class Mapa {
 
     let entity = this.getTileTypeFromString(newType)
 
-    const newTile = new entity(x, z, y, tile.size);
+    const newTile = new entity(this, x, z, y, tile.size);
     this.grid[x][z][y] = new GridPoint(x, z, y);
-    console.log('add', newTile)
     this.tiles.push(newTile);
     this.updateNeighbors();
     this.updateInstancedMesh();
   }
 
   addPreview(hit, newType) {
-    console.log('addPreview')
     const tile = this.tiles[hit.instanceId];
+    if (!tile) {
+      return;
+    }
     
     let x = parseInt(tile.x + hit.normal.x)
     let y = parseInt(tile.y + hit.normal.y)
@@ -516,7 +519,7 @@ class Mapa {
       return false;
     }
     
-    const prev = new Preview(x, z, y, tile.size)
+    const prev = new Preview(this.x, z, y, tile.size)
     this.tiles.push(prev);
     this.previewTile = prev;
     // this.previewTile.instanceId = hit.instanceId;
@@ -527,7 +530,6 @@ class Mapa {
     if (!this.previewTile) {
       return false;
     }
-    console.log('remove', this.previewTile)
     delete this.tiles[this.previewTile.instanceId];
     this.previewTile = null;
     this.updateInstancedMesh();

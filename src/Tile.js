@@ -12,36 +12,38 @@ class GridPoint {
     this.h = 0; // heuristic estimated cost function from current grid point to the goal
     this.neighbors = []; // neighbors of the current grid point
     this.top_parent = undefined; // immediate source of the current grid point
+    this.tile = null;
   }
 
   // update neighbors array for a given grid point
   updateNeighbors = function (grid, cols, rows) {
-    let i = this.x;
-    let j = this.z;
+    let x = this.x;
+    let y = this.y;
+    let z = this.z;
 
-    const minY = this.y >= 1 ? this.y - 1 : 0;
-    const maxY = this.y + 1;
+    // const minY = this.y >= 1 ? this.y - 1 : 0;
+    // const maxY = this.y + 1;
 
     this.neighbors = [];
 
     // the floor (z 0) is a plane with no height
 
-    for (let y = minY; y <= maxY; y++) {
+    // for (let y = minY; y <= maxY; y++) {
       // left
-      if (i < cols - 1 && grid[i + 1][j][y]) {
+      if (x < cols - 1 && grid[x + 1][y][z]) {
         // console.log({left: grid[i + 1][j][z]})
-        this.neighbors.push(grid[i + 1][j][y]);
+        this.neighbors.push(grid[x + 1][y][z]);
       }
 
       // right
-      if (i > 0 && grid[i - 1][j][y]) {
-        this.neighbors.push(grid[i - 1][j][y]);
+      if (x > 0 && grid[x - 1][y][z]) {
+        this.neighbors.push(grid[x - 1][y][z]);
       }
 
       // front
       // console.log(i, j, y, grid[i])
-      if (j < rows - 1 && grid[i][j + 1][y]) {
-        this.neighbors.push(grid[i][j + 1][y]);
+      if (z < rows - 1 && grid[x][z + 1][y]) {
+        this.neighbors.push(grid[x][z + 1][y]);
         // front left
         // if (i < cols - 1 && grid[i + 1][j + 1][z]) {
         //   this.neighbors.push(grid[i + 1][j + 1][z]);
@@ -54,8 +56,8 @@ class GridPoint {
       }
 
       // back
-      if (j > 0 && grid[i][j - 1][y]) {
-        this.neighbors.push(grid[i][j - 1][y]);
+      if (z > 0 && grid[x][z - 1][y]) {
+        this.neighbors.push(grid[x][z - 1][y]);
         
         // back left
         // if (i < cols - 1 && grid[i + 1][j - 1][z]) {
@@ -67,7 +69,7 @@ class GridPoint {
         //   this.neighbors.push(grid[i - 1][j - 1][z]);
         // }
       }
-    }
+    // }
   };
 }
 
@@ -228,7 +230,7 @@ class Water extends Cube {
     this.type = 'water';
     // this.walkable = false;
     this.walkable = true;
-    this.speed = .01
+    this.speed = .1
     this.setColor();
   }
 }
@@ -238,7 +240,7 @@ class Path extends Cube {
     super(map, x, z, y,"#aa9f2b", size, gridIndex);
     this.type = 'path';
     this.walkable = true;
-    this.speed = .05
+    this.speed = 1
     this.setColor();
   }
 }
@@ -248,7 +250,7 @@ class Grass extends Cube {
     super(map, x, z, y, "#51d343", size, gridIndex);
     this.type = 'grass';
     this.walkable = true;
-    this.speed = .04
+    this.speed = .5
     this.setColor();
   }
 }

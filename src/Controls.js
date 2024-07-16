@@ -30,9 +30,9 @@ class Controls {
       }
     });
 
-    document.addEventListener('wheel', (e) => {
-      self.zoomHandler(e);
-    });
+    // document.addEventListener('wheel', (e) => {
+    //   self.zoomHandler(e);
+    // });
 
     window.addEventListener('resize', () => {
       self.parent.resize();
@@ -96,7 +96,7 @@ class Controls {
             hit.object.type !== 'preview'
           ) {
           }
-          // this.parent.mapa.addPreview(hit);
+          this.parent.mapa.addPreview(hit);
       }
 
       // const self = this;
@@ -229,11 +229,15 @@ class Controls {
   
   rightClickHandler(e) {
     e.preventDefault();
-
+    const hit = this.intersects[0]
     if (this.parent.cosita_selected) {
-      this.parent.cosita_selected.deselect()
-      this.parent.cosita_selected.following = false;
-      this.parent.cosita_selected = null;
+      // this.parent.cosita_selected.deselect()
+      // this.parent.cosita_selected.following = false;
+      // this.parent.cosita_selected = null;
+      const tile = this.parent.mapa.tiles[hit.instanceId];
+      this.parent.cosita_selected.moveTo(this.parent.mapa.grid[tile.x][tile.z][tile.y])
+
+      return;
     }
 
     if (this.parent.target_selected) {
@@ -244,7 +248,7 @@ class Controls {
     }
 
     
-    const hit = this.intersects[0]
+    
     if (hit && hit.object.type !== 'cosita') {
       this.parent.mapa.removeTile(hit.instanceId)
     }
@@ -261,63 +265,12 @@ class Controls {
 
   clickHandler(e) {
 
-    if (e.which === 1 && e.target.tagName === 'CANVAS') {
-      const hit = this.intersects[0];
-      if (hit) {
-        
+    if (e.target.tagName !== 'CANVAS') {
+      return;
+    }
 
-        if (
-          this.parent.toolbar.selectedTool 
-          && hit.object.type !== 'cosita'
-        ) {
-          if (this.parent.toolbar.selectedTool.name !== 'cosita') {
-            this.parent.mapa.addTile(hit, this.parent.toolbar.selectedTool.name)
-          } else {
-            this.parent.addCositas([
-              {
-                x: hit.object.x,
-                y: hit.object.y,
-                z: hit.object.z
-              }
-            ])
-          }
-          // this.parent.mapa.replaceTile(hit.object, this.parent.toolbar.selectedTool.name)
-          return false;
-        }
-
-
-        if (this.parent.cosita_selected && hit.object.type !== 'cosita' && hit.object.type !== 'Mesh') {
-          
-          if (this.parent.target_selected) {
-            if (this.parent.target_selected.deselect) {
-              this.parent.target_selected.deselect();
-            }
-          }
-
-          this.parent.target_selected = hit.object;
-          this.parent.cosita_selected.moveTo(hit.object)
-        } else {
-          
-          if (this.parent.cosita_selected) {
-            this.parent.cosita_selected.deselect();
-          }
-          
-          if (this.parent.target_selected && this.parent.target_selected.deselect) {
-            this.parent.target_selected.deselect();
-          }
-
-          if (hit.object.type === 'cosita') {
-            this.parent.cosita_selected = hit.object;
-          } else {
-            this.parent.selectTile(hit.instanceId);
-            return false;
-            // this.parent.target_selected = hit.object;
-          }
-        }
-
-        if (hit.object.onClick) hit.object.onClick(hit)
-  
-      }
+    if (e.which === 1) {
+      this.checkHitObject()
     } else if (e.which === 2) {
       if (!this.parent.orbitControls) {
         this.dragging = true;
@@ -325,20 +278,82 @@ class Controls {
     }
   }
 
-  zoomHandler(e) {
-    if (e.target.tagName === 'CANVAS' && (this.parent.camera && !this.parent.orbitControls)) {
-      if (e.deltaY < 0) {
-        if (this.parent.camera.position.z > 1) {
-          this.parent.camera.position.z -= 1
-          this.parent.camera.position.y += 1
+  checkHitObject() {
+    const hit = this.intersects[0];
+    if (hit) {
+      if (
+        this.parent.toolbar.selectedTool 
+        && hit.object.type !== 'cosita'
+      ) {
+        return this.useTool(hit)
+      }
+
+      if (this.parent.cosita_selected && hit.object.type !== 'cosita' && hit.object.type !== 'Mesh') {
+        
+        if (this.parent.target_selected) {
+          if (this.parent.target_selected.deselect) {
+            this.parent.target_selected.deselect();
+          }
         }
+
+        this.parent.target_selected = hit.object;
+        this.parent.cosita_selected.moveTo(hit.object)
       } else {
-        if (this.parent.camera.position.z < 8) {
-          this.parent.camera.position.z += 1
-          this.parent.camera.position.y -= 1
+        
+        if (this.parent.cosita_selected) {
+          this.parent.cosita_selected.deselect();
+        }
+        
+        if (this.parent.target_selected && this.parent.target_selected.deselect) {
+          this.parent.target_selected.deselect();
+        }
+
+        if (hit.object.type === 'cosita') {
+          this.parent.cosita_selected = hit.object;
+        } else {
+          return this.parent.selectTile(hit.instanceId);
         }
       }
+
+      if (hit.object.onClick) hit.object.onClick(hit)
+
     }
+  }
+
+  useTool(hit) {
+    if (this.parent.toolbar.selectedTool.name !== 'cosita') {
+      this.parent.mapa.addTile(hit, this.parent.toolbar.selectedTool.name)
+    } else {
+      const tile = this.parent.mapa.tiles[hit.instanceId];
+      let x = parseInt(tile.x)
+      let y = parseInt(tile.z)
+      this.parent.addCositas([{x, y}])
+    }
+  }
+
+  zoomHandler(e) {
+    if (e.target.tagName !== 'CANVAS' || !this.parent.camera || this.parent.orbitControls) {
+      return;
+    }
+
+    console.log({scroll: e.deltaY})
+    console.log({position: {
+      x: this.parent.camera.position.x,
+      x: this.parent.camera.position.y,
+      x: this.parent.camera.position.z,
+    }})
+    if (e.deltaY < 0) {
+      if (this.parent.camera.position.z > 1) {
+        this.parent.camera.position.z -= 1
+        this.parent.camera.position.y += 1
+      }
+    } else {
+      if (this.parent.camera.position.z < 8) {
+        this.parent.camera.position.z += 1
+        this.parent.camera.position.y -= 1
+      }
+    }
+    
   }
 
   dblclickHandler(e) {
