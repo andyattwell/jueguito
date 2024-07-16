@@ -6,13 +6,20 @@ module.exports = {
   entry: './src/index.js',
   output: {
     filename: 'bundle.js',
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'dist/js'),
   },
-  watch: true,
+  // watch: true,
   watchOptions: {
     aggregateTimeout: 200,
     poll: 1000,
     ignored: /node_modules/,
+  },
+  devServer: {
+    static: {
+      directory: path.join(__dirname, 'dist'),
+    },
+    compress: true,
+    port: 9000,
   },
   module: {
     rules: [
