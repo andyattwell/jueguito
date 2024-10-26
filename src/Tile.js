@@ -12,61 +12,36 @@ class GridPoint {
     this.h = 0; // heuristic estimated cost function from current grid point to the goal
     this.neighbors = []; // neighbors of the current grid point
     this.top_parent = undefined; // immediate source of the current grid point
+    this.tile = null;
   }
 
   // update neighbors array for a given grid point
   updateNeighbors = function (grid, cols, rows) {
-    let i = this.x;
-    let j = this.z;
-
-    const minY = this.y >= 1 ? this.y - 1 : 0;
-    const maxY = this.y + 1;
+    let x = this.x;
+    let y = this.y;
+    let z = this.z;
 
     this.neighbors = [];
 
-    // the floor (z 0) is a plane with no height
+    // left
+    if (x < cols - 1 && grid[x + 1][z][y]) {
+      // console.log({left: grid[i + 1][j][z]})
+      this.neighbors.push(grid[x + 1][z][y]);
+    }
 
-    for (let y = minY; y <= maxY; y++) {
-      // left
-      if (i < cols - 1 && grid[i + 1][j][y]) {
-        // console.log({left: grid[i + 1][j][z]})
-        this.neighbors.push(grid[i + 1][j][y]);
-      }
+    // right
+    if (x > 0 && grid[x - 1][z][y]) {
+      this.neighbors.push(grid[x - 1][z][y]);
+    }
 
-      // right
-      if (i > 0 && grid[i - 1][j][y]) {
-        this.neighbors.push(grid[i - 1][j][y]);
-      }
+    // front
+    if (y < rows - 1 && grid[x][z + 1] && grid[x][z + 1][y]) {
+      this.neighbors.push(grid[x][z + 1][y]);
+    }
 
-      // front
-      // console.log(i, j, y, grid[i])
-      if (j < rows - 1 && grid[i][j + 1][y]) {
-        this.neighbors.push(grid[i][j + 1][y]);
-        // front left
-        // if (i < cols - 1 && grid[i + 1][j + 1][z]) {
-        //   this.neighbors.push(grid[i + 1][j + 1][z]);
-        // }
-
-        // // front right
-        // if (i > 0 && grid[i - 1][j + 1][z]) {
-        //   this.neighbors.push(grid[i - 1][j + 1][z]);
-        // }
-      }
-
-      // back
-      if (j > 0 && grid[i][j - 1][y]) {
-        this.neighbors.push(grid[i][j - 1][y]);
-        
-        // back left
-        // if (i < cols - 1 && grid[i + 1][j - 1][z]) {
-        //   this.neighbors.push(grid[i + 1][j - 1][z]);
-        // }
-
-        // // back right
-        // if (i > 0 && grid[i - 1][j - 1][z]) {
-        //   this.neighbors.push(grid[i - 1][j - 1][z]);
-        // }
-      }
+    // back
+    if (y > 0 && grid[x][z - 1] && grid[x][z - 1][y]) {
+      this.neighbors.push(grid[x][z - 1][y]);
     }
   };
 }
@@ -179,17 +154,18 @@ class Cube extends THREE.Mesh  {
 }
 
 class Plane extends THREE.Mesh  {
-  constructor(x, z, y, color, size, gridIndex) {
-    super(x, z, y, gridIndex)
+  constructor(x, y, z, color, size, gridIndex) {
+    super()
     this.color = color;
     this.material = new THREE.MeshBasicMaterial({color: color})
     this.geometry = new THREE.PlaneGeometry(size, size)
-    this.position.set(this.left, this.top, 0)
+    this.position.set(x * size, ((y + 1) * size) - size / 2, z * size)
+    this.rotation.x = -Math.PI / 2;
     this.speed = .03
   }
 
   setColor (color) {
-    this.material = new THREE.MeshBasicMaterial({color: color || this.getColor()})
+    this.material = new THREE.MeshBasicMaterial({ color: color })
   }
 }
 
@@ -228,7 +204,7 @@ class Water extends Cube {
     this.type = 'water';
     // this.walkable = false;
     this.walkable = true;
-    this.speed = .01
+    this.speed = .1
     this.setColor();
   }
 }
@@ -238,7 +214,7 @@ class Path extends Cube {
     super(map, x, z, y,"#aa9f2b", size, gridIndex);
     this.type = 'path';
     this.walkable = true;
-    this.speed = .05
+    this.speed = 1
     this.setColor();
   }
 }
@@ -248,7 +224,7 @@ class Grass extends Cube {
     super(map, x, z, y, "#51d343", size, gridIndex);
     this.type = 'grass';
     this.walkable = true;
-    this.speed = .04
+    this.speed = .5
     this.setColor();
   }
 }

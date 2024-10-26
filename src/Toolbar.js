@@ -11,7 +11,7 @@ class Toolbar {
     this.color = "#0d0b0b";
 
     this.x = 0;
-    this.y = this.parent.height - this.height;
+    this.y = 0;
 
     this.buttons = [
       {
@@ -57,7 +57,7 @@ class Toolbar {
     container.css('background-color', this.color);
     container.css('width', this.buttons.length * 80);
     container.css('height', this.height);
-    container.css('top', this.y);
+    container.css('bottom', this.y);
     container.css('left', this.x);
 
     for (let i = 0; i < this.buttons.length; i++) {

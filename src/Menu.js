@@ -213,7 +213,6 @@ class Menu {
 
     const $form = $('<form id="generate-form">')
 
-    console.log(this.parent)
     let settings = {
       mapHeight: 40,
       mapWidth: 40,
@@ -331,7 +330,7 @@ class Menu {
           $('<label for="mapFlat" class="form-label ms-3">Flat</label>'),
         ),
         $('<div class="col-sm-1">').append(
-          $('<input type="checkbox" name="mapFlat" id="mapFlat" ' + settings.mapFlat ? 'checked' : '' + ' class="form-check-input ms-1"/>'),
+          $('<input type="checkbox" name="mapFlat" id="mapFlat" class="form-check-input ms-1"' + (settings.mapFlat ? 'checked' : '') + '/>'),
         ),
         $('<div class="col-sm-3">').append(
           $('<label for="mapAltitude" class="form-label ms-3">Height</label>'),
@@ -389,6 +388,7 @@ class Menu {
       $("#generate-modal").hide();
     })
   }
+
   generateMap() {
     
     if ($("#generate-modal").length === 0) {

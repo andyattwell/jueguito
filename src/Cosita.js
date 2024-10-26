@@ -2,13 +2,13 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 class Cosita extends THREE.Mesh {
-  constructor(map, spawn, time) {
+  constructor(game, map, spawn, time) {
     super()
-
+    this.game = game;
     this.type = 'cosita';
-    this.width = 0.1;
-    this.height = .3;
-    this.scaleObj = .03;
+    this.width = 4;
+    this.height = 4;
+    this.scaleObj = 1;
     this.selected = false;
     this.speed = .5;
     this.color = "#FFFFFF";
@@ -17,23 +17,37 @@ class Cosita extends THREE.Mesh {
     this.following = false;
     this.queuedAction = null;
     this.inventory = [];
+
+    // this.material = new THREE.MeshBasicMaterial({
+    //   color: this.color,
+    //   transparent: true,
+    //   opacity: 0
+    // })
+    // this.geometry = new THREE.BoxGeometry(this.width, this.width, this.height);
     this.material = new THREE.MeshBasicMaterial({
-      color: 0x000000,
+      color: this.color,
       transparent: true,
-      opacity: 0
+      opacity: 1
     })
-    
-    this.geometry = new THREE.BoxGeometry(this.width, this.width, this.height);
-
-    this.x = parseInt(spawn ? spawn.x : 0); // cell x
-    this.y = parseInt(spawn ? spawn.y : 0); // cell y
-    this.z = parseInt(spawn ? spawn.z : this.map.grid[this.x][this.y].length - 1); // cell z
-
+    this.geometry = new THREE.BoxGeometry(this.width, this.height, this.width);
+    this.x = parseInt(spawn && spawn.x ? spawn.x : 0); // cell x
+    this.y = parseInt(spawn && spawn.y ? spawn.y : 0); // cell y
+    let z = 0;
+    this.map.grid[this.x][this.y].forEach((point, index) => {
+      if (point.tile) {
+        z = index
+      }
+    })
+    this.z = parseInt(spawn && spawn.z ? spawn.z : z); // cell z
     this.current = this.map.grid[this.x][this.y][this.z];
-    this.position.set(this.current.position.x, this.current.position.y, this.current.position.z + this.current.size )
-
+    this.position.set(this.x * this.map.tileSize, this.z * this.map.tileSize + this.map.tileSize, this.y * this.map.tileSize )
     this.lastTile = null;
     this.lookForStuff = true;
+    
+    // this.loadTexture()
+  }
+  
+  loadTexture() {
     const loader = new GLTFLoader();
     const self = this
     loader.load( '../models/bear/scene.gltf', function ( gltf ) {
@@ -108,10 +122,10 @@ class Cosita extends THREE.Mesh {
 
     const lookInNeighbors = function (current, tile, depth, done = []) {
       let found = null;
-
-      if(depth > 120) {
+      if(!tile || depth > 120) {
         return false;
       }
+      // console.log('look', {current, tile, depth, done})
 
       for (let n = 0; n < tile.neighbors.length; n++ ) {
         const neighbor = tile.neighbors[n];
@@ -138,8 +152,9 @@ class Cosita extends THREE.Mesh {
       return found;
     }
     let prize = null;
+
     if (this.lookForStuff) {
-      prize = lookInNeighbors(this.current, this.map.grid[this.current.x][this.current.y][this.current.z], 0);
+      prize = lookInNeighbors(this.current, this.current, 0);
     }
     if (prize) {
       this.queuedAction = {
@@ -156,22 +171,11 @@ class Cosita extends THREE.Mesh {
 
   moveToRandomPisition(depth = 0) {
 
-    const radius = 5;
-
-    const minX = this.current.x > radius ? this.current.x - radius : 0;
-    const maxX = this.current.x < this.map.cols - radius ? this.current.x + radius : this.map.cols - 1;
-    const diffX = maxX - minX;
-
-    const minY = this.current.y > radius ? this.current.y - radius : 0;
-    const maxY = this.current.y < this.map.rows - radius ? this.current.y + radius : this.map.rows - 1;
-    const diffY = maxY - minY;
-
     let randX = 7 + parseInt(Math.random() * 3);
     let plusOrMinus = Math.random() < 0.5 ? -1 : 1;
     randX *= plusOrMinus;
-    
     let nextX = parseInt(this.current.x + randX);
-    
+
     if (nextX < 0){
       nextX = 0;
     } if (nextX > this.map.cols - 1) {
@@ -189,10 +193,15 @@ class Cosita extends THREE.Mesh {
       nextY = this.map.rows - 1;
     }
 
-    let nextZ = this.map.grid[nextX][nextY].length - 1;
+    // let nextZ = this.map.grid[nextX][nextY].length - 1;
+    let nextZ = 0;
+    this.map.grid[nextX][nextY].forEach((point, index) => {
+      if (point.tile) {
+        nextZ = index
+      }
+    })
 
     if (this.lastTile) {
-
       let lastminX = this.lastTile.x - 5
       let lastmaxX = this.lastTile.x + 5
       let lastminY = this.lastTile.y - 5
@@ -216,7 +225,6 @@ class Cosita extends THREE.Mesh {
       randTile = this.map.grid[nextX][nextY][nextZ];
       // Check if is in range of the last tile
     }
-    
     if (randTile && randTile !== undefined) {
       this.moveTo(randTile)
     }
@@ -229,29 +237,20 @@ class Cosita extends THREE.Mesh {
       return false;
     }
 
-    let targetCell = this.currentPath[0];
-    
-    if (!targetCell) {
-      return false;
-    }
-    
     this.checkQueuedAction()
 
-    this.updatePositionRotation(targetCell, time)
+    if (!this.currentPath || !this.currentPath.length) {
+      return false;
+    }    
     
-    if (this.following) {
-      this.cameraFollow()
-    }
+    this.updatePositionRotation(this.currentPath[0], time)
 
   }
 
-  updatePositionRotation(targetCell, time) {
-    let targetPosX = targetCell.position.x;
-    let targetPosY = targetCell.position.y - targetCell.size / 2;
-    let targetPosZ = targetCell.position.z + 0.03;
-    if (targetCell.z > 0) {
-      targetPosZ = targetCell.position.z + targetCell.size
-    }
+  updatePositionRotation(gridPoint, time) {
+    let targetPosX = gridPoint.tile.position.x;
+    let targetPosY = gridPoint.tile.position.y; //  - gridPoint.tile.size
+    let targetPosZ = gridPoint.tile.position.z;
 
     let diffX = parseFloat(Math.abs(this.position.x - targetPosX).toFixed(2));
     let diffY = parseFloat(Math.abs(this.position.y - targetPosY).toFixed(2));
@@ -261,7 +260,7 @@ class Cosita extends THREE.Mesh {
     let nextY = this.position.y;
     let nextZ = this.position.z;
 
-    const speed = (targetCell.speed || 0.1) * this.speed
+    const speed = (gridPoint.tile.speed || 0.1) * this.speed
 
     let direction = '';
 
@@ -297,39 +296,41 @@ class Cosita extends THREE.Mesh {
     this.getWorldPosition(oldObjectPosition);
     
     this.x = nextX;
-    this.y = nextY;
-    this.x = nextZ;
+    // this.y = nextY;
+    this.z = nextZ;
 
-    this.position.set(nextX, nextY, nextZ)
+    this.position.set(this.x, this.position.y, this.z)
 
-    let zRotation = 0;
-    if (direction === 'back') {
-      zRotation = -Math.PI / 2
-    } else if (direction === 'front'){
-      zRotation = Math.PI / 2;
-    } else if (direction === 'left'){
-      zRotation = 0;
-    } else if (direction === 'right'){
-      zRotation = Math.PI;
-    }
+    // let zRotation = 0;
+    // if (direction === 'back') {
+    //   zRotation = -Math.PI / 2
+    // } else if (direction === 'front'){
+    //   zRotation = Math.PI / 2;
+    // } else if (direction === 'left'){
+    //   zRotation = 0;
+    // } else if (direction === 'right'){
+    //   zRotation = Math.PI;
+    // }
 
-    // this.rotation.set(this.rotation.x, this.rotation.y, Math.PI / 2)
-    if (direction !== '') {
-      this.rotation.setFromVector3(new THREE.Vector3( 0, 0, zRotation));
-    }
-
-    if (diffY <= speed && diffX <= speed && diffZ <= speed) {
+    // // this.rotation.set(this.rotation.x, this.rotation.y, Math.PI / 2)
+    // if (direction !== '') {
+    //   this.rotation.setFromVector3(new THREE.Vector3( 0, 0, zRotation));
+    // }
+    //diffY <= speed && 
+    if (diffX <= speed && diffZ <= speed) {
       this.currentPath.shift();
       
-      this.lastTile = this.current;
-      this.lastTile.planned = false;
-      this.lastTile.occupied = false;
-      this.lastTile.setColor();
+      if (this.current) {
+        this.lastTile = this.current;
+        this.lastTile.tile.planned = false;
+        this.lastTile.tile.occupied = false;
+        this.lastTile.tile.setColor();
+      }
 
-      this.current = targetCell;
-      this.current.planned = false;
-      this.current.occupied = true;
-      this.current.setColor();
+      this.current = gridPoint;
+      this.current.tile.planned = false;
+      this.current.tile.occupied = true;
+      this.current.tile.setColor();
 
       this.lastTime = time;
 
@@ -342,52 +343,36 @@ class Cosita extends THREE.Mesh {
     }
   }
 
-  cameraFollow() {
-    const oldObjectPosition = new THREE.Vector3();
-    camera.getWorldPosition(oldObjectPosition);
-    const newObjectPosition = new THREE.Vector3();
-    camera.getWorldPosition(newObjectPosition);
-    newObjectPosition.x = this.position.x
-    newObjectPosition.y = this.position.y - 2
-    newObjectPosition.z = this.position.z + 2
-    const delta = newObjectPosition.clone().sub(oldObjectPosition);
-    camera.position.add(delta);
-    camera.lookAt(this.position);
-  }
-
   moveTo(endTile) {
     const self = this;
-    
+
     this.clearPath();
 
     this.currentPath = this.map.findPath(this.current, endTile)
       .filter((tile) => tile !== self.current);
-
+    
+    console.log('currentPath', this.currentPath)
     if (this.queuedAction && (!this.currentPath || this.currentPath.length === 0)) {
       console.log('Not reachable', this.queuedAction)
       this.queuedAction = null;
       this.lookForStuff = false;
     }
 
-    this.paintPath()
+    // this.paintPath()
   }
 
-  paintPath() {
-    if (this.currentPath && this.currentPath.length >= 1) {
-      this.currentPath.map(tile => {
-        tile.planned = true;
-        tile.setColor();
-        return tile;
-      });
-    }
-  }
+  // paintPath() {
+  //   if (this.currentPath && this.currentPath.length >= 1) {
+  //     this.game.paintPath(this.currentPath)
+  //   }
+  // }
 
   clearPath() {
     if (this.currentPath && this.currentPath.length >= 1) {
-      this.currentPath.map(tile => {
-        tile.planned = false;
-        tile.setColor();
-        return tile;
+      this.currentPath.map(gridPoint => {
+        gridPoint.tile.planned = false;
+        gridPoint.tile.setColor();
+        return gridPoint;
       });
     }
   }
@@ -443,7 +428,21 @@ class Cosita extends THREE.Mesh {
     // this.material.forEach((c, i) => {
     //   this.material.at(i).color.set(color || this.getColor())
     // })
-    const obj = this.children[0].children[0];
+    const obj = this.children[0]?.children[0];
+
+    if (!obj) {
+      let color = this.color;
+      if (this.selected) {
+        color = this.blendColors(color, "#af30ff", 0.5);
+      } else if (this.hover) {
+        color = this.blendColors(color, "#ffffff", 0.5);
+      }
+
+      this.material = new THREE.MeshBasicMaterial({
+        color: color,
+      })
+      return;
+    }
 
     obj.children.forEach((c, i) => {
       let color = '';
